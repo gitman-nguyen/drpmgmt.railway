@@ -132,6 +132,17 @@ const translations = {
     endDate: 'Ngày kết thúc',
     notInTimeframe: 'Chưa đến thời gian diễn tập',
     executor: 'Người thực hiện',
+    changePassword: 'Đổi mật khẩu',
+    oldPassword: 'Mật khẩu cũ',
+    newPassword: 'Mật khẩu mới',
+    confirmNewPassword: 'Xác nhận mật khẩu mới',
+    passwordMismatch: 'Mật khẩu mới không khớp.',
+    passwordChangedSuccess: 'Đổi mật khẩu thành công!',
+    passwordChangedError: 'Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu cũ.',
+    resetPassword: 'Reset Mật khẩu',
+    resetPasswordConfirmation: 'Bạn có chắc muốn reset mật khẩu cho người dùng này về "password"?',
+    passwordResetSuccess: 'Reset mật khẩu thành công!',
+    passwordResetError: 'Reset mật khẩu thất bại.',
   },
   en: {
     loginTitle: 'System Login',
@@ -263,6 +274,17 @@ const translations = {
     endDate: 'End Date',
     notInTimeframe: 'Not within the drill timeframe',
     executor: 'Executor',
+    changePassword: 'Change Password',
+    oldPassword: 'Old Password',
+    newPassword: 'New Password',
+    confirmNewPassword: 'Confirm New Password',
+    passwordMismatch: 'New passwords do not match.',
+    passwordChangedSuccess: 'Password changed successfully!',
+    passwordChangedError: 'Failed to change password. Please check your old password.',
+    resetPassword: 'Reset Password',
+    resetPasswordConfirmation: 'Are you sure you want to reset the password for this user to "password"?',
+    passwordResetSuccess: 'Password reset successfully!',
+    passwordResetError: 'Failed to reset password.',
   },
 };
 
@@ -317,6 +339,8 @@ const CloseIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w
 const ApproveIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>;
 const RejectIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>;
 const SubmitApprovalIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>;
+const KeyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.623 5.91l-4.644 4.644a2 2 0 01-2.828 0L3.101 17.94a2 2 0 010-2.828l4.644-4.644A6 6 0 0115 7z" /></svg>;
+
 
 // --- UI COMPONENTS ---
 
@@ -436,6 +460,8 @@ const LoginPage = ({ onLogin, onCancel }) => {
 
 const AppLayout = ({ user, onLogout, children, activeScreen, setActiveScreen }) => {
   const { t, setLanguage, language } = useTranslation();
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+
   const adminLinks = [
     { id: 'dashboard', name: t('dashboard'), icon: <DashboardIcon /> },
     { id: 'scenarios', name: t('scenarioManagement'), icon: <ScenariosIcon /> },
@@ -459,6 +485,7 @@ const AppLayout = ({ user, onLogout, children, activeScreen, setActiveScreen }) 
   const navLinks = user.role === 'ADMIN' ? adminLinks : userLinks;
 
   return (
+    <>
     <div className="flex h-screen bg-[#1D2A2E] text-[#C5D2D8] font-sans">
       <nav className="w-64 bg-[#334A52]/70 backdrop-blur-lg border-r border-[#506771] p-4 hidden md:flex md:flex-col">
         <div className="flex items-center space-x-3 mb-10">
@@ -474,7 +501,10 @@ const AppLayout = ({ user, onLogout, children, activeScreen, setActiveScreen }) 
              </li>
           ))}
         </ul>
-        <div className="mt-auto">
+        <div className="mt-auto space-y-2">
+          <button onClick={() => setIsPasswordModalOpen(true)} className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-yellow-500/20 text-yellow-300 transition-colors duration-200">
+            <KeyIcon /><span>{t('changePassword')}</span>
+          </button>
           <button onClick={onLogout} className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-red-500/20 text-red-400 transition-colors duration-200">
             <LogoutIcon /><span>{t('logout')}</span>
           </button>
@@ -507,6 +537,8 @@ const AppLayout = ({ user, onLogout, children, activeScreen, setActiveScreen }) 
         <main className="p-4 sm:p-6 lg:p-8 flex-1">{children}</main>
       </div>
     </div>
+    {isPasswordModalOpen && <ChangePasswordModal user={user} onClose={() => setIsPasswordModalOpen(false)} />}
+    </>
   );
 };
 
@@ -643,11 +675,11 @@ const DashboardScreen = ({ user, drills, setDrills, onExecuteDrill, onViewReport
   );
 };
 
-const UserManagementScreen = ({ users, setUsers }) => {
+const UserManagementScreen = ({ users, setUsers, onDataRefresh }) => {
     const { t } = useTranslation();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
-    const [formData, setFormData] = useState({ username: '', role: 'TECHNICAL', first_name: '', last_name: '', description: '' });
+    const [formData, setFormData] = useState({ username: '', role: 'TECHNICAL', first_name: '', last_name: '', description: '', password: '' });
     
     const roleDescriptions = {
         ADMIN: t('adminRoleDesc'),
@@ -657,7 +689,7 @@ const UserManagementScreen = ({ users, setUsers }) => {
 
     const openModalForCreate = () => {
         setEditingUser(null);
-        setFormData({ username: '', role: 'TECHNICAL', first_name: '', last_name: '', description: '' });
+        setFormData({ username: '', role: 'TECHNICAL', first_name: '', last_name: '', description: '', password: '' });
         setIsModalOpen(true);
     };
 
@@ -686,10 +718,38 @@ const UserManagementScreen = ({ users, setUsers }) => {
                 alert('Lỗi cập nhật người dùng.');
             }
         } else {
-            // Logic for creating a new user would go here with a POST request
-            alert("Chức năng tạo người dùng mới chưa được triển khai.");
+             try {
+                const response = await fetch(`/api/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData),
+                });
+                if (!response.ok) throw new Error('Failed to create user');
+                const newUser = await response.json();
+                setUsers([...users, newUser]);
+            } catch (error) {
+                console.error("Create failed:", error);
+                alert('Lỗi tạo người dùng mới.');
+            }
         }
         setIsModalOpen(false);
+    };
+
+    const handleResetPassword = async (userId) => {
+        if (window.confirm(t('resetPasswordConfirmation'))) {
+            try {
+                const response = await fetch(`/api/users/${userId}/password`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ new_password: 'password' }),
+                });
+                if (!response.ok) throw new Error('Failed to reset password');
+                alert(t('passwordResetSuccess'));
+            } catch (error) {
+                console.error(error);
+                alert(t('passwordResetError'));
+            }
+        }
     };
 
     return (
@@ -706,7 +766,6 @@ const UserManagementScreen = ({ users, setUsers }) => {
                                 <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('username')}</th>
                                 <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('fullName')}</th>
                                 <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('role')}</th>
-                                <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('description')}</th>
                                 <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('action')}</th>
                             </tr>
                         </thead>
@@ -716,9 +775,11 @@ const UserManagementScreen = ({ users, setUsers }) => {
                                     <td className="py-3 px-4 text-white">{u.username}</td>
                                     <td className="py-3 px-4 text-white">{`${u.last_name} ${u.first_name}`}</td>
                                     <td className="py-3 px-4 text-gray-300">{u.role}</td>
-                                    <td className="py-3 px-4 text-gray-300">{u.description}</td>
                                     <td className="py-3 px-4">
-                                        <button onClick={() => openModalForEdit(u)} className="text-yellow-300 hover:underline">{t('edit')}</button>
+                                        <div className="flex items-center space-x-2">
+                                            <button onClick={() => openModalForEdit(u)} className="text-yellow-300 hover:underline">{t('edit')}</button>
+                                            <button onClick={() => handleResetPassword(u.id)} className="text-red-400 hover:underline">{t('resetPassword')}</button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -745,6 +806,12 @@ const UserManagementScreen = ({ users, setUsers }) => {
                                 <label className="block text-sm font-medium text-[#C5D2D8]">{t('username')}</label>
                                 <input type="text" value={formData.username} onChange={(e) => setFormData({...formData, username: e.target.value})} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none"/>
                             </div>
+                            {!editingUser && (
+                                <div>
+                                <label className="block text-sm font-medium text-[#C5D2D8]">{t('password')}</label>
+                                <input type="password" placeholder="Để trống sẽ mặc định là 'password'" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none"/>
+                                </div>
+                            )}
                             <div>
                                 <label className="block text-sm font-medium text-[#C5D2D8]">{t('description')}</label>
                                 <input type="text" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none"/>
@@ -770,7 +837,7 @@ const UserManagementScreen = ({ users, setUsers }) => {
     );
 };
 
-const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, executionData, onExecutionUpdate }) => {
+const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, executionData, onExecutionUpdate, onDataRefresh }) => {
     const { t } = useTranslation();
     const [activeScenarioId, setActiveScenarioId] = useState(null);
     const [completionModal, setCompletionModal] = useState(null);
@@ -799,7 +866,7 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, executionData,
 
     const activeScenario = activeScenarioId ? scenariosWithLockStatus.find(s => s.id === activeScenarioId) : null;
 
-    const updateExecutionStep = async (payload) => {
+    const updateExecutionStep = async (payload, isCompletion = false) => {
         try {
             const response = await fetch('/api/execution/step', {
                 method: 'POST',
@@ -809,6 +876,29 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, executionData,
             if (!response.ok) throw new Error('Failed to update step');
             const updatedStep = await response.json();
             onExecutionUpdate(drill.id, updatedStep.step_id, updatedStep);
+
+            // Auto-start next steps if this was a completion
+            if (isCompletion && updatedStep.status.startsWith('Completed')) {
+                const completedStepId = updatedStep.step_id;
+                const scenario = scenarios[activeScenarioId];
+                if (scenario) {
+                    for (const nextStepId of scenario.steps) {
+                        const nextStep = steps[nextStepId];
+                        const isPending = !(executionData[drill.id]?.[nextStepId]);
+                        if (isPending && nextStep.dependsOn?.includes(completedStepId)) {
+                            // Re-evaluate dependencies with the latest state
+                            const allDepsMet = nextStep.dependsOn.every(depId => {
+                                const depState = (depId === completedStepId) ? updatedStep : executionData[drill.id]?.[depId];
+                                return depState?.status?.startsWith('Completed');
+                            });
+                            if (allDepsMet) {
+                                handleStepStart(nextStepId);
+                            }
+                        }
+                    }
+                }
+            }
+
         } catch (error) {
             console.error(error);
             alert('Lỗi cập nhật bước thực thi.');
@@ -835,7 +925,7 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, executionData,
             result_text: result.text,
             started_at: currentStepState.started_at, 
             assignee: currentStepState.assignee,
-        });
+        }, true); // Pass true for isCompletion
         setCompletionModal(null);
     };
     
@@ -1183,7 +1273,7 @@ const ReportScreen = ({ drill, executionData, scenarios, steps, onBack }) => {
     )
 };
 
-const CreateDrillScreen = ({ setActiveScreen, setDb, db, user, drillToEdit, onDoneEditing }) => {
+const CreateDrillScreen = ({ setActiveScreen, setDb, db, user, drillToEdit, onDoneEditing, onDataRefresh }) => {
     const { t } = useTranslation();
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
@@ -1194,6 +1284,7 @@ const CreateDrillScreen = ({ setActiveScreen, setDb, db, user, drillToEdit, onDo
     const [availableScenarios, setAvailableScenarios] = useState([]);
     const [selectedScenarios, setSelectedScenarios] = useState([]);
     const [draggedItem, setDraggedItem] = useState(null);
+    const [openDependencySelector, setOpenDependencySelector] = useState(null);
 
     useEffect(() => {
         const allScenarios = Object.values(db.scenarios).filter(s => s.status === 'Active');
@@ -1275,11 +1366,45 @@ const CreateDrillScreen = ({ setActiveScreen, setDb, db, user, drillToEdit, onDo
         setSelectedScenarios(selectedScenarios.map(s => s.id === scenarioId ? { ...s, dependsOn: dependencyIds } : s));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // This would be a POST/PUT API call in a real app
-        alert("Chức năng tạo/sửa Drill chưa được kết nối với backend.");
-        onDoneEditing();
+        if (!name) {
+            alert('Vui lòng nhập tên Drill.');
+            return;
+        }
+
+        const payload = {
+            name,
+            description,
+            basis,
+            start_date: startDate,
+            end_date: endDate,
+            status: basis ? status : 'Draft',
+            scenarios: selectedScenarios.map(({ id, dependsOn }) => ({ id, dependsOn })),
+        };
+
+        try {
+            let response;
+            if (drillToEdit) {
+                response = await fetch(`/api/drills/${drillToEdit.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } else {
+                 response = await fetch('/api/drills', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            }
+            if (!response.ok) throw new Error('Failed to save drill');
+            onDataRefresh();
+            onDoneEditing();
+        } catch (error) {
+            console.error(error);
+            alert('Lỗi lưu Drill.');
+        }
     };
 
     return (
@@ -1406,7 +1531,7 @@ const RichTextEditor = ({ value, onChange }) => {
 };
 
 
-const ScenarioManagementScreen = ({ db, setDb, user }) => {
+const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh }) => {
     const { t } = useTranslation();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingScenario, setEditingScenario] = useState(null);
@@ -1414,13 +1539,13 @@ const ScenarioManagementScreen = ({ db, setDb, user }) => {
     const [expandedStepIndex, setExpandedStepIndex] = useState(0);
     
     const initialFormState = { name: '', role: user.role === 'ADMIN' ? 'TECHNICAL' : user.role, basis: '', status: 'Draft' };
-    const initialStepState = [{ title: '', description: '', estimatedTime: '', dependsOn: [] }];
+    const initialStepState = [{ id: `temp-${Date.now()}`, title: '', description: '', estimatedTime: '', dependsOn: [] }];
 
     const [formData, setFormData] = useState(initialFormState);
     const [stepInputs, setStepInputs] = useState(initialStepState);
 
     const handleAddStep = () => {
-        setStepInputs([...stepInputs, { title: '', description: '', estimatedTime: '', dependsOn: [] }]);
+        setStepInputs([...stepInputs, { id: `temp-${Date.now()}`, title: '', description: '', estimatedTime: '', dependsOn: [] }]);
         setExpandedStepIndex(stepInputs.length); // Expand the new step
     };
     
@@ -1451,9 +1576,7 @@ const ScenarioManagementScreen = ({ db, setDb, user }) => {
                 status: 'Draft' 
             });
             const stepsForScenario = (scenarioToEdit.steps || []).map(stepId => {
-                const newStep = {...db.steps[stepId]};
-                delete newStep.id; // Remove old ID for cloning
-                return newStep;
+                return { ...db.steps[stepId] };
             });
             setStepInputs(stepsForScenario.length > 0 ? stepsForScenario : initialStepState);
         } else {
@@ -1465,11 +1588,46 @@ const ScenarioManagementScreen = ({ db, setDb, user }) => {
         setIsModalOpen(true);
     };
 
-    const handleSave = (e) => {
+    const handleSave = async (e) => {
         e.preventDefault();
-        // This would be an API call in a real app
-        alert("Chức năng tạo/sửa Scenario chưa được kết nối với backend.");
-        setIsModalOpen(false);
+        
+        for (const step of stepInputs) {
+            if (!step.title.trim() || !step.description.trim() || step.description.trim() === "<p><br></p>") {
+                alert('Vui lòng nhập đầy đủ Tên bước và Mô tả cho tất cả các bước.');
+                return;
+            }
+        }
+        
+        const payload = {
+            ...formData,
+            status: formData.basis ? formData.status : 'Draft',
+            created_by: user.id,
+            steps: stepInputs,
+        };
+
+        try {
+            let response;
+            if (editingScenario) {
+                response = await fetch(`/api/scenarios/${editingScenario.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } else {
+                response = await fetch('/api/scenarios', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            }
+            if (!response.ok) throw new Error('Failed to save scenario');
+            
+            setIsModalOpen(false);
+            onDataRefresh(); // Reload all data to ensure consistency
+        } catch (error) {
+            console.error(error);
+            alert('Lỗi lưu kịch bản.');
+        }
     };
     
     const handleStatusChange = async (scenarioId, newStatus) => {
@@ -1630,7 +1788,7 @@ const ScenarioManagementScreen = ({ db, setDb, user }) => {
                             <div className="space-y-2">
                                 {stepInputs.map((step, index) => (
                                     <div 
-                                        key={index} 
+                                        key={step.id || index} 
                                         className={`border border-[#506771] rounded-md bg-[#22333B]/50 transition-all duration-300 ${draggedStepIndex === index ? 'opacity-50' : ''}`}
                                         draggable
                                         onDragStart={(e) => handleDragStart(e, index)}
@@ -1662,7 +1820,7 @@ const ScenarioManagementScreen = ({ db, setDb, user }) => {
                                                     </div>
                                                     <div>
                                                         <label className="block text-xs font-medium text-[#C5D2D8]">{t('estimatedTime')}</label>
-                                                        <input type="text" placeholder="hh:mm:ss" value={step.estimatedTime} onChange={e => handleStepChange(index, 'estimatedTime', e.target.value)} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none" />
+                                                        <input type="text" placeholder="hh:mm:ss" value={step.estimated_time} onChange={e => handleStepChange(index, 'estimated_time', e.target.value)} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none" />
                                                     </div>
                                                 </div>
                                                 <div>
@@ -1924,6 +2082,69 @@ const PublicDashboard = ({ drills, scenarios, steps, executionData, onLoginReque
     );
 };
 
+const ChangePasswordModal = ({ user, onClose }) => {
+    const { t } = useTranslation();
+    const [oldPassword, setOldPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+        if (newPassword !== confirmPassword) {
+            setError(t('passwordMismatch'));
+            return;
+        }
+        try {
+            const response = await fetch('/api/user/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id, oldPassword, newPassword }),
+            });
+            if (!response.ok) {
+                 const errData = await response.json();
+                 throw new Error(errData.error || 'Failed to change password');
+            }
+            setSuccess(t('passwordChangedSuccess'));
+            setTimeout(() => onClose(), 2000);
+        } catch (err) {
+            setError(t('passwordChangedError'));
+            console.error(err);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-[#334A52] p-8 rounded-2xl shadow-2xl shadow-black/30 border border-[#506771] w-full max-w-md">
+                <h3 className="text-lg font-bold text-white mb-4">{t('changePassword')}</h3>
+                {error && <p className="text-red-400 text-sm my-2">{error}</p>}
+                {success && <p className="text-green-400 text-sm my-2">{success}</p>}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-[#C5D2D8]">{t('oldPassword')}</label>
+                        <input type="password" value={oldPassword} onChange={e => setOldPassword(e.target.value)} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none" required />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-[#C5D2D8]">{t('newPassword')}</label>
+                        <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none" required />
+                    </div>
+                     <div>
+                        <label className="block text-sm font-medium text-[#C5D2D8]">{t('confirmNewPassword')}</label>
+                        <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none" required />
+                    </div>
+                    <div className="flex justify-end space-x-2 pt-4">
+                        <button type="button" onClick={onClose} className="bg-gray-700 py-2 px-4 rounded-lg text-gray-300 hover:bg-gray-600">{t('cancel')}</button>
+                        <button type="submit" className="bg-yellow-400 text-black font-semibold py-2 px-4 rounded-lg hover:bg-yellow-500">{t('saveChanges')}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
 
 // --- Main App Component ---
 
@@ -1943,6 +2164,23 @@ export default function App() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const fetchData = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch('/api/data');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setDb(data);
+      } catch (e) {
+        console.error("Failed to fetch data:", e);
+        setError("Không thể tải dữ liệu từ server. Vui lòng kiểm tra lại backend.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
   useEffect(() => {
     const link = document.createElement('link');
@@ -1970,31 +2208,12 @@ export default function App() {
     `;
     document.head.appendChild(style);
 
+    fetchData();
+
     return () => {
         if(document.head.contains(link)) document.head.removeChild(link);
         if(document.head.contains(style)) document.head.removeChild(style);
     };
-  }, []);
-
-  // Fetch data from backend on component mount
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('/api/data');
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        setDb(data);
-      } catch (e) {
-        console.error("Failed to fetch data:", e);
-        setError("Không thể tải dữ liệu từ server. Vui lòng kiểm tra lại backend.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
   }, []);
 
   useEffect(() => {
@@ -2063,21 +2282,21 @@ export default function App() {
       setActiveScreen('dashboard');
   }
 
-  // --- BẮT ĐẦU THAY ĐỔI ---
-  // Hàm cập nhật state an toàn cho dữ liệu thực thi
   const handleExecutionUpdate = (drillId, entityId, newData) => {
-    setDb(prevDb => ({
-        ...prevDb,
-        executionData: {
-            ...prevDb.executionData,
-            [drillId]: {
-                ...(prevDb.executionData[drillId] || {}),
-                [entityId]: newData
-            }
+    setDb(prevDb => {
+        // Create a deep copy to avoid mutation issues
+        const newExecutionData = JSON.parse(JSON.stringify(prevDb.executionData));
+        if (!newExecutionData[drillId]) {
+            newExecutionData[drillId] = {};
         }
-    }));
+        newExecutionData[drillId][entityId] = newData;
+
+        return {
+            ...prevDb,
+            executionData: newExecutionData
+        };
+    });
   };
-  // --- KẾT THÚC THAY ĐỔI ---
 
   if (loading) {
     return <div className="flex items-center justify-center h-screen bg-[#1D2A2E] text-white">Đang tải dữ liệu...</div>;
@@ -2115,9 +2334,8 @@ export default function App() {
                 scenarios={db.scenarios} 
                 steps={db.steps}
                 executionData={db.executionData}
-                // --- BẮT ĐẦU THAY ĐỔI ---
                 onExecutionUpdate={handleExecutionUpdate}
-                // --- KẾT THÚC THAY ĐỔI ---
+                onDataRefresh={fetchData}
               />;
         case 'report':
             if (!activeDrill) return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} />;
@@ -2130,12 +2348,12 @@ export default function App() {
               />;
         case 'user-management':
              if (user.role !== 'ADMIN') return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} />;
-            return <UserManagementScreen users={db.users} setUsers={(newUsers) => setDb({...db, users: newUsers})} />;
+            return <UserManagementScreen users={db.users} setUsers={(newUsers) => setDb({...db, users: newUsers})} onDataRefresh={fetchData} />;
         case 'scenarios':
-            return <ScenarioManagementScreen db={db} setDb={setDb} user={user} />;
+            return <ScenarioManagementScreen db={db} setDb={setDb} user={user} onDataRefresh={fetchData} />;
         case 'create-drill':
              if (user.role !== 'ADMIN') return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} />;
-            return <CreateDrillScreen setActiveScreen={setActiveScreen} setDb={setDb} db={db} user={user} drillToEdit={editingDrill} onDoneEditing={() => setActiveScreen('dashboard')} />;
+            return <CreateDrillScreen setActiveScreen={setActiveScreen} setDb={setDb} db={db} user={user} drillToEdit={editingDrill} onDoneEditing={() => setActiveScreen('dashboard')} onDataRefresh={fetchData} />;
         default:
             return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios}/>;
     }
