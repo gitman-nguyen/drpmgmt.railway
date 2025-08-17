@@ -384,8 +384,8 @@ const DependencySelector = ({ item, itemList, currentIndex, onDependencyChange }
     return (
         <div className="mt-2 relative" ref={wrapperRef}>
             <label className="text-xs text-gray-400">{t('dependencies')}</label>
-            <div className="p-2 mt-1 bg-[#22333B] border border-[#506771] rounded-md text-white min-h-[40px]">
-                <p className="text-sm text-gray-300">{dependencyNames || t('noDependencies')}</p>
+            <div className="p-2 mt-1 bg-gray-100 border border-gray-300 rounded-md text-gray-800 min-h-[40px]">
+                <p className="text-sm text-gray-600">{dependencyNames || t('noDependencies')}</p>
             </div>
             {possibleDependencies.length > 0 && (
                 <button type="button" onClick={() => setIsOpen(!isOpen)} className="mt-2 text-xs bg-gray-600 hover:bg-gray-500 text-white font-semibold py-1 px-3 rounded">
@@ -393,14 +393,14 @@ const DependencySelector = ({ item, itemList, currentIndex, onDependencyChange }
                 </button>
             )}
             {isOpen && (
-                <div className="absolute z-10 mt-1 w-full bg-[#334A52] border border-[#506771] rounded-md shadow-lg p-4">
-                    <h4 className="font-bold text-white mb-2">{t('selectDependencies')}</h4>
+                <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg p-4">
+                    <h4 className="font-bold text-gray-800 mb-2">{t('selectDependencies')}</h4>
                     <div className="space-y-2 max-h-40 overflow-y-auto">
                         {possibleDependencies.map(dep => (
-                            <label key={getItemId(dep)} className="flex items-center space-x-2 text-white">
+                            <label key={getItemId(dep)} className="flex items-center space-x-2 text-gray-800">
                                 <input
                                     type="checkbox"
-                                    className="rounded bg-gray-700 border-gray-600 text-yellow-400 focus:ring-yellow-500"
+                                    className="rounded bg-gray-200 border-gray-300 text-sky-600 focus:ring-sky-500"
                                     checked={(item.dependsOn || []).includes(getItemId(dep))}
                                     onChange={(e) => handleCheckboxChange(getItemId(dep), e.target.checked)}
                                 />
@@ -408,7 +408,7 @@ const DependencySelector = ({ item, itemList, currentIndex, onDependencyChange }
                             </label>
                         ))}
                     </div>
-                    <button type="button" onClick={() => setIsOpen(false)} className="mt-3 w-full text-xs bg-yellow-500 hover:bg-yellow-400 text-black font-semibold py-1 px-3 rounded">{t('close')}</button>
+                    <button type="button" onClick={() => setIsOpen(false)} className="mt-3 w-full text-xs bg-sky-600 hover:bg-sky-700 text-white font-semibold py-1 px-3 rounded">{t('close')}</button>
                 </div>
             )}
         </div>
@@ -486,15 +486,15 @@ const AppLayout = ({ user, onLogout, children, activeScreen, setActiveScreen }) 
 
   return (
     <>
-    <div className="flex h-screen bg-[#1D2A2E] text-[#C5D2D8] font-sans">
-      <nav className="w-64 bg-[#334A52]/70 backdrop-blur-lg border-r border-[#506771] p-4 hidden md:flex md:flex-col">
+    <div className="flex h-screen bg-slate-100 text-gray-800 font-sans">
+      <nav className="w-64 bg-sky-900 text-white p-4 hidden md:flex md:flex-col">
         <div className="flex items-center space-x-3 mb-10">
             <LogoIcon />
         </div>
         <ul className="space-y-2">
           {navLinks.map(link => (
              <li key={link.id}>
-                <button onClick={() => setActiveScreen(link.id)} className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 text-left ${activeScreen === link.id ? 'bg-yellow-400/10 text-yellow-300 font-semibold' : 'hover:bg-gray-700/50'}`}>
+                <button onClick={() => setActiveScreen(link.id)} className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 text-left ${activeScreen === link.id ? 'bg-sky-700 text-white font-semibold' : 'text-sky-100 hover:bg-sky-800'}`}>
                     {link.icon}
                     <span>{link.name}</span>
                 </button>
@@ -502,32 +502,32 @@ const AppLayout = ({ user, onLogout, children, activeScreen, setActiveScreen }) 
           ))}
         </ul>
         <div className="mt-auto space-y-2">
-          <button onClick={() => setIsPasswordModalOpen(true)} className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-yellow-500/20 text-yellow-300 transition-colors duration-200">
+          <button onClick={() => setIsPasswordModalOpen(true)} className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-sky-800 text-sky-100 transition-colors duration-200">
             <KeyIcon /><span>{t('changePassword')}</span>
           </button>
-          <button onClick={onLogout} className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-red-500/20 text-red-400 transition-colors duration-200">
+          <button onClick={onLogout} className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-red-600 text-red-200 transition-colors duration-200">
             <LogoutIcon /><span>{t('logout')}</span>
           </button>
         </div>
       </nav>
 
       <div className="flex-1 flex flex-col overflow-y-auto">
-         <header className="flex-shrink-0 bg-[#334A52]/50 backdrop-blur-sm border-b border-[#506771] p-4 flex justify-between items-center z-10">
-          <h1 className="text-2xl font-bold text-white capitalize">{screenTitles[activeScreen] || activeScreen}</h1>
+         <header className="flex-shrink-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center z-10">
+          <h1 className="text-2xl font-bold text-gray-900 capitalize">{screenTitles[activeScreen] || activeScreen}</h1>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-                <button onClick={() => setLanguage('vi')} className={`w-8 h-8 rounded-full overflow-hidden border-2 ${language === 'vi' ? 'border-yellow-400' : 'border-transparent'}`}><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Flag_of_Vietnam.svg/1200px-Flag_of_Vietnam.svg.png" alt="Vietnamese" className="w-full h-full object-cover" /></button>
-                <button onClick={() => setLanguage('en')} className={`w-8 h-8 rounded-full overflow-hidden border-2 ${language === 'en' ? 'border-yellow-400' : 'border-transparent'}`}><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Flag_of_the_United_Kingdom_%281-2%29.svg/1200px-Flag_of_the_United_Kingdom_%281-2%29.svg.png" alt="English" className="w-full h-full object-cover" /></button>
+                <button onClick={() => setLanguage('vi')} className={`w-8 h-8 rounded-full overflow-hidden border-2 ${language === 'vi' ? 'border-sky-500' : 'border-transparent'}`}><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Flag_of_Vietnam.svg/1200px-Flag_of_Vietnam.svg.png" alt="Vietnamese" className="w-full h-full object-cover" /></button>
+                <button onClick={() => setLanguage('en')} className={`w-8 h-8 rounded-full overflow-hidden border-2 ${language === 'en' ? 'border-sky-500' : 'border-transparent'}`}><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Flag_of_the_United_Kingdom_%281-2%29.svg/1200px-Flag_of_the_United_Kingdom_%281-2%29.svg.png" alt="English" className="w-full h-full object-cover" /></button>
             </div>
-            <p className="text-gray-400 text-sm hidden sm:block">{t('welcome')}, <span className="font-semibold text-yellow-300">{user.name}</span></p>
-            <button onClick={onLogout} className="md:hidden bg-gray-700 text-gray-300 font-semibold py-2 px-4 rounded-lg">{t('logout')}</button>
+            <p className="text-gray-600 text-sm hidden sm:block">{t('welcome')}, <span className="font-semibold text-sky-700">{user.name}</span></p>
+            <button onClick={onLogout} className="md:hidden bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg">{t('logout')}</button>
           </div>
         </header>
 
-        <nav className="bg-[#334A52]/50 border-b border-[#506771] md:hidden">
+        <nav className="bg-white border-b border-gray-200 md:hidden">
             <div className="flex justify-around">
                 {navLinks.map(link => (
-                    <button key={link.id} onClick={() => setActiveScreen(link.id)} className={`flex-1 py-3 text-sm font-medium transition-colors ${activeScreen === link.id ? 'text-yellow-300 border-b-2 border-yellow-300' : 'text-gray-400'}`}>
+                    <button key={link.id} onClick={() => setActiveScreen(link.id)} className={`flex-1 py-3 text-sm font-medium transition-colors ${activeScreen === link.id ? 'text-sky-600 border-b-2 border-sky-600' : 'text-gray-500'}`}>
                         {link.name}
                     </button>
                 ))}
@@ -546,14 +546,14 @@ const DashboardScreen = ({ user, drills, setDrills, onExecuteDrill, onViewReport
   const { t } = useTranslation();
   
   const getStatusClass = (status) => {
-    if (status === 'Active') return 'bg-green-500/20 text-green-300';
-    return 'bg-gray-500/20 text-gray-300';
+    if (status === 'Active') return 'bg-green-100 text-green-800';
+    return 'bg-gray-100 text-gray-700';
   };
   
   const getExecStatusClass = (status) => {
-    if (status === 'InProgress') return 'bg-blue-500/20 text-blue-300';
-    if (status === 'Closed') return 'bg-green-500/20 text-green-300';
-    return 'bg-yellow-500/20 text-yellow-300';
+    if (status === 'InProgress') return 'bg-blue-100 text-blue-800';
+    if (status === 'Closed') return 'bg-green-100 text-green-800';
+    return 'bg-yellow-100 text-yellow-800';
   };
 
   const handleDrillStatusUpdate = async (drill, newStatus) => {
@@ -610,31 +610,31 @@ const DashboardScreen = ({ user, drills, setDrills, onExecuteDrill, onViewReport
   }
 
   return (
-    <div className="bg-[#334A52]/80 backdrop-blur-sm p-6 rounded-2xl shadow-2xl shadow-black/20 border border-[#506771]">
+    <div className="bg-white p-6 rounded-2xl shadow-lg">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-white">{t('drills')}</h2>
+        <h2 className="text-xl font-bold text-gray-900">{t('drills')}</h2>
         {user.role === 'ADMIN' && (
-            <button onClick={onCreateDrill} className="bg-[#FFDE59] text-black font-bold py-2 px-4 rounded-lg hover:bg-yellow-300 transition-all duration-300 shadow-lg shadow-yellow-400/20 hover:shadow-xl hover:shadow-yellow-400/30">{t('createNewDrill')}</button>
+            <button onClick={onCreateDrill} className="bg-sky-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-sky-700 transition-all duration-300 shadow-lg shadow-sky-500/20 hover:shadow-xl hover:shadow-sky-500/30">{t('createNewDrill')}</button>
         )}
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full">
-            <thead className="border-b border-[#506771]">
+            <thead className="border-b border-gray-200">
                 <tr>
-                    <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('drillName')}</th>
-                    <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('status')}</th>
-                    <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('action')}</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('drillName')}</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('status')}</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('action')}</th>
                 </tr>
             </thead>
             <tbody>
                 {drills.map(drill => {
                     const inTime = isDrillInTimeframe(drill);
                     return (
-                        <tr key={drill.id} className="border-b border-[#334A52] hover:bg-[#334A52]/50">
+                        <tr key={drill.id} className="border-b border-gray-100 hover:bg-gray-50">
                             <td className="py-3 px-4">
-                                <p className="font-bold text-white">{drill.name}</p>
-                                <p className="text-sm text-gray-400">{drill.description}</p>
-                                <p className="text-xs text-gray-500 mt-1">{t('startDate')}: {new Date(drill.start_date).toLocaleDateString()} - {t('endDate')}: {new Date(drill.end_date).toLocaleDateString()}</p>
+                                <p className="font-bold text-gray-900">{drill.name}</p>
+                                <p className="text-sm text-gray-500">{drill.description}</p>
+                                <p className="text-xs text-gray-400 mt-1">{t('startDate')}: {new Date(drill.start_date).toLocaleDateString()} - {t('endDate')}: {new Date(drill.end_date).toLocaleDateString()}</p>
                             </td>
                             <td className="py-3 px-4">
                                 <div className="flex flex-col items-start space-y-1">
@@ -645,21 +645,21 @@ const DashboardScreen = ({ user, drills, setDrills, onExecuteDrill, onViewReport
                             <td className="py-3 px-4">
                                 <div className="flex items-center space-x-2">
                                     {user.role === 'ADMIN' && drill.status === 'Active' && drill.execution_status === 'Scheduled' && (
-                                        <button onClick={() => handleOpenDrill(drill)} disabled={!inTime} title={inTime ? t('openDrill') : t('notInTimeframe')} className="p-2 rounded-lg text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 disabled:text-gray-500 disabled:bg-gray-500/10 disabled:cursor-not-allowed"><OpenIcon /></button>
+                                        <button onClick={() => handleOpenDrill(drill)} disabled={!inTime} title={inTime ? t('openDrill') : t('notInTimeframe')} className="p-2 rounded-lg text-blue-600 bg-blue-100 hover:bg-blue-200 disabled:text-gray-400 disabled:bg-gray-100 disabled:cursor-not-allowed"><OpenIcon /></button>
                                     )}
                                     {user.role === 'ADMIN' && drill.execution_status === 'InProgress' && (
-                                        <button onClick={() => handleCloseDrill(drill.id)} title={t('closeDrill')} className="p-2 rounded-lg text-red-400 bg-red-500/10 hover:bg-red-500/20"><CloseIcon /></button>
+                                        <button onClick={() => handleCloseDrill(drill.id)} title={t('closeDrill')} className="p-2 rounded-lg text-red-600 bg-red-100 hover:bg-red-200"><CloseIcon /></button>
                                     )}
                                     {drill.execution_status === 'InProgress' && (
-                                        <button onClick={() => onExecuteDrill(drill)} title={t('execute')} className="p-2 rounded-lg text-gray-300 bg-gray-500/10 hover:bg-gray-500/20"><ExecuteIcon /></button>
+                                        <button onClick={() => onExecuteDrill(drill)} title={t('execute')} className="p-2 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200"><ExecuteIcon /></button>
                                     )}
                                     {drill.execution_status === 'Closed' && (
-                                        <button onClick={() => onViewReport(drill)} title={t('viewReport')} className="p-2 rounded-lg text-gray-300 bg-gray-500/10 hover:bg-gray-500/20"><ReportIcon /></button>
+                                        <button onClick={() => onViewReport(drill)} title={t('viewReport')} className="p-2 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200"><ReportIcon /></button>
                                     )}
                                     {user.role === 'ADMIN' && (
                                         <>
-                                            <button onClick={() => onEditDrill(drill)} title={t('edit')} className="p-2 rounded-lg text-yellow-300 bg-yellow-500/10 hover:bg-yellow-500/20"><EditIcon /></button>
-                                            <button onClick={() => onCloneDrill(drill)} title={t('clone')} className="p-2 rounded-lg text-purple-300 bg-purple-500/10 hover:bg-purple-500/20"><CloneIcon /></button>
+                                            <button onClick={() => onEditDrill(drill)} title={t('edit')} className="p-2 rounded-lg text-yellow-600 bg-yellow-100 hover:bg-yellow-200"><EditIcon /></button>
+                                            <button onClick={() => onCloneDrill(drill)} title={t('clone')} className="p-2 rounded-lg text-purple-600 bg-purple-100 hover:bg-purple-200"><CloneIcon /></button>
                                         </>
                                     )}
                                 </div>
@@ -753,31 +753,31 @@ const UserManagementScreen = ({ users, setUsers, onDataRefresh }) => {
 
     return (
         <>
-            <div className="bg-[#334A52]/80 backdrop-blur-sm p-6 rounded-2xl shadow-2xl shadow-black/20 border border-[#506771]">
+            <div className="bg-white p-6 rounded-2xl shadow-lg">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold text-white">{t('userList')}</h2>
-                    <button onClick={openModalForCreate} className="bg-[#FFDE59] text-black font-bold py-2 px-4 rounded-lg hover:bg-yellow-300 transition-all duration-300 shadow-lg shadow-yellow-400/20 hover:shadow-xl hover:shadow-yellow-400/30">{t('addUser')}</button>
+                    <h2 className="text-xl font-bold text-gray-900">{t('userList')}</h2>
+                    <button onClick={openModalForCreate} className="bg-sky-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-sky-700 transition-all duration-300 shadow-lg shadow-sky-500/20 hover:shadow-xl hover:shadow-sky-500/30">{t('addUser')}</button>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="min-w-full">
-                        <thead className="border-b border-[#506771]">
+                        <thead className="border-b border-gray-200">
                             <tr>
-                                <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('username')}</th>
-                                <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('fullName')}</th>
-                                <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('role')}</th>
-                                <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('action')}</th>
+                                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('username')}</th>
+                                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('fullName')}</th>
+                                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('role')}</th>
+                                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('action')}</th>
                             </tr>
                         </thead>
                         <tbody>
                             {users.map(u => (
-                                <tr key={u.id} className="border-b border-[#334A52] hover:bg-[#334A52]/50">
-                                    <td className="py-3 px-4 text-white">{u.username}</td>
-                                    <td className="py-3 px-4 text-white">{`${u.last_name} ${u.first_name}`}</td>
-                                    <td className="py-3 px-4 text-gray-300">{u.role}</td>
+                                <tr key={u.id} className="border-b border-gray-100 hover:bg-gray-50">
+                                    <td className="py-3 px-4 text-gray-800">{u.username}</td>
+                                    <td className="py-3 px-4 text-gray-800">{`${u.last_name} ${u.first_name}`}</td>
+                                    <td className="py-3 px-4 text-gray-600">{u.role}</td>
                                     <td className="py-3 px-4">
                                         <div className="flex items-center space-x-2">
-                                            <button onClick={() => openModalForEdit(u)} className="text-yellow-300 hover:underline">{t('edit')}</button>
-                                            <button onClick={() => handleResetPassword(u.id)} className="text-red-400 hover:underline">{t('resetPassword')}</button>
+                                            <button onClick={() => openModalForEdit(u)} className="text-yellow-600 hover:underline">{t('edit')}</button>
+                                            <button onClick={() => handleResetPassword(u.id)} className="text-red-600 hover:underline">{t('resetPassword')}</button>
                                         </div>
                                     </td>
                                 </tr>
@@ -788,45 +788,45 @@ const UserManagementScreen = ({ users, setUsers, onDataRefresh }) => {
             </div>
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className="bg-[#334A52] p-8 rounded-2xl shadow-2xl shadow-black/30 border border-[#506771] w-full max-w-lg">
-                        <h3 className="text-lg font-bold text-white mb-4">{editingUser ? t('editUser') : t('createUser')}</h3>
+                    <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">{editingUser ? t('editUser') : t('createUser')}</h3>
                         <form onSubmit={handleSave} className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-[#C5D2D8]">{t('lastName')}</label>
-                                    <input type="text" value={formData.last_name} onChange={(e) => setFormData({...formData, last_name: e.target.value})} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none"/>
+                                    <label className="block text-sm font-medium text-gray-700">{t('lastName')}</label>
+                                    <input type="text" value={formData.last_name} onChange={(e) => setFormData({...formData, last_name: e.target.value})} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"/>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-[#C5D2D8]">{t('firstName')}</label>
-                                    <input type="text" value={formData.first_name} onChange={(e) => setFormData({...formData, first_name: e.target.value})} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none"/>
+                                    <label className="block text-sm font-medium text-gray-700">{t('firstName')}</label>
+                                    <input type="text" value={formData.first_name} onChange={(e) => setFormData({...formData, first_name: e.target.value})} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"/>
                                 </div>
                             </div>
                              <div>
-                                <label className="block text-sm font-medium text-[#C5D2D8]">{t('username')}</label>
-                                <input type="text" value={formData.username} onChange={(e) => setFormData({...formData, username: e.target.value})} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none"/>
+                                <label className="block text-sm font-medium text-gray-700">{t('username')}</label>
+                                <input type="text" value={formData.username} onChange={(e) => setFormData({...formData, username: e.target.value})} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"/>
                             </div>
                             {!editingUser && (
                                 <div>
-                                <label className="block text-sm font-medium text-[#C5D2D8]">{t('password')}</label>
-                                <input type="password" placeholder="Để trống sẽ mặc định là 'password'" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none"/>
+                                <label className="block text-sm font-medium text-gray-700">{t('password')}</label>
+                                <input type="password" placeholder="Để trống sẽ mặc định là 'password'" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"/>
                                 </div>
                             )}
                             <div>
-                                <label className="block text-sm font-medium text-[#C5D2D8]">{t('description')}</label>
-                                <input type="text" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none"/>
+                                <label className="block text-sm font-medium text-gray-700">{t('description')}</label>
+                                <input type="text" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"/>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-[#C5D2D8]">{t('role')}</label>
-                                <select value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none">
+                                <label className="block text-sm font-medium text-gray-700">{t('role')}</label>
+                                <select value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none">
                                     <option value="TECHNICAL">TECHNICAL</option>
                                     <option value="BUSINESS">BUSINESS</option>
                                     <option value="ADMIN">ADMIN</option>
                                 </select>
-                                <p className="text-xs text-gray-400 mt-2 p-2 bg-[#22333B] rounded-md">{roleDescriptions[formData.role]}</p>
+                                <p className="text-xs text-gray-500 mt-2 p-2 bg-gray-100 rounded-md">{roleDescriptions[formData.role]}</p>
                             </div>
                             <div className="flex justify-end space-x-2 pt-4">
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="bg-gray-700 py-2 px-4 rounded-lg text-gray-300 hover:bg-gray-600">{t('cancel')}</button>
-                                <button type="submit" className="bg-yellow-400 text-black py-2 px-4 rounded-lg hover:bg-yellow-500 font-semibold">{t('save')}</button>
+                                <button type="button" onClick={() => setIsModalOpen(false)} className="bg-gray-200 py-2 px-4 rounded-lg text-gray-800 hover:bg-gray-300">{t('cancel')}</button>
+                                <button type="submit" className="bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-sky-700">{t('save')}</button>
                             </div>
                         </form>
                     </div>
@@ -954,20 +954,20 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, executionData,
     return (
         <>
             <div>
-                <button onClick={onBack} className="text-yellow-300 hover:underline mb-4">&larr; {t('backToDashboard')}</button>
+                <button onClick={onBack} className="text-sky-600 hover:underline mb-4">&larr; {t('backToDashboard')}</button>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-1 bg-[#334A52]/80 backdrop-blur-sm p-4 rounded-xl border border-[#506771]">
-                        <h2 className="text-lg font-bold text-white mb-3">{t('scenarios')}</h2>
+                    <div className="lg:col-span-1 bg-white p-4 rounded-xl shadow-lg">
+                        <h2 className="text-lg font-bold text-gray-900 mb-3">{t('scenarios')}</h2>
                         <div className="space-y-2">
                             {scenariosWithLockStatus.map(scen => (
-                                <button key={scen.id} onClick={() => setActiveScenarioId(scen.id)} disabled={scen.isLocked} className={`w-full text-left p-3 rounded-lg border transition-all duration-200 ${activeScenarioId === scen.id ? 'bg-yellow-400/10 border-yellow-400' : 'bg-[#22333B]/50 border-[#506771] hover:border-gray-600'} ${scen.isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                    <h4 className="font-semibold text-white flex items-center">{scen.isLocked && <LockIcon />}{scen.name}</h4>
-                                    <span className={`text-xs px-2 py-0.5 rounded-full ${scen.role === 'TECHNICAL' ? 'bg-purple-500/20 text-purple-300' : 'bg-orange-500/20 text-orange-300'}`}>{scen.role}</span>
+                                <button key={scen.id} onClick={() => setActiveScenarioId(scen.id)} disabled={scen.isLocked} className={`w-full text-left p-3 rounded-lg border transition-all duration-200 ${activeScenarioId === scen.id ? 'bg-sky-100 border-sky-500' : 'bg-gray-50 border-gray-200 hover:border-gray-400'} ${scen.isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                    <h4 className="font-semibold text-gray-900 flex items-center">{scen.isLocked && <LockIcon />}{scen.name}</h4>
+                                    <span className={`text-xs px-2 py-0.5 rounded-full ${scen.role === 'TECHNICAL' ? 'bg-purple-100 text-purple-800' : 'bg-orange-100 text-orange-800'}`}>{scen.role}</span>
                                 </button>
                             ))}
                         </div>
                     </div>
-                    <div className="lg:col-span-2 bg-[#334A52]/80 backdrop-blur-sm p-6 rounded-xl border border-[#506771]">
+                    <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg">
                         {activeScenario ? (
                             <ScenarioDetail 
                                 scenario={activeScenario}
@@ -1021,38 +1021,38 @@ const ScenarioDetail = ({ scenario, steps, getStepState, handleStepStart, setCom
         return (
             <div className="flex flex-col items-center justify-center h-full text-center">
                 <LockIcon />
-                <h3 className="text-xl font-bold text-white mt-4">{t('scenarioLocked')}</h3>
-                <p className="text-gray-400">{t('scenarioLockedMessage', { scenarioName: dependencyName })}</p>
+                <h3 className="text-xl font-bold text-gray-900 mt-4">{t('scenarioLocked')}</h3>
+                <p className="text-gray-500">{t('scenarioLockedMessage', { scenarioName: dependencyName })}</p>
             </div>
         )
     }
 
     return (
         <div>
-            <h2 className="text-2xl font-bold text-white mb-4">{scenario.name}</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">{scenario.name}</h2>
             <div className="space-y-3">
                 {scenario.steps.map(stepId => {
                     const step = steps[stepId];
                     if (!step) return null; // Guard against missing step data
                     const state = getStepState(stepId);
-                    let statusIcon = '🕒'; let borderColor = 'border-[#506771]';
+                    let statusIcon = '🕒'; let borderColor = 'border-gray-300';
                     if (state.status === 'InProgress') { statusIcon = '▶️'; borderColor = 'border-blue-500'; }
                     if (state.status === 'Completed-Success') { statusIcon = '✅'; borderColor = 'border-green-500'; }
                     if (state.status === 'Completed-Failure' || state.status === 'Completed-Blocked') { statusIcon = '❌'; borderColor = 'border-red-500'; }
 
                     return (
-                        <div key={stepId} className={`p-4 rounded-lg border-l-4 bg-[#22333B]/50 ${borderColor} ${state.status?.includes('Failure') || state.status?.includes('Blocked') ? 'bg-red-500/10' : ''}`}>
+                        <div key={stepId} className={`p-4 rounded-lg border-l-4 bg-gray-50 ${borderColor} ${state.status?.includes('Failure') || state.status?.includes('Blocked') ? 'bg-red-50' : ''}`}>
                             <div className="flex justify-between items-start">
                                 <div>
                                     <div className="flex items-center justify-between">
-                                        <h4 className="font-bold text-lg text-white">{statusIcon} {step.title}</h4>
-                                        {step.estimated_time && <span className="text-sm text-gray-400 ml-4 flex items-center"><ClockIcon />{step.estimated_time}</span>}
+                                        <h4 className="font-bold text-lg text-gray-900">{statusIcon} {step.title}</h4>
+                                        {step.estimated_time && <span className="text-sm text-gray-500 ml-4 flex items-center"><ClockIcon />{step.estimated_time}</span>}
                                     </div>
-                                    <div className="prose prose-sm prose-invert mt-2 max-w-none" dangerouslySetInnerHTML={{ __html: step.description }} />
+                                    <div className="prose prose-sm mt-2 max-w-none text-gray-600" dangerouslySetInnerHTML={{ __html: step.description }} />
                                 </div>
                                 <div className="text-right flex-shrink-0 ml-4">
-                                    {state.status === 'Pending' && <button onClick={() => handleStepStart(stepId)} className="bg-blue-500/80 text-white text-sm font-semibold py-1 px-3 rounded-lg hover:bg-blue-500">{t('start')}</button>}
-                                    {state.status === 'InProgress' && <button onClick={() => setCompletionModal({ stepId })} className="bg-green-500/80 text-white text-sm font-semibold py-1 px-3 rounded-lg hover:bg-green-500">{t('complete')}</button>}
+                                    {state.status === 'Pending' && <button onClick={() => handleStepStart(stepId)} className="bg-blue-500 text-white text-sm font-semibold py-1 px-3 rounded-lg hover:bg-blue-600">{t('start')}</button>}
+                                    {state.status === 'InProgress' && <button onClick={() => setCompletionModal({ stepId })} className="bg-green-500 text-white text-sm font-semibold py-1 px-3 rounded-lg hover:bg-green-600">{t('complete')}</button>}
                                 </div>
                             </div>
                         </div>
@@ -1060,23 +1060,23 @@ const ScenarioDetail = ({ scenario, steps, getStepState, handleStepStart, setCom
                 })}
             </div>
             {allStepsDone && hasFailedStep && !isConfirmed && (
-                <div className="mt-6 border-t border-[#506771] pt-4">
-                    <h3 className="text-lg font-bold text-red-400">{t('confirmScenarioResult')}</h3>
-                    <p className="text-sm text-gray-400 mb-2">{t('confirmScenarioResultMessage')}</p>
+                <div className="mt-6 border-t border-gray-200 pt-4">
+                    <h3 className="text-lg font-bold text-red-600">{t('confirmScenarioResult')}</h3>
+                    <p className="text-sm text-gray-600 mb-2">{t('confirmScenarioResultMessage')}</p>
                      <div className="mb-2">
-                        <label className="block text-sm font-medium text-gray-400">{t('finalResult')}</label>
-                        <select value={finalStatus} onChange={(e) => setFinalStatus(e.target.value)} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none">
+                        <label className="block text-sm font-medium text-gray-700">{t('finalResult')}</label>
+                        <select value={finalStatus} onChange={(e) => setFinalStatus(e.target.value)} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none">
                             <option value="Failure-Confirmed">{t('failureConfirmed')}</option>
                             <option value="Success-Overridden">{t('successOverridden')}</option>
                         </select>
                     </div>
-                    <textarea value={finalReason} onChange={(e) => setFinalReason(e.target.value)} rows="3" className="w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none" placeholder={t('reasonPlaceholder')}></textarea>
+                    <textarea value={finalReason} onChange={(e) => setFinalReason(e.target.value)} rows="3" className="w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none" placeholder={t('reasonPlaceholder')}></textarea>
                     <button onClick={handleConfirm} className="mt-2 bg-yellow-400 text-black font-bold py-2 px-4 rounded-lg hover:bg-yellow-500">{t('confirmResult')}</button>
                 </div>
             )}
             {isConfirmed && (
-                <div className="mt-6 border-t border-[#506771] pt-4">
-                     <h3 className="text-lg font-bold text-green-400">{t('resultConfirmed')}</h3>
+                <div className="mt-6 border-t border-gray-200 pt-4">
+                     <h3 className="text-lg font-bold text-green-600">{t('resultConfirmed')}</h3>
                 </div>
             )}
         </div>
@@ -1094,24 +1094,24 @@ const CompletionModal = ({ step, onComplete, onClose }) => {
     };
 
     return (
-        <div className="bg-[#334A52] p-8 rounded-2xl shadow-2xl shadow-black/30 border border-[#506771] w-full max-w-md">
-            <h3 className="text-lg font-bold text-white mb-4">{t('completeStepTitle', { stepTitle: step.title })}</h3>
+        <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">{t('completeStepTitle', { stepTitle: step.title })}</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-400">{t('status')}</label>
-                    <select value={status} onChange={(e) => setStatus(e.target.value)} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none">
+                    <label className="block text-sm font-medium text-gray-700">{t('status')}</label>
+                    <select value={status} onChange={(e) => setStatus(e.target.value)} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none">
                         <option value="Completed-Success">{t('success')}</option>
                         <option value="Completed-Failure">{t('failure')}</option>
                         <option value="Completed-Blocked">{t('blocked')}</option>
                     </select>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-400">{t('resultNotes')}</label>
-                    <textarea value={resultText} onChange={(e) => setResultText(e.target.value)} rows="4" className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none"/>
+                    <label className="block text-sm font-medium text-gray-700">{t('resultNotes')}</label>
+                    <textarea value={resultText} onChange={(e) => setResultText(e.target.value)} rows="4" className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"/>
                 </div>
                 <div className="flex justify-end space-x-2 pt-4">
-                    <button type="button" onClick={onClose} className="bg-gray-700 py-2 px-4 rounded-lg text-gray-300 hover:bg-gray-600">{t('cancel')}</button>
-                    <button type="submit" className="bg-yellow-400 text-black font-semibold py-2 px-4 rounded-lg hover:bg-yellow-500">{t('submit')}</button>
+                    <button type="button" onClick={onClose} className="bg-gray-200 py-2 px-4 rounded-lg text-gray-800 hover:bg-gray-300">{t('cancel')}</button>
+                    <button type="submit" className="bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-sky-700">{t('submit')}</button>
                 </div>
             </form>
         </div>
@@ -1119,13 +1119,13 @@ const CompletionModal = ({ step, onComplete, onClose }) => {
 };
 
 const KpiCard = ({ title, value, icon, iconBgColor }) => (
-    <div className="bg-[#22333B]/50 p-4 rounded-lg border border-[#506771] flex items-center">
+    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex items-center">
         <div className={`p-3 rounded-full mr-4 ${iconBgColor}`}>
             {icon}
         </div>
         <div>
-            <p className="text-sm text-gray-400">{title}</p>
-            <p className="text-2xl font-bold text-white">{value}</p>
+            <p className="text-sm text-gray-500">{title}</p>
+            <p className="text-2xl font-bold text-gray-900">{value}</p>
         </div>
     </div>
 );
@@ -1156,28 +1156,28 @@ const ReportScreen = ({ drill, executionData, scenarios, steps, onBack }) => {
 
     return (
         <div>
-            <button onClick={onBack} className="text-yellow-300 hover:underline mb-4">&larr; {t('backToDashboard')}</button>
+            <button onClick={onBack} className="text-sky-600 hover:underline mb-4">&larr; {t('backToDashboard')}</button>
             <div className="space-y-6">
-                <div className="bg-[#334A52]/80 backdrop-blur-sm p-6 rounded-xl border border-[#506771]">
-                    <h2 className="text-2xl font-bold text-white mb-4">{t('drillReportTitle', { drillName: drill.name })}</h2>
+                <div className="bg-white p-6 rounded-xl shadow-lg">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('drillReportTitle', { drillName: drill.name })}</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                        <KpiCard title={t('totalTime')} value={totalDuration} icon={<ClockIcon />} iconBgColor="bg-blue-500/30" />
-                        <KpiCard title={t('participants')} value={participants.length} icon={<UsersIcon />} iconBgColor="bg-purple-500/30" />
-                        <KpiCard title={t('successfulSteps')} value={successfulSteps} icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>} iconBgColor="bg-green-500/30" />
-                        <KpiCard title={t('failedSteps')} value={failedSteps} icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>} iconBgColor="bg-red-500/30" />
+                        <KpiCard title={t('totalTime')} value={totalDuration} icon={<ClockIcon />} iconBgColor="bg-blue-100" />
+                        <KpiCard title={t('participants')} value={participants.length} icon={<UsersIcon />} iconBgColor="bg-purple-100" />
+                        <KpiCard title={t('successfulSteps')} value={successfulSteps} icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>} iconBgColor="bg-green-100" />
+                        <KpiCard title={t('failedSteps')} value={failedSteps} icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>} iconBgColor="bg-red-100" />
                     </div>
                 </div>
 
-                <div className="bg-[#334A52]/80 backdrop-blur-sm p-6 rounded-xl border border-[#506771]">
-                    <h3 className="text-xl font-bold text-white mb-4">{t('scenarioSummary')}</h3>
+                <div className="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 className="text-xl font-bold text-gray-900 mb-4">{t('scenarioSummary')}</h3>
                     <div className="overflow-x-auto">
                         <table className="min-w-full">
-                            <thead className="border-b border-[#506771]">
+                            <thead className="border-b border-gray-200">
                                 <tr>
                                     <th className="py-2 px-4 w-12"></th>
-                                    <th className="py-2 px-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('scenarioName')}</th>
-                                    <th className="py-2 px-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('totalTime')}</th>
-                                    <th className="py-2 px-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('status')}</th>
+                                    <th className="py-2 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('scenarioName')}</th>
+                                    <th className="py-2 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('totalTime')}</th>
+                                    <th className="py-2 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('status')}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1211,17 +1211,17 @@ const ReportScreen = ({ drill, executionData, scenarios, steps, onBack }) => {
                                         : 'N/A';
 
                                     const getScenarioStatusClass = (status) => {
-                                        if (status === t('complete')) return 'bg-green-500/20 text-green-300';
-                                        if (status.includes(t('failure'))) return 'bg-red-500/20 text-red-300';
-                                        if (status.includes(t('completedWithOverride'))) return 'bg-yellow-500/20 text-yellow-300';
-                                        return 'bg-gray-700 text-gray-300';
+                                        if (status === t('complete')) return 'bg-green-100 text-green-800';
+                                        if (status.includes(t('failure'))) return 'bg-red-100 text-red-800';
+                                        if (status.includes(t('completedWithOverride'))) return 'bg-yellow-100 text-yellow-800';
+                                        return 'bg-gray-100 text-gray-800';
                                     }
 
                                     return (
                                         <React.Fragment key={scenId}>
-                                            <tr className="border-t border-[#506771] cursor-pointer hover:bg-[#334A52]/50" onClick={() => toggleScenario(scenId)}>
+                                            <tr className="border-t border-gray-100 cursor-pointer hover:bg-gray-50" onClick={() => toggleScenario(scenId)}>
                                                 <td className="py-3 px-4 text-center"><svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg></td>
-                                                <td className="py-3 px-4 font-semibold text-white">{scenario.name}</td>
+                                                <td className="py-3 px-4 font-semibold text-gray-800">{scenario.name}</td>
                                                 <td className="py-3 px-4">{scenarioDuration}</td>
                                                 <td className="py-3 px-4">
                                                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getScenarioStatusClass(scenarioStatus)}`}>
@@ -1230,11 +1230,11 @@ const ReportScreen = ({ drill, executionData, scenarios, steps, onBack }) => {
                                                 </td>
                                             </tr>
                                             {isExpanded && (
-                                                <tr className="bg-[#22333B]/50">
+                                                <tr className="bg-gray-50">
                                                     <td colSpan="4" className="p-4">
-                                                        <div className="p-2 bg-[#334A52] rounded-md">
+                                                        <div className="p-2 bg-white rounded-md">
                                                             {drillExecData[scenId]?.final_reason && (
-                                                                <div className="mb-2 p-2 bg-yellow-500/10 border-l-4 border-yellow-400 text-yellow-300">
+                                                                <div className="mb-2 p-2 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800">
                                                                     <p className="font-bold text-sm">{t('confirmationReason')}</p>
                                                                     <p className="text-sm">{drillExecData[scenId].final_reason}</p>
                                                                 </div>
@@ -1247,10 +1247,10 @@ const ReportScreen = ({ drill, executionData, scenarios, steps, onBack }) => {
                                                                     const state = drillExecData[stepId] || {};
                                                                     return (
                                                                         <tr key={stepId}>
-                                                                            <td className="py-1 pl-4 w-1/2 text-gray-300">{step.title}</td>
-                                                                            <td className="py-1 text-gray-400">{state.status || 'Pending'}</td>
-                                                                            <td className="py-1 text-gray-400">{formatStepDuration(state.started_at, state.completed_at)}</td>
-                                                                            <td className="py-1 text-gray-400">{state.assignee || 'N/A'}</td>
+                                                                            <td className="py-1 pl-4 w-1/2 text-gray-600">{step.title}</td>
+                                                                            <td className="py-1 text-gray-500">{state.status || 'Pending'}</td>
+                                                                            <td className="py-1 text-gray-500">{formatStepDuration(state.started_at, state.completed_at)}</td>
+                                                                            <td className="py-1 text-gray-500">{state.assignee || 'N/A'}</td>
                                                                         </tr>
                                                                     )
                                                                 })}
@@ -1407,63 +1407,63 @@ const CreateDrillScreen = ({ setActiveScreen, setDb, db, user, drillToEdit, onDo
     };
 
     return (
-        <div className="bg-[#334A52]/80 backdrop-blur-sm p-6 rounded-2xl shadow-2xl shadow-black/20 border border-[#506771]">
-            <button onClick={onDoneEditing} className="text-yellow-300 hover:underline mb-4">&larr; {t('back')}</button>
-            <h2 className="text-2xl font-bold text-white mb-6">{drillToEdit ? t('editDrillTitle') : t('createDrillTitle')}</h2>
+        <div className="bg-white p-6 rounded-2xl shadow-lg">
+            <button onClick={onDoneEditing} className="text-sky-600 hover:underline mb-4">&larr; {t('back')}</button>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">{drillToEdit ? t('editDrillTitle') : t('createDrillTitle')}</h2>
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-sm font-medium text-[#C5D2D8] mb-1">{t('drillName')}</label>
-                        <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full px-4 py-2 bg-[#22333B] border border-[#506771] rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none transition" required />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('drillName')}</label>
+                        <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none transition" required />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-[#C5D2D8] mb-1">{t('drillStatus')}</label>
-                        <select value={status} onChange={e => setStatus(e.target.value)} disabled={!basis} className="w-full px-4 py-2 bg-[#22333B] border border-[#506771] rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none transition disabled:opacity-50">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('drillStatus')}</label>
+                        <select value={status} onChange={e => setStatus(e.target.value)} disabled={!basis} className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none transition disabled:opacity-50">
                             <option value="Draft">{t('draft')}</option>
                             <option value="Active">{t('active')}</option>
                         </select>
-                         {!basis && <p className="text-xs text-yellow-400 mt-1">{t('basisRequiredMessage')}</p>}
+                         {!basis && <p className="text-xs text-yellow-600 mt-1">{t('basisRequiredMessage')}</p>}
                     </div>
                 </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-sm font-medium text-[#C5D2D8] mb-1">{t('startDate')}</label>
-                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-4 py-2 bg-[#22333B] border border-[#506771] rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none transition" required />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('startDate')}</label>
+                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none transition" required />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-[#C5D2D8] mb-1">{t('endDate')}</label>
-                        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full px-4 py-2 bg-[#22333B] border border-[#506771] rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none transition" required />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('endDate')}</label>
+                        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none transition" required />
                     </div>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-[#C5D2D8] mb-1">{t('description')}</label>
-                    <textarea value={description} onChange={e => setDescription(e.target.value)} rows="2" className="w-full px-4 py-2 bg-[#22333B] border border-[#506771] rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none transition" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('description')}</label>
+                    <textarea value={description} onChange={e => setDescription(e.target.value)} rows="2" className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none transition" />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-[#C5D2D8] mb-1">{t('basisForConstruction')}</label>
-                    <textarea value={basis} onChange={e => setBasis(e.target.value)} rows="2" className="w-full px-4 py-2 bg-[#22333B] border border-[#506771] rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none transition" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('basisForConstruction')}</label>
+                    <textarea value={basis} onChange={e => setBasis(e.target.value)} rows="2" className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none transition" />
                 </div>
 
 
                 <div className="flex space-x-6">
                     <div className="w-1/3">
-                        <h3 className="font-bold text-white mb-2">{t('availableScenarios')}</h3>
-                        <div onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, 'available')} className="bg-[#22333B]/50 p-4 rounded-lg min-h-[300px] border-dashed border-2 border-gray-700 space-y-2">
+                        <h3 className="font-bold text-gray-900 mb-2">{t('availableScenarios')}</h3>
+                        <div onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, 'available')} className="bg-gray-100 p-4 rounded-lg min-h-[300px] border-dashed border-2 border-gray-300 space-y-2">
                             {availableScenarios.map(scen => (
-                                <div key={scen.id} draggable onDragStart={(e) => handleDragStart(e, scen, 'available')} className="p-3 bg-[#334A52] border border-[#506771] rounded-md cursor-move shadow-sm hover:bg-gray-700/50 wiggle-on-drag">
-                                    <p className="font-semibold text-white">{scen.name}</p>
-                                    <p className="text-xs text-gray-400">{scen.role}</p>
+                                <div key={scen.id} draggable onDragStart={(e) => handleDragStart(e, scen, 'available')} className="p-3 bg-white border border-gray-200 rounded-md cursor-move shadow-sm hover:bg-gray-50 wiggle-on-drag">
+                                    <p className="font-semibold text-gray-800">{scen.name}</p>
+                                    <p className="text-xs text-gray-500">{scen.role}</p>
                                 </div>
                             ))}
                         </div>
                     </div>
                     <div className="w-2/3">
-                        <h3 className="font-bold text-white mb-2">{t('scenariosInDrill')}</h3>
-                        <div onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, 'selected')} className="bg-yellow-900/10 p-4 rounded-lg min-h-[300px] border-dashed border-2 border-yellow-400/50 space-y-2">
+                        <h3 className="font-bold text-gray-900 mb-2">{t('scenariosInDrill')}</h3>
+                        <div onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, 'selected')} className="bg-sky-50 p-4 rounded-lg min-h-[300px] border-dashed border-2 border-sky-300 space-y-2">
                             {selectedScenarios.length === 0 && <p className="text-gray-500 text-center pt-16">{t('dragScenarioHere')}</p>}
                             {selectedScenarios.map((scen, index) => (
-                                <div key={scen.id} draggable onDragStart={(e) => handleDragStart(e, scen, 'selected')} onDragOver={handleDragOver} onDrop={(e) => handleDropOnItem(e, scen.id)} className="p-3 bg-[#334A52] border border-[#506771] rounded-md shadow-sm cursor-move wiggle-on-drag">
-                                    <p className="font-semibold text-white">{index + 1}. {scen.name}</p>
+                                <div key={scen.id} draggable onDragStart={(e) => handleDragStart(e, scen, 'selected')} onDragOver={handleDragOver} onDrop={(e) => handleDropOnItem(e, scen.id)} className="p-3 bg-white border border-gray-200 rounded-md shadow-sm cursor-move wiggle-on-drag">
+                                    <p className="font-semibold text-gray-800">{index + 1}. {scen.name}</p>
                                     <DependencySelector 
                                         item={scen}
                                         itemList={selectedScenarios}
@@ -1477,7 +1477,7 @@ const CreateDrillScreen = ({ setActiveScreen, setDb, db, user, drillToEdit, onDo
                 </div>
 
                 <div className="flex justify-end">
-                    <button type="submit" className="bg-[#FFDE59] text-black font-bold py-2 px-6 rounded-lg hover:bg-yellow-300 transition-all duration-300 shadow-lg shadow-yellow-400/20 hover:shadow-xl hover:shadow-yellow-400/30">{drillToEdit ? t('saveChanges') : t('createDrill')}</button>
+                    <button type="submit" className="bg-sky-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-sky-700 transition-all duration-300 shadow-lg shadow-sky-500/20 hover:shadow-xl hover:shadow-sky-500/30">{drillToEdit ? t('saveChanges') : t('createDrill')}</button>
                 </div>
             </form>
         </div>
@@ -1504,26 +1504,26 @@ const RichTextEditor = ({ value, onChange }) => {
     };
 
     return (
-        <div className="border border-[#506771] rounded-md bg-[#22333B] text-gray-300">
-            <div className="flex items-center p-1 border-b border-[#506771] space-x-1">
-                <select onChange={(e) => handleCommand('fontName', e.target.value)} className="text-xs bg-[#334A52] border-[#506771] rounded-md p-1 focus:ring-yellow-400 focus:outline-none">
+        <div className="border border-gray-300 rounded-md bg-white text-gray-800">
+            <div className="flex items-center p-1 border-b border-gray-200 space-x-1">
+                <select onChange={(e) => handleCommand('fontName', e.target.value)} className="text-xs bg-gray-100 border-gray-300 rounded-md p-1 focus:ring-sky-500 focus:outline-none">
                     <option value="Inter">Inter</option>
                     <option value="Arial">Arial</option>
                     <option value="Georgia">Georgia</option>
                     <option value="Verdana">Verdana</option>
                 </select>
-                <button type="button" onClick={() => handleCommand('bold')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-700 rounded text-gray-300"><BoldIcon /></button>
-                <button type="button" onClick={() => handleCommand('italic')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-700 rounded text-gray-300"><ItalicIcon /></button>
-                <button type="button" onClick={() => handleCommand('underline')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-700 rounded text-gray-300"><UnderlineIcon /></button>
-                <button type="button" onClick={() => handleCommand('justifyLeft')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-700 rounded text-gray-300"><AlignLeftIcon /></button>
-                <button type="button" onClick={() => handleCommand('justifyCenter')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-700 rounded text-gray-300"><AlignCenterIcon /></button>
-                <button type="button" onClick={() => handleCommand('justifyRight')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-700 rounded text-gray-300"><AlignRightIcon /></button>
+                <button type="button" onClick={() => handleCommand('bold')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-600"><BoldIcon /></button>
+                <button type="button" onClick={() => handleCommand('italic')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-600"><ItalicIcon /></button>
+                <button type="button" onClick={() => handleCommand('underline')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-600"><UnderlineIcon /></button>
+                <button type="button" onClick={() => handleCommand('justifyLeft')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-600"><AlignLeftIcon /></button>
+                <button type="button" onClick={() => handleCommand('justifyCenter')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-600"><AlignCenterIcon /></button>
+                <button type="button" onClick={() => handleCommand('justifyRight')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-600"><AlignRightIcon /></button>
             </div>
             <div
                 ref={editorRef}
                 onInput={handleInput}
                 contentEditable={true}
-                className="p-2 min-h-[100px] focus:outline-none prose prose-sm prose-invert max-w-none"
+                className="p-2 min-h-[100px] focus:outline-none prose prose-sm max-w-none"
             />
         </div>
     );
@@ -1687,55 +1687,55 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh }) => {
 
     const getStatusClass = (status) => {
         switch(status) {
-            case 'Active': return 'bg-green-500/20 text-green-300';
-            case 'Pending Approval': return 'bg-yellow-500/20 text-yellow-300';
-            case 'Rejected': return 'bg-red-500/20 text-red-300';
-            default: return 'bg-gray-500/20 text-gray-300';
+            case 'Active': return 'bg-green-100 text-green-800';
+            case 'Pending Approval': return 'bg-yellow-100 text-yellow-800';
+            case 'Rejected': return 'bg-red-100 text-red-800';
+            default: return 'bg-gray-100 text-gray-800';
         }
     };
 
     return (
         <>
-            <div className="bg-[#334A52]/80 backdrop-blur-sm p-6 rounded-2xl shadow-2xl shadow-black/20 border border-[#506771]">
+            <div className="bg-white p-6 rounded-2xl shadow-lg">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold text-white">{t('scenarioList')}</h2>
-                    <button onClick={() => handleOpenModal()} className="bg-[#FFDE59] text-black font-bold py-2 px-4 rounded-lg hover:bg-yellow-300 transition-all duration-300 shadow-lg shadow-yellow-400/20 hover:shadow-xl hover:shadow-yellow-400/30">{t('createNewScenario')}</button>
+                    <h2 className="text-xl font-bold text-gray-900">{t('scenarioList')}</h2>
+                    <button onClick={() => handleOpenModal()} className="bg-sky-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-sky-700 transition-all duration-300 shadow-lg shadow-sky-500/20 hover:shadow-xl hover:shadow-sky-500/30">{t('createNewScenario')}</button>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="min-w-full">
-                         <thead className="border-b border-[#506771]">
+                         <thead className="border-b border-gray-200">
                             <tr>
-                                <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('scenarioName')}</th>
-                                <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('status')}</th>
-                                <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('creator')}</th>
-                                <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('lastUpdated')}</th>
-                                <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('action')}</th>
+                                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('scenarioName')}</th>
+                                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('status')}</th>
+                                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('creator')}</th>
+                                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('lastUpdated')}</th>
+                                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('action')}</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredScenarios.map(s => {
                                 const creator = db.users.find(u => u.id === s.created_by);
                                 return (
-                                <tr key={s.id} className="border-b border-[#334A52] hover:bg-[#334A52]/50">
-                                    <td className="py-3 px-4 text-white">{s.name}</td>
+                                <tr key={s.id} className="border-b border-gray-100 hover:bg-gray-50">
+                                    <td className="py-3 px-4 text-gray-800">{s.name}</td>
                                     <td className="py-3 px-4"><span className={`text-xs px-2 py-1 rounded-full font-semibold ${getStatusClass(s.status)}`}>{s.status}</span></td>
-                                    <td className="py-3 px-4 text-gray-300">{creator ? creator.username : 'N/A'}</td>
-                                    <td className="py-3 px-4 text-gray-300">{formatDate(s.last_updated_at)}</td>
+                                    <td className="py-3 px-4 text-gray-600">{creator ? creator.username : 'N/A'}</td>
+                                    <td className="py-3 px-4 text-gray-600">{formatDate(s.last_updated_at)}</td>
                                     <td className="py-3 px-4">
                                         <div className="flex items-center space-x-2">
                                             {(user.role === 'ADMIN' || user.id === s.created_by) && (
                                                 <>
-                                                    <button onClick={() => handleOpenModal(s)} title={t('edit')} className="p-2 rounded-lg text-yellow-300 bg-yellow-500/10 hover:bg-yellow-500/20"><EditIcon /></button>
-                                                    <button onClick={() => handleOpenModal(s, true)} title={t('clone')} className="p-2 rounded-lg text-purple-300 bg-purple-500/10 hover:bg-purple-500/20"><CloneIcon /></button>
+                                                    <button onClick={() => handleOpenModal(s)} title={t('edit')} className="p-2 rounded-lg text-yellow-600 bg-yellow-100 hover:bg-yellow-200"><EditIcon /></button>
+                                                    <button onClick={() => handleOpenModal(s, true)} title={t('clone')} className="p-2 rounded-lg text-purple-600 bg-purple-100 hover:bg-purple-200"><CloneIcon /></button>
                                                 </>
                                             )}
                                             {user.role !== 'ADMIN' && s.status === 'Draft' && s.basis && (
-                                                <button onClick={() => handleStatusChange(s.id, 'Pending Approval')} title={t('submitForApproval')} className="p-2 rounded-lg text-blue-300 bg-blue-500/10 hover:bg-blue-500/20"><SubmitApprovalIcon /></button>
+                                                <button onClick={() => handleStatusChange(s.id, 'Pending Approval')} title={t('submitForApproval')} className="p-2 rounded-lg text-blue-600 bg-blue-100 hover:bg-blue-200"><SubmitApprovalIcon /></button>
                                             )}
                                             {user.role === 'ADMIN' && s.status === 'Pending Approval' && (
                                                 <>
-                                                    <button onClick={() => handleStatusChange(s.id, 'Active')} title={t('approve')} className="p-2 rounded-lg text-green-300 bg-green-500/10 hover:bg-green-500/20"><ApproveIcon /></button>
-                                                    <button onClick={() => handleStatusChange(s.id, 'Rejected')} title={t('reject')} className="p-2 rounded-lg text-red-400 bg-red-500/10 hover:bg-red-500/20"><RejectIcon /></button>
+                                                    <button onClick={() => handleStatusChange(s.id, 'Active')} title={t('approve')} className="p-2 rounded-lg text-green-600 bg-green-100 hover:bg-green-200"><ApproveIcon /></button>
+                                                    <button onClick={() => handleStatusChange(s.id, 'Rejected')} title={t('reject')} className="p-2 rounded-lg text-red-600 bg-red-100 hover:bg-red-200"><RejectIcon /></button>
                                                 </>
                                             )}
                                         </div>
@@ -1748,62 +1748,62 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh }) => {
             </div>
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className="bg-[#334A52] p-6 rounded-2xl shadow-2xl shadow-black/30 border border-[#506771] w-full max-w-4xl max-h-[90vh] flex flex-col">
-                        <h3 className="text-lg font-bold text-white mb-4 flex-shrink-0">{editingScenario ? t('editScenario') : t('createScenario')}</h3>
+                    <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex-shrink-0">{editingScenario ? t('editScenario') : t('createScenario')}</h3>
                         <form onSubmit={handleSave} className="flex-1 overflow-y-auto pr-2">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-[#C5D2D8]">{t('scenarioName')}</label>
-                                    <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none" required/>
+                                    <label className="block text-sm font-medium text-gray-700">{t('scenarioName')}</label>
+                                    <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none" required/>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-[#C5D2D8]">{t('role')}</label>
+                                    <label className="block text-sm font-medium text-gray-700">{t('role')}</label>
                                     {user.role === 'ADMIN' ? (
-                                        <select value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none">
+                                        <select value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none">
                                             <option value="TECHNICAL">TECHNICAL</option>
                                             <option value="BUSINESS">BUSINESS</option>
                                         </select>
                                     ) : (
-                                        <input type="text" value={formData.role} className="mt-1 block w-full bg-[#22333B]/50 border border-[#506771] rounded-md p-2 text-gray-400" readOnly/>
+                                        <input type="text" value={formData.role} className="mt-1 block w-full bg-gray-200 border border-gray-300 rounded-md p-2 text-gray-500" readOnly/>
                                     )}
                                 </div>
                             </div>
                             <div className="mb-4">
-                                <label className="block text-sm font-medium text-[#C5D2D8]">{t('basisForConstruction')}</label>
-                                <textarea value={formData.basis} onChange={(e) => setFormData({...formData, basis: e.target.value})} rows="2" className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none" />
+                                <label className="block text-sm font-medium text-gray-700">{t('basisForConstruction')}</label>
+                                <textarea value={formData.basis} onChange={(e) => setFormData({...formData, basis: e.target.value})} rows="2" className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
                             </div>
                             {user.role === 'ADMIN' && (
                                 <div className="mb-4">
-                                    <label className="block text-sm font-medium text-[#C5D2D8]">{t('scenarioStatus')}</label>
-                                    <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} disabled={!formData.basis} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none disabled:opacity-50">
+                                    <label className="block text-sm font-medium text-gray-700">{t('scenarioStatus')}</label>
+                                    <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} disabled={!formData.basis} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:opacity-50">
                                         <option value="Draft">{t('draft')}</option>
                                         <option value="Active">{t('active')}</option>
                                     </select>
-                                    {!formData.basis && <p className="text-xs text-yellow-400 mt-1">{t('basisRequiredMessage')}</p>}
+                                    {!formData.basis && <p className="text-xs text-yellow-600 mt-1">{t('basisRequiredMessage')}</p>}
                                 </div>
                             )}
 
-                            <h4 className="font-bold text-white mt-6 mb-2">{t('steps')}</h4>
+                            <h4 className="font-bold text-gray-900 mt-6 mb-2">{t('steps')}</h4>
                             <div className="space-y-2">
                                 {stepInputs.map((step, index) => (
                                     <div 
                                         key={step.id || index} 
-                                        className={`border border-[#506771] rounded-md bg-[#22333B]/50 transition-all duration-300 ${draggedStepIndex === index ? 'opacity-50' : ''}`}
+                                        className={`border border-gray-200 rounded-md bg-gray-50 transition-all duration-300 ${draggedStepIndex === index ? 'opacity-50' : ''}`}
                                         draggable
                                         onDragStart={(e) => handleDragStart(e, index)}
                                         onDragOver={handleDragOver}
                                         onDrop={(e) => handleDrop(e, index)}
                                     >
                                         <div className="p-2 flex items-center space-x-2">
-                                            <div className="cursor-move text-gray-500 wiggle-on-drag">
+                                            <div className="cursor-move text-gray-400 wiggle-on-drag">
                                                 <DragHandleIcon />
                                             </div>
                                             <div className="flex-1 cursor-pointer" onClick={() => setExpandedStepIndex(expandedStepIndex === index ? null : index)}>
                                                 <div className="flex justify-between items-center">
-                                                    <h4 className="font-bold text-white">{t('step')} {index + 1}: {step.title || t('noTitle')}</h4>
+                                                    <h4 className="font-bold text-gray-800">{t('step')} {index + 1}: {step.title || t('noTitle')}</h4>
                                                     <div className="flex items-center space-x-4">
                                                     {stepInputs.length > 1 && (
-                                                        <button type="button" onClick={(e) => { e.stopPropagation(); handleRemoveStep(index); }} className="text-red-400 hover:text-red-300 font-bold text-xl">&times;</button>
+                                                        <button type="button" onClick={(e) => { e.stopPropagation(); handleRemoveStep(index); }} className="text-red-500 hover:text-red-700 font-bold text-xl">&times;</button>
                                                     )}
                                                     <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 transition-transform ${expandedStepIndex === index ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                                                     </div>
@@ -1811,19 +1811,19 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh }) => {
                                             </div>
                                         </div>
                                         {expandedStepIndex === index && (
-                                            <div className="p-4 border-t border-[#506771] space-y-4">
+                                            <div className="p-4 border-t border-gray-200 space-y-4">
                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                     <div className="md:col-span-2">
-                                                        <label className="block text-xs font-medium text-[#C5D2D8]">{t('stepName')} <span className="text-red-400">{t('requiredField')}</span></label>
-                                                        <input type="text" placeholder={t('stepTitlePlaceholder')} value={step.title} onChange={e => handleStepChange(index, 'title', e.target.value)} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none" required />
+                                                        <label className="block text-xs font-medium text-gray-600">{t('stepName')} <span className="text-red-500">{t('requiredField')}</span></label>
+                                                        <input type="text" placeholder={t('stepTitlePlaceholder')} value={step.title} onChange={e => handleStepChange(index, 'title', e.target.value)} className="mt-1 block w-full bg-white border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none" required />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-xs font-medium text-[#C5D2D8]">{t('estimatedTime')}</label>
-                                                        <input type="text" placeholder="hh:mm:ss" value={step.estimated_time} onChange={e => handleStepChange(index, 'estimated_time', e.target.value)} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none" />
+                                                        <label className="block text-xs font-medium text-gray-600">{t('estimatedTime')}</label>
+                                                        <input type="text" placeholder="hh:mm:ss" value={step.estimated_time} onChange={e => handleStepChange(index, 'estimated_time', e.target.value)} className="mt-1 block w-full bg-white border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-xs font-medium text-[#C5D2D8]">{t('stepDescription')} <span className="text-red-400">{t('requiredField')}</span></label>
+                                                    <label className="block text-xs font-medium text-gray-600">{t('stepDescription')} <span className="text-red-500">{t('requiredField')}</span></label>
                                                     <RichTextEditor value={step.description} onChange={value => handleStepChange(index, 'description', value)} />
                                                 </div>
                                                 <DependencySelector 
@@ -1837,10 +1837,10 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh }) => {
                                     </div>
                                 ))}
                             </div>
-                            <button type="button" onClick={handleAddStep} className="mt-4 text-yellow-300 hover:underline text-sm font-semibold">{t('addStep')}</button>
-                            <div className="flex justify-end space-x-2 mt-6 border-t border-[#506771] pt-4 flex-shrink-0">
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="bg-gray-700 py-2 px-4 rounded-lg text-gray-300 hover:bg-gray-600">{t('cancel')}</button>
-                                <button type="submit" className="bg-yellow-400 text-black font-semibold py-2 px-4 rounded-lg hover:bg-yellow-500">{editingScenario ? t('saveChanges') : t('saveScenario')}</button>
+                            <button type="button" onClick={handleAddStep} className="mt-4 text-sky-600 hover:underline text-sm font-semibold">{t('addStep')}</button>
+                            <div className="flex justify-end space-x-2 mt-6 border-t border-gray-200 pt-4 flex-shrink-0">
+                                <button type="button" onClick={() => setIsModalOpen(false)} className="bg-gray-200 py-2 px-4 rounded-lg text-gray-800 hover:bg-gray-300">{t('cancel')}</button>
+                                <button type="submit" className="bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-sky-700">{editingScenario ? t('saveChanges') : t('saveScenario')}</button>
                             </div>
                         </form>
                     </div>
@@ -2120,26 +2120,26 @@ const ChangePasswordModal = ({ user, onClose }) => {
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-[#334A52] p-8 rounded-2xl shadow-2xl shadow-black/30 border border-[#506771] w-full max-w-md">
-                <h3 className="text-lg font-bold text-white mb-4">{t('changePassword')}</h3>
-                {error && <p className="text-red-400 text-sm my-2">{error}</p>}
-                {success && <p className="text-green-400 text-sm my-2">{success}</p>}
+            <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">{t('changePassword')}</h3>
+                {error && <p className="text-red-500 text-sm my-2">{error}</p>}
+                {success && <p className="text-green-600 text-sm my-2">{success}</p>}
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-[#C5D2D8]">{t('oldPassword')}</label>
-                        <input type="password" value={oldPassword} onChange={e => setOldPassword(e.target.value)} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none" required />
+                        <label className="block text-sm font-medium text-gray-700">{t('oldPassword')}</label>
+                        <input type="password" value={oldPassword} onChange={e => setOldPassword(e.target.value)} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none" required />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-[#C5D2D8]">{t('newPassword')}</label>
-                        <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none" required />
+                        <label className="block text-sm font-medium text-gray-700">{t('newPassword')}</label>
+                        <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none" required />
                     </div>
                      <div>
-                        <label className="block text-sm font-medium text-[#C5D2D8]">{t('confirmNewPassword')}</label>
-                        <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none" required />
+                        <label className="block text-sm font-medium text-gray-700">{t('confirmNewPassword')}</label>
+                        <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none" required />
                     </div>
                     <div className="flex justify-end space-x-2 pt-4">
-                        <button type="button" onClick={onClose} className="bg-gray-700 py-2 px-4 rounded-lg text-gray-300 hover:bg-gray-600">{t('cancel')}</button>
-                        <button type="submit" className="bg-yellow-400 text-black font-semibold py-2 px-4 rounded-lg hover:bg-yellow-500">{t('saveChanges')}</button>
+                        <button type="button" onClick={onClose} className="bg-gray-200 py-2 px-4 rounded-lg text-gray-800 hover:bg-gray-300">{t('cancel')}</button>
+                        <button type="submit" className="bg-sky-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-sky-700">{t('saveChanges')}</button>
                     </div>
                 </form>
             </div>
@@ -2193,11 +2193,11 @@ export default function App() {
     const style = document.createElement('style');
     style.innerHTML = `
       body { font-family: 'Inter', sans-serif; }
-      .prose-invert {
-        --tw-prose-body: #C5D2D8;
-        --tw-prose-headings: #fff;
-        --tw-prose-bold: #fff;
-        --tw-prose-bullets: #C5D2D8;
+      .prose {
+        --tw-prose-body: #374151;
+        --tw-prose-headings: #111827;
+        --tw-prose-bold: #111827;
+        --tw-prose-bullets: #374151;
       }
       @keyframes wiggle {
         0%, 100% { transform: rotate(-0.5deg); }
