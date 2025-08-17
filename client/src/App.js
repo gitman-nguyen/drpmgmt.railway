@@ -542,7 +542,7 @@ const AppLayout = ({ user, onLogout, children, activeScreen, setActiveScreen }) 
   );
 };
 
-const DashboardScreen = ({ user, drills, setDrills, onExecuteDrill, onViewReport, onEditDrill, onCloneDrill, executionData, scenarios, onCreateDrill }) => {
+const DashboardScreen = ({ user, drills, setDrills, onExecuteDrill, onViewReport, onEditDrill, onCloneDrill, executionData, scenarios, onCreateDrill, onDataRefresh }) => {
   const { t } = useTranslation();
   
   const getStatusClass = (status) => {
@@ -564,8 +564,7 @@ const DashboardScreen = ({ user, drills, setDrills, onExecuteDrill, onViewReport
             body: JSON.stringify({ execution_status: newStatus, timestamp: new Date().toISOString() }),
         });
         if (!response.ok) throw new Error('Failed to update drill status');
-        const updatedDrill = await response.json();
-        setDrills(drills.map(d => (d.id === updatedDrill.id ? updatedDrill : d)));
+        await onDataRefresh();
     } catch (error) {
         console.error(error);
         alert('Lỗi cập nhật trạng thái Drill.');
@@ -1385,7 +1384,7 @@ const CreateDrillScreen = ({ setActiveScreen, setDb, db, user, drillToEdit, onDo
 
         try {
             let response;
-            if (drillToEdit) {
+            if (drillToEdit && drillToEdit.id) {
                 response = await fetch(`/api/drills/${drillToEdit.id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
@@ -2016,7 +2015,10 @@ const PublicDashboard = ({ drills, scenarios, steps, executionData, onLoginReque
                             <div key={scenario.id} className="bg-[#2A3A3F]/80 rounded-xl border border-[#3D4F56] backdrop-blur-sm">
                                 <div className="p-4 cursor-pointer" onClick={() => toggleScenario(scenario.id)}>
                                     <div className="flex justify-between items-center">
-                                        <h3 className="text-xl font-bold text-yellow-300">{scenario.name}</h3>
+                                        <div className="flex items-center">
+                                            <h3 className="text-xl font-bold text-yellow-300">{scenario.name}</h3>
+                                            <span className="ml-4 text-sm font-bold text-yellow-300 bg-yellow-500/10 px-2 py-1 rounded-md">{stats.progress.toFixed(0)}%</span>
+                                        </div>
                                         <div className="flex items-center space-x-4">
                                             <span className="text-sm text-gray-300">{stats.status}</span>
                                             <span className="text-sm font-mono text-gray-400">{t('elapsedTime')}: {stats.elapsedTime}</span>
@@ -2324,9 +2326,9 @@ export default function App() {
   const renderScreen = () => {
     switch(activeScreen) {
         case 'dashboard':
-            return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} />;
+            return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={fetchData} />;
         case 'execution':
-            if (!activeDrill) return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} />;
+            if (!activeDrill) return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={fetchData} />;
             return <ExecutionScreen 
                 user={user} 
                 drill={activeDrill} 
@@ -2338,7 +2340,7 @@ export default function App() {
                 onDataRefresh={fetchData}
               />;
         case 'report':
-            if (!activeDrill) return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} />;
+            if (!activeDrill) return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={fetchData} />;
             return <ReportScreen 
                 drill={activeDrill} 
                 onBack={handleBackToDashboard} 
@@ -2347,15 +2349,15 @@ export default function App() {
                 executionData={db.executionData}
               />;
         case 'user-management':
-             if (user.role !== 'ADMIN') return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} />;
+             if (user.role !== 'ADMIN') return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={fetchData} />;
             return <UserManagementScreen users={db.users} setUsers={(newUsers) => setDb({...db, users: newUsers})} onDataRefresh={fetchData} />;
         case 'scenarios':
             return <ScenarioManagementScreen db={db} setDb={setDb} user={user} onDataRefresh={fetchData} />;
         case 'create-drill':
-             if (user.role !== 'ADMIN') return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} />;
+             if (user.role !== 'ADMIN') return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={fetchData} />;
             return <CreateDrillScreen setActiveScreen={setActiveScreen} setDb={setDb} db={db} user={user} drillToEdit={editingDrill} onDoneEditing={() => setActiveScreen('dashboard')} onDataRefresh={fetchData} />;
         default:
-            return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios}/>;
+            return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onDataRefresh={fetchData}/>;
     }
   }
 
