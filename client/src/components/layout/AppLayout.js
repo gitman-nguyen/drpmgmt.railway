@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../../contexts/LanguageContext';
 import ChangePasswordModal from '../auth/ChangePasswordModal';
-import { LogoIcon, DashboardIcon, ScenariosIcon, UsersIcon, LogoutIcon, KeyIcon } from '../icons';
+import { LogoIcon, DashboardIcon, ScenariosIcon, UsersIcon, AdminIcon, LogoutIcon, KeyIcon } from '../icons';
 
 const AppLayout = ({ user, onLogout, children, activeScreen, setActiveScreen, isXlsxReady }) => {
   const { t, setLanguage, language } = useTranslation();
@@ -11,6 +11,8 @@ const AppLayout = ({ user, onLogout, children, activeScreen, setActiveScreen, is
     { id: 'dashboard', name: t('dashboard'), icon: <DashboardIcon /> },
     { id: 'scenarios', name: t('scenarioManagement'), icon: <ScenariosIcon /> },
     { id: 'user-management', name: t('userManagement'), icon: <UsersIcon /> },
+    // --- THAY ĐỔI: Thêm mục điều hướng mới cho màn hình quản trị ---
+    { id: 'admin', name: t('adminSystem'), icon: <AdminIcon /> },
   ];
 
   const userLinks = [
@@ -22,6 +24,8 @@ const AppLayout = ({ user, onLogout, children, activeScreen, setActiveScreen, is
     'dashboard': t('dashboard'),
     'scenarios': t('scenarioManagement'),
     'user-management': t('userManagement'),
+    // --- THAY ĐỔI: Thêm tiêu đề cho màn hình quản trị ---
+    'admin': t('adminSystem'),
     'create-drill': t('createNewDrill'),
     'execution': t('execute'),
     'report': t('viewReport'),

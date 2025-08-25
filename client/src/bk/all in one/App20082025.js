@@ -132,6 +132,22 @@ const translations = {
     endDate: 'Ngày kết thúc',
     notInTimeframe: 'Chưa đến thời gian diễn tập',
     executor: 'Người thực hiện',
+    changePassword: 'Đổi mật khẩu',
+    oldPassword: 'Mật khẩu cũ',
+    newPassword: 'Mật khẩu mới',
+    confirmNewPassword: 'Xác nhận mật khẩu mới',
+    passwordMismatch: 'Mật khẩu mới không khớp.',
+    passwordChangedSuccess: 'Đổi mật khẩu thành công!',
+    passwordChangedError: 'Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu cũ.',
+    resetPassword: 'Reset Mật khẩu',
+    resetPasswordConfirmation: 'Bạn có chắc muốn reset mật khẩu cho người dùng này về "password"?',
+    passwordResetSuccess: 'Reset mật khẩu thành công!',
+    passwordResetError: 'Reset mật khẩu thất bại.',
+    downloadTemplate: 'Tải file mẫu',
+    importFromExcel: 'Import từ Excel',
+    importing: 'Đang xử lý file...',
+    importError: 'Lỗi import file. Vui lòng kiểm tra định dạng file và thử lại.',
+    excelLibraryNotReady: 'Thư viện Excel chưa sẵn sàng, vui lòng thử lại sau giây lát.',
   },
   en: {
     loginTitle: 'System Login',
@@ -263,6 +279,22 @@ const translations = {
     endDate: 'End Date',
     notInTimeframe: 'Not within the drill timeframe',
     executor: 'Executor',
+    changePassword: 'Change Password',
+    oldPassword: 'Old Password',
+    newPassword: 'New Password',
+    confirmNewPassword: 'Confirm New Password',
+    passwordMismatch: 'New passwords do not match.',
+    passwordChangedSuccess: 'Password changed successfully!',
+    passwordChangedError: 'Failed to change password. Please check your old password.',
+    resetPassword: 'Reset Password',
+    resetPasswordConfirmation: 'Are you sure you want to reset the password for this user to "password"?',
+    passwordResetSuccess: 'Password reset successfully!',
+    passwordResetError: 'Failed to reset password.',
+    downloadTemplate: 'Download Template',
+    importFromExcel: 'Import from Excel',
+    importing: 'Processing file...',
+    importError: 'Error importing file. Please check the file format and try again.',
+    excelLibraryNotReady: 'Excel library not ready, please try again in a moment.',
   },
 };
 
@@ -317,6 +349,10 @@ const CloseIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w
 const ApproveIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>;
 const RejectIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>;
 const SubmitApprovalIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>;
+const KeyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.623 5.91l-4.644 4.644a2 2 0 01-2.828 0L3.101 17.94a2 2 0 010-2.828l4.644-4.644A6 6 0 0115 7z" /></svg>;
+const DownloadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>;
+const UploadIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4 4m0 0l-4 4m4-4H4" /></svg>;
+
 
 // --- UI COMPONENTS ---
 
@@ -360,8 +396,8 @@ const DependencySelector = ({ item, itemList, currentIndex, onDependencyChange }
     return (
         <div className="mt-2 relative" ref={wrapperRef}>
             <label className="text-xs text-gray-400">{t('dependencies')}</label>
-            <div className="p-2 mt-1 bg-[#22333B] border border-[#506771] rounded-md text-white min-h-[40px]">
-                <p className="text-sm text-gray-300">{dependencyNames || t('noDependencies')}</p>
+            <div className="p-2 mt-1 bg-gray-100 border border-gray-300 rounded-md text-gray-800 min-h-[40px]">
+                <p className="text-sm text-gray-600">{dependencyNames || t('noDependencies')}</p>
             </div>
             {possibleDependencies.length > 0 && (
                 <button type="button" onClick={() => setIsOpen(!isOpen)} className="mt-2 text-xs bg-gray-600 hover:bg-gray-500 text-white font-semibold py-1 px-3 rounded">
@@ -369,14 +405,14 @@ const DependencySelector = ({ item, itemList, currentIndex, onDependencyChange }
                 </button>
             )}
             {isOpen && (
-                <div className="absolute z-10 mt-1 w-full bg-[#334A52] border border-[#506771] rounded-md shadow-lg p-4">
-                    <h4 className="font-bold text-white mb-2">{t('selectDependencies')}</h4>
+                <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg p-4">
+                    <h4 className="font-bold text-gray-800 mb-2">{t('selectDependencies')}</h4>
                     <div className="space-y-2 max-h-40 overflow-y-auto">
                         {possibleDependencies.map(dep => (
-                            <label key={getItemId(dep)} className="flex items-center space-x-2 text-white">
+                            <label key={getItemId(dep)} className="flex items-center space-x-2 text-gray-800">
                                 <input
                                     type="checkbox"
-                                    className="rounded bg-gray-700 border-gray-600 text-yellow-400 focus:ring-yellow-500"
+                                    className="rounded bg-gray-200 border-gray-300 text-sky-600 focus:ring-sky-500"
                                     checked={(item.dependsOn || []).includes(getItemId(dep))}
                                     onChange={(e) => handleCheckboxChange(getItemId(dep), e.target.checked)}
                                 />
@@ -384,7 +420,7 @@ const DependencySelector = ({ item, itemList, currentIndex, onDependencyChange }
                             </label>
                         ))}
                     </div>
-                    <button type="button" onClick={() => setIsOpen(false)} className="mt-3 w-full text-xs bg-yellow-500 hover:bg-yellow-400 text-black font-semibold py-1 px-3 rounded">{t('close')}</button>
+                    <button type="button" onClick={() => setIsOpen(false)} className="mt-3 w-full text-xs bg-[#00558F] hover:bg-[#004472] text-white font-semibold py-1 px-3 rounded">{t('close')}</button>
                 </div>
             )}
         </div>
@@ -434,8 +470,10 @@ const LoginPage = ({ onLogin, onCancel }) => {
   );
 };
 
-const AppLayout = ({ user, onLogout, children, activeScreen, setActiveScreen }) => {
+const AppLayout = ({ user, onLogout, children, activeScreen, setActiveScreen, isXlsxReady }) => {
   const { t, setLanguage, language } = useTranslation();
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+
   const adminLinks = [
     { id: 'dashboard', name: t('dashboard'), icon: <DashboardIcon /> },
     { id: 'scenarios', name: t('scenarioManagement'), icon: <ScenariosIcon /> },
@@ -457,78 +495,105 @@ const AppLayout = ({ user, onLogout, children, activeScreen, setActiveScreen }) 
   };
 
   const navLinks = user.role === 'ADMIN' ? adminLinks : userLinks;
+  
+  const childrenWithProps = React.Children.map(children, child => {
+    if (React.isValidElement(child)) {
+      return React.cloneElement(child, { isXlsxReady });
+    }
+    return child;
+  });
 
   return (
-    <div className="flex h-screen bg-[#1D2A2E] text-[#C5D2D8] font-sans">
-      <nav className="w-64 bg-[#334A52]/70 backdrop-blur-lg border-r border-[#506771] p-4 hidden md:flex md:flex-col">
+    <>
+    <div className="flex h-screen bg-gray-100 text-gray-800 font-sans">
+      <nav className="w-64 bg-[#2A3A3F] text-white p-4 hidden md:flex md:flex-col">
         <div className="flex items-center space-x-3 mb-10">
             <LogoIcon />
         </div>
         <ul className="space-y-2">
           {navLinks.map(link => (
              <li key={link.id}>
-                <button onClick={() => setActiveScreen(link.id)} className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 text-left ${activeScreen === link.id ? 'bg-yellow-400/10 text-yellow-300 font-semibold' : 'hover:bg-gray-700/50'}`}>
+                <button onClick={() => setActiveScreen(link.id)} className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 text-left ${activeScreen === link.id ? 'bg-[#3D4F56] text-white font-semibold' : 'text-gray-300 hover:bg-[#3D4F56]'}`}>
                     {link.icon}
                     <span>{link.name}</span>
                 </button>
              </li>
           ))}
         </ul>
-        <div className="mt-auto">
-          <button onClick={onLogout} className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-red-500/20 text-red-400 transition-colors duration-200">
+        <div className="mt-auto space-y-2">
+          <button onClick={() => setIsPasswordModalOpen(true)} className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-[#3D4F56] text-gray-300 transition-colors duration-200">
+            <KeyIcon /><span>{t('changePassword')}</span>
+          </button>
+          <button onClick={onLogout} className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-red-600/80 text-red-200 transition-colors duration-200">
             <LogoutIcon /><span>{t('logout')}</span>
           </button>
         </div>
       </nav>
 
       <div className="flex-1 flex flex-col overflow-y-auto">
-         <header className="flex-shrink-0 bg-[#334A52]/50 backdrop-blur-sm border-b border-[#506771] p-4 flex justify-between items-center z-10">
-          <h1 className="text-2xl font-bold text-white capitalize">{screenTitles[activeScreen] || activeScreen}</h1>
+         <header className="flex-shrink-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center z-10">
+          <h1 className="text-2xl font-bold text-gray-900 capitalize">{screenTitles[activeScreen] || activeScreen}</h1>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-                <button onClick={() => setLanguage('vi')} className={`w-8 h-8 rounded-full overflow-hidden border-2 ${language === 'vi' ? 'border-yellow-400' : 'border-transparent'}`}><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Flag_of_Vietnam.svg/1200px-Flag_of_Vietnam.svg.png" alt="Vietnamese" className="w-full h-full object-cover" /></button>
-                <button onClick={() => setLanguage('en')} className={`w-8 h-8 rounded-full overflow-hidden border-2 ${language === 'en' ? 'border-yellow-400' : 'border-transparent'}`}><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Flag_of_the_United_Kingdom_%281-2%29.svg/1200px-Flag_of_the_United_Kingdom_%281-2%29.svg.png" alt="English" className="w-full h-full object-cover" /></button>
+                <button onClick={() => setLanguage('vi')} className={`w-8 h-8 rounded-full overflow-hidden border-2 ${language === 'vi' ? 'border-[#00558F]' : 'border-transparent'}`}><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Flag_of_Vietnam.svg/1200px-Flag_of_Vietnam.svg.png" alt="Vietnamese" className="w-full h-full object-cover" /></button>
+                <button onClick={() => setLanguage('en')} className={`w-8 h-8 rounded-full overflow-hidden border-2 ${language === 'en' ? 'border-[#00558F]' : 'border-transparent'}`}><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Flag_of_the_United_Kingdom_%281-2%29.svg/1200px-Flag_of_the_United_Kingdom_%281-2%29.svg.png" alt="English" className="w-full h-full object-cover" /></button>
             </div>
-            <p className="text-gray-400 text-sm hidden sm:block">{t('welcome')}, <span className="font-semibold text-yellow-300">{user.name}</span></p>
-            <button onClick={onLogout} className="md:hidden bg-gray-700 text-gray-300 font-semibold py-2 px-4 rounded-lg">{t('logout')}</button>
+            <p className="text-gray-600 text-sm hidden sm:block">{t('welcome')}, <span className="font-semibold text-gray-800">{user.name}</span></p>
+            <button onClick={onLogout} className="md:hidden bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded-lg">{t('logout')}</button>
           </div>
         </header>
 
-        <nav className="bg-[#334A52]/50 border-b border-[#506771] md:hidden">
+        <nav className="bg-white border-b border-gray-200 md:hidden">
             <div className="flex justify-around">
                 {navLinks.map(link => (
-                    <button key={link.id} onClick={() => setActiveScreen(link.id)} className={`flex-1 py-3 text-sm font-medium transition-colors ${activeScreen === link.id ? 'text-yellow-300 border-b-2 border-yellow-300' : 'text-gray-400'}`}>
+                    <button key={link.id} onClick={() => setActiveScreen(link.id)} className={`flex-1 py-3 text-sm font-medium transition-colors ${activeScreen === link.id ? 'text-[#00558F] border-b-2 border-[#00558F]' : 'text-gray-500'}`}>
                         {link.name}
                     </button>
                 ))}
             </div>
         </nav>
 
-        <main className="p-4 sm:p-6 lg:p-8 flex-1">{children}</main>
+        <main className="p-4 sm:p-6 lg:p-8 flex-1 bg-gray-100">{childrenWithProps}</main>
       </div>
     </div>
+    {isPasswordModalOpen && <ChangePasswordModal user={user} onClose={() => setIsPasswordModalOpen(false)} />}
+    </>
   );
 };
 
-const DashboardScreen = ({ user, drills, setDrills, onExecuteDrill, onViewReport, onEditDrill, onCloneDrill, executionData, scenarios, onCreateDrill }) => {
+const DashboardScreen = ({ user, drills, setDrills, onExecuteDrill, onViewReport, onEditDrill, onCloneDrill, executionData, scenarios, onCreateDrill, onDataRefresh }) => {
   const { t } = useTranslation();
   
   const getStatusClass = (status) => {
-    if (status === 'Active') return 'bg-green-500/20 text-green-300';
-    return 'bg-gray-500/20 text-gray-300';
+    if (status === 'Active') return 'bg-green-100 text-green-800';
+    return 'bg-gray-100 text-gray-700';
   };
   
   const getExecStatusClass = (status) => {
-    if (status === 'InProgress') return 'bg-blue-500/20 text-blue-300';
-    if (status === 'Closed') return 'bg-green-500/20 text-green-300';
-    return 'bg-yellow-500/20 text-yellow-300';
+    if (status === 'InProgress') return 'bg-blue-100 text-blue-800';
+    if (status === 'Closed') return 'bg-green-100 text-green-800';
+    return 'bg-yellow-100 text-yellow-800';
+  };
+
+  const handleDrillStatusUpdate = async (drill, newStatus) => {
+    try {
+        const response = await fetch(`/api/drills/${drill.id}/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ execution_status: newStatus, timestamp: new Date().toISOString() }),
+        });
+        if (!response.ok) throw new Error('Failed to update drill status');
+        await onDataRefresh();
+    } catch (error) {
+        console.error(error);
+        alert('Lỗi cập nhật trạng thái Drill.');
+    }
   };
 
   const handleOpenDrill = (drill) => {
     const today = new Date().toISOString().split('T')[0];
-    if (drill.start_date && drill.end_date && today >= drill.start_date && today <= drill.end_date) {
-        // In a real app, this would be an API call
-        setDrills(drills.map(d => d.id === drill.id ? { ...d, execution_status: 'InProgress', opened_at: new Date().toISOString() } : d));
+    if (drill.start_date && drill.end_date && today >= drill.start_date.split('T')[0] && today <= drill.end_date.split('T')[0]) {
+        handleDrillStatusUpdate(drill, 'InProgress');
     } else {
         alert(t('notInTimeframe'));
     }
@@ -545,12 +610,11 @@ const DashboardScreen = ({ user, drills, setDrills, onExecuteDrill, onViewReport
         const allStepsDone = scenarioSteps.every(s => s.status && s.status.startsWith('Completed'));
         const hasFailedStep = scenarioSteps.some(s => s.status === 'Completed-Failure' || s.status === 'Completed-Blocked');
         
-        return !allStepsDone || (hasFailedStep && !drillExecData[scen.id]?.finalStatus);
+        return !allStepsDone || (hasFailedStep && !drillExecData[scen.id]?.final_status);
     }).map(scen => scenarios[scen.id].name);
 
     if (incompleteScenarios.length === 0) {
-        // In a real app, this would be an API call
-        setDrills(drills.map(d => d.id === drillId ? { ...d, execution_status: 'Closed', closed_at: new Date().toISOString() } : d));
+        handleDrillStatusUpdate(drill, 'Closed');
     } else {
         alert(`${t('closeDrillError')}: ${t('closeDrillErrorMessage', { scenarios: incompleteScenarios.join(', ') })}`);
     }
@@ -565,31 +629,31 @@ const DashboardScreen = ({ user, drills, setDrills, onExecuteDrill, onViewReport
   }
 
   return (
-    <div className="bg-[#334A52]/80 backdrop-blur-sm p-6 rounded-2xl shadow-2xl shadow-black/20 border border-[#506771]">
+    <div className="bg-white p-6 rounded-2xl shadow-lg">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-white">{t('drills')}</h2>
+        <h2 className="text-xl font-bold text-gray-900">{t('drills')}</h2>
         {user.role === 'ADMIN' && (
-            <button onClick={onCreateDrill} className="bg-[#FFDE59] text-black font-bold py-2 px-4 rounded-lg hover:bg-yellow-300 transition-all duration-300 shadow-lg shadow-yellow-400/20 hover:shadow-xl hover:shadow-yellow-400/30">{t('createNewDrill')}</button>
+            <button onClick={onCreateDrill} className="bg-[#00558F] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#004472] transition-all duration-300 shadow-lg shadow-blue-900/20 hover:shadow-xl hover:shadow-blue-800/30">{t('createNewDrill')}</button>
         )}
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full">
-            <thead className="border-b border-[#506771]">
+            <thead className="border-b border-gray-200">
                 <tr>
-                    <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('drillName')}</th>
-                    <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('status')}</th>
-                    <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('action')}</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('drillName')}</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('status')}</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('action')}</th>
                 </tr>
             </thead>
             <tbody>
                 {drills.map(drill => {
                     const inTime = isDrillInTimeframe(drill);
                     return (
-                        <tr key={drill.id} className="border-b border-[#334A52] hover:bg-[#334A52]/50">
+                        <tr key={drill.id} className="border-b border-gray-100 hover:bg-gray-50">
                             <td className="py-3 px-4">
-                                <p className="font-bold text-white">{drill.name}</p>
-                                <p className="text-sm text-gray-400">{drill.description}</p>
-                                <p className="text-xs text-gray-500 mt-1">{t('startDate')}: {drill.start_date} - {t('endDate')}: {drill.end_date}</p>
+                                <p className="font-bold text-gray-900">{drill.name}</p>
+                                <p className="text-sm text-gray-500">{drill.description}</p>
+                                <p className="text-xs text-gray-400 mt-1">{t('startDate')}: {new Date(drill.start_date).toLocaleDateString()} - {t('endDate')}: {new Date(drill.end_date).toLocaleDateString()}</p>
                             </td>
                             <td className="py-3 px-4">
                                 <div className="flex flex-col items-start space-y-1">
@@ -600,21 +664,21 @@ const DashboardScreen = ({ user, drills, setDrills, onExecuteDrill, onViewReport
                             <td className="py-3 px-4">
                                 <div className="flex items-center space-x-2">
                                     {user.role === 'ADMIN' && drill.status === 'Active' && drill.execution_status === 'Scheduled' && (
-                                        <button onClick={() => handleOpenDrill(drill)} disabled={!inTime} title={inTime ? t('openDrill') : t('notInTimeframe')} className="p-2 rounded-lg text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 disabled:text-gray-500 disabled:bg-gray-500/10 disabled:cursor-not-allowed"><OpenIcon /></button>
+                                        <button onClick={() => handleOpenDrill(drill)} disabled={!inTime} title={inTime ? t('openDrill') : t('notInTimeframe')} className="p-2 rounded-lg text-blue-600 bg-blue-100 hover:bg-blue-200 disabled:text-gray-400 disabled:bg-gray-100 disabled:cursor-not-allowed"><OpenIcon /></button>
                                     )}
                                     {user.role === 'ADMIN' && drill.execution_status === 'InProgress' && (
-                                        <button onClick={() => handleCloseDrill(drill.id)} title={t('closeDrill')} className="p-2 rounded-lg text-red-400 bg-red-500/10 hover:bg-red-500/20"><CloseIcon /></button>
+                                        <button onClick={() => handleCloseDrill(drill.id)} title={t('closeDrill')} className="p-2 rounded-lg text-red-600 bg-red-100 hover:bg-red-200"><CloseIcon /></button>
                                     )}
                                     {drill.execution_status === 'InProgress' && (
-                                        <button onClick={() => onExecuteDrill(drill)} title={t('execute')} className="p-2 rounded-lg text-gray-300 bg-gray-500/10 hover:bg-gray-500/20"><ExecuteIcon /></button>
+                                        <button onClick={() => onExecuteDrill(drill)} title={t('execute')} className="p-2 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200"><ExecuteIcon /></button>
                                     )}
                                     {drill.execution_status === 'Closed' && (
-                                        <button onClick={() => onViewReport(drill)} title={t('viewReport')} className="p-2 rounded-lg text-gray-300 bg-gray-500/10 hover:bg-gray-500/20"><ReportIcon /></button>
+                                        <button onClick={() => onViewReport(drill)} title={t('viewReport')} className="p-2 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200"><ReportIcon /></button>
                                     )}
                                     {user.role === 'ADMIN' && (
                                         <>
-                                            <button onClick={() => onEditDrill(drill)} title={t('edit')} className="p-2 rounded-lg text-yellow-300 bg-yellow-500/10 hover:bg-yellow-500/20"><EditIcon /></button>
-                                            <button onClick={() => onCloneDrill(drill)} title={t('clone')} className="p-2 rounded-lg text-purple-300 bg-purple-500/10 hover:bg-purple-500/20"><CloneIcon /></button>
+                                            <button onClick={() => onEditDrill(drill)} title={t('edit')} className="p-2 rounded-lg text-yellow-600 bg-yellow-100 hover:bg-yellow-200"><EditIcon /></button>
+                                            <button onClick={() => onCloneDrill(drill)} title={t('clone')} className="p-2 rounded-lg text-purple-600 bg-purple-100 hover:bg-purple-200"><CloneIcon /></button>
                                         </>
                                     )}
                                 </div>
@@ -629,11 +693,11 @@ const DashboardScreen = ({ user, drills, setDrills, onExecuteDrill, onViewReport
   );
 };
 
-const UserManagementScreen = ({ users, setUsers }) => {
+const UserManagementScreen = ({ users, setUsers, onDataRefresh }) => {
     const { t } = useTranslation();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
-    const [formData, setFormData] = useState({ username: '', role: 'TECHNICAL', first_name: '', last_name: '', description: '' });
+    const [formData, setFormData] = useState({ username: '', role: 'TECHNICAL', first_name: '', last_name: '', description: '', password: '' });
     
     const roleDescriptions = {
         ADMIN: t('adminRoleDesc'),
@@ -643,7 +707,7 @@ const UserManagementScreen = ({ users, setUsers }) => {
 
     const openModalForCreate = () => {
         setEditingUser(null);
-        setFormData({ username: '', role: 'TECHNICAL', first_name: '', last_name: '', description: '' });
+        setFormData({ username: '', role: 'TECHNICAL', first_name: '', last_name: '', description: '', password: '' });
         setIsModalOpen(true);
     };
 
@@ -653,45 +717,87 @@ const UserManagementScreen = ({ users, setUsers }) => {
         setIsModalOpen(true);
     };
 
-    const handleSave = (e) => {
+    const handleSave = async (e) => {
         e.preventDefault();
-        // In a real app, this would be an API call (POST for new, PUT for edit)
+        
         if (editingUser) {
-            setUsers(users.map(u => u.id === editingUser.id ? { ...u, ...formData } : u));
+            try {
+                const response = await fetch(`/api/users/${editingUser.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData),
+                });
+
+                if (!response.ok) throw new Error('Failed to update user');
+                const updatedUser = await response.json();
+                setUsers(users.map(u => (u.id === editingUser.id ? updatedUser : u)));
+            } catch (error) {
+                console.error("Update failed:", error);
+                alert('Lỗi cập nhật người dùng.');
+            }
         } else {
-            const newUser = { ...formData, id: `user-${Date.now()}`, password: 'password' };
-            setUsers([...users, newUser]);
+             try {
+                const response = await fetch(`/api/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData),
+                });
+                if (!response.ok) throw new Error('Failed to create user');
+                const newUser = await response.json();
+                setUsers([...users, newUser]);
+            } catch (error) {
+                console.error("Create failed:", error);
+                alert('Lỗi tạo người dùng mới.');
+            }
         }
         setIsModalOpen(false);
     };
 
+    const handleResetPassword = async (userId) => {
+        if (window.confirm(t('resetPasswordConfirmation'))) {
+            try {
+                const response = await fetch(`/api/users/${userId}/password`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ new_password: 'password' }),
+                });
+                if (!response.ok) throw new Error('Failed to reset password');
+                alert(t('passwordResetSuccess'));
+            } catch (error) {
+                console.error(error);
+                alert(t('passwordResetError'));
+            }
+        }
+    };
+
     return (
         <>
-            <div className="bg-[#334A52]/80 backdrop-blur-sm p-6 rounded-2xl shadow-2xl shadow-black/20 border border-[#506771]">
+            <div className="bg-white p-6 rounded-2xl shadow-lg">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold text-white">{t('userList')}</h2>
-                    <button onClick={openModalForCreate} className="bg-[#FFDE59] text-black font-bold py-2 px-4 rounded-lg hover:bg-yellow-300 transition-all duration-300 shadow-lg shadow-yellow-400/20 hover:shadow-xl hover:shadow-yellow-400/30">{t('addUser')}</button>
+                    <h2 className="text-xl font-bold text-gray-900">{t('userList')}</h2>
+                    <button onClick={openModalForCreate} className="bg-[#00558F] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#004472] transition-all duration-300 shadow-lg shadow-blue-900/20 hover:shadow-xl hover:shadow-blue-800/30">{t('addUser')}</button>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="min-w-full">
-                        <thead className="border-b border-[#506771]">
+                        <thead className="border-b border-gray-200">
                             <tr>
-                                <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('username')}</th>
-                                <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('fullName')}</th>
-                                <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('role')}</th>
-                                <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('description')}</th>
-                                <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('action')}</th>
+                                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('username')}</th>
+                                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('fullName')}</th>
+                                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('role')}</th>
+                                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('action')}</th>
                             </tr>
                         </thead>
                         <tbody>
                             {users.map(u => (
-                                <tr key={u.id} className="border-b border-[#334A52] hover:bg-[#334A52]/50">
-                                    <td className="py-3 px-4 text-white">{u.username}</td>
-                                    <td className="py-3 px-4 text-white">{`${u.last_name} ${u.first_name}`}</td>
-                                    <td className="py-3 px-4 text-gray-300">{u.role}</td>
-                                    <td className="py-3 px-4 text-gray-300">{u.description}</td>
+                                <tr key={u.id} className="border-b border-gray-100 hover:bg-gray-50">
+                                    <td className="py-3 px-4 text-gray-800">{u.username}</td>
+                                    <td className="py-3 px-4 text-gray-800">{`${u.last_name} ${u.first_name}`}</td>
+                                    <td className="py-3 px-4 text-gray-600">{u.role}</td>
                                     <td className="py-3 px-4">
-                                        <button onClick={() => openModalForEdit(u)} className="text-yellow-300 hover:underline">{t('edit')}</button>
+                                        <div className="flex items-center space-x-2">
+                                            <button onClick={() => openModalForEdit(u)} className="text-yellow-600 hover:underline">{t('edit')}</button>
+                                            <button onClick={() => handleResetPassword(u.id)} className="text-red-600 hover:underline">{t('resetPassword')}</button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -701,39 +807,45 @@ const UserManagementScreen = ({ users, setUsers }) => {
             </div>
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className="bg-[#334A52] p-8 rounded-2xl shadow-2xl shadow-black/30 border border-[#506771] w-full max-w-lg">
-                        <h3 className="text-lg font-bold text-white mb-4">{editingUser ? t('editUser') : t('createUser')}</h3>
+                    <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">{editingUser ? t('editUser') : t('createUser')}</h3>
                         <form onSubmit={handleSave} className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-[#C5D2D8]">{t('lastName')}</label>
-                                    <input type="text" value={formData.last_name} onChange={(e) => setFormData({...formData, last_name: e.target.value})} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none"/>
+                                    <label className="block text-sm font-medium text-gray-700">{t('lastName')}</label>
+                                    <input type="text" value={formData.last_name} onChange={(e) => setFormData({...formData, last_name: e.target.value})} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"/>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-[#C5D2D8]">{t('firstName')}</label>
-                                    <input type="text" value={formData.first_name} onChange={(e) => setFormData({...formData, first_name: e.target.value})} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none"/>
+                                    <label className="block text-sm font-medium text-gray-700">{t('firstName')}</label>
+                                    <input type="text" value={formData.first_name} onChange={(e) => setFormData({...formData, first_name: e.target.value})} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"/>
                                 </div>
                             </div>
                              <div>
-                                <label className="block text-sm font-medium text-[#C5D2D8]">{t('username')}</label>
-                                <input type="text" value={formData.username} onChange={(e) => setFormData({...formData, username: e.target.value})} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none"/>
+                                <label className="block text-sm font-medium text-gray-700">{t('username')}</label>
+                                <input type="text" value={formData.username} onChange={(e) => setFormData({...formData, username: e.target.value})} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"/>
+                            </div>
+                            {!editingUser && (
+                                <div>
+                                <label className="block text-sm font-medium text-gray-700">{t('password')}</label>
+                                <input type="password" placeholder="Để trống sẽ mặc định là 'password'" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"/>
+                                </div>
+                            )}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">{t('description')}</label>
+                                <input type="text" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"/>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-[#C5D2D8]">{t('description')}</label>
-                                <input type="text" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none"/>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-[#C5D2D8]">{t('role')}</label>
-                                <select value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none">
+                                <label className="block text-sm font-medium text-gray-700">{t('role')}</label>
+                                <select value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none">
                                     <option value="TECHNICAL">TECHNICAL</option>
                                     <option value="BUSINESS">BUSINESS</option>
                                     <option value="ADMIN">ADMIN</option>
                                 </select>
-                                <p className="text-xs text-gray-400 mt-2 p-2 bg-[#22333B] rounded-md">{roleDescriptions[formData.role]}</p>
+                                <p className="text-xs text-gray-500 mt-2 p-2 bg-gray-100 rounded-md">{roleDescriptions[formData.role]}</p>
                             </div>
                             <div className="flex justify-end space-x-2 pt-4">
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="bg-gray-700 py-2 px-4 rounded-lg text-gray-300 hover:bg-gray-600">{t('cancel')}</button>
-                                <button type="submit" className="bg-yellow-400 text-black py-2 px-4 rounded-lg hover:bg-yellow-500 font-semibold">{t('save')}</button>
+                                <button type="button" onClick={() => setIsModalOpen(false)} className="bg-gray-200 py-2 px-4 rounded-lg text-gray-800 hover:bg-gray-300">{t('cancel')}</button>
+                                <button type="submit" className="bg-[#00558F] hover:bg-[#004472] text-white font-semibold py-2 px-4 rounded-lg">{t('save')}</button>
                             </div>
                         </form>
                     </div>
@@ -743,7 +855,7 @@ const UserManagementScreen = ({ users, setUsers }) => {
     );
 };
 
-const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, executionData, setExecutionData }) => {
+const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, executionData, onExecutionUpdate, onDataRefresh }) => {
     const { t } = useTranslation();
     const [activeScenarioId, setActiveScenarioId] = useState(null);
     const [completionModal, setCompletionModal] = useState(null);
@@ -754,7 +866,7 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, executionData,
         }
         return item.dependsOn.every(depId => {
             const dependency = allItems[depId];
-            if (!dependency) return false; // Dependency not found
+            if (!dependency) return false;
             
             return dependency.steps.every(stepId => execData[stepId]?.status?.startsWith('Completed'));
         });
@@ -772,46 +884,88 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, executionData,
 
     const activeScenario = activeScenarioId ? scenariosWithLockStatus.find(s => s.id === activeScenarioId) : null;
 
+    const updateExecutionStep = async (payload, isCompletion = false) => {
+        try {
+            const response = await fetch('/api/execution/step', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) throw new Error('Failed to update step');
+            const updatedStep = await response.json();
+            onExecutionUpdate(drill.id, updatedStep.step_id, updatedStep);
+
+            // Auto-start next steps if this was a completion
+            if (isCompletion && updatedStep.status.startsWith('Completed')) {
+                const completedStepId = updatedStep.step_id;
+                const scenario = scenarios[activeScenarioId];
+                if (scenario) {
+                    for (const nextStepId of scenario.steps) {
+                        const nextStep = steps[nextStepId];
+                        const isPending = !(executionData[drill.id]?.[nextStepId]);
+                        if (isPending && nextStep.dependsOn?.includes(completedStepId)) {
+                            // Re-evaluate dependencies with the latest state
+                            const allDepsMet = nextStep.dependsOn.every(depId => {
+                                const depState = (depId === completedStepId) ? updatedStep : executionData[drill.id]?.[depId];
+                                return depState?.status?.startsWith('Completed');
+                            });
+                            if (allDepsMet) {
+                                handleStepStart(nextStepId);
+                            }
+                        }
+                    }
+                }
+            }
+
+        } catch (error) {
+            console.error(error);
+            alert('Lỗi cập nhật bước thực thi.');
+        }
+    };
+
     const handleStepStart = (stepId) => {
-        // In a real app, this would be an API call
-        setExecutionData(prev => {
-            const drillData = prev[drill.id] || {};
-            return { ...prev, [drill.id]: { ...drillData, [stepId]: { ...drillData[stepId], status: 'InProgress', started_at: new Date().toISOString(), assignee: user.name } } };
+        updateExecutionStep({
+            drill_id: drill.id,
+            step_id: stepId,
+            status: 'InProgress',
+            started_at: new Date().toISOString(),
+            assignee: user.name
         });
     };
 
     const handleStepComplete = (stepId, result) => {
-        // In a real app, this would be an API call
-        setExecutionData(prev => {
-            const drillData = prev[drill.id] || {};
-            const newDrillData = { ...drillData };
-            newDrillData[stepId] = { ...newDrillData[stepId], status: result.status, result_text: result.text, completed_at: new Date().toISOString() };
-            
-            const scenario = scenarios[activeScenarioId];
-            if (scenario) {
-                scenario.steps.forEach(nextStepId => {
-                    const nextStep = steps[nextStepId];
-                    const nextStepState = newDrillData[nextStepId] || { status: 'Pending' };
-                    if (nextStepState.status === 'Pending' && nextStep.dependsOn && nextStep.dependsOn.length > 0) {
-                        const allDepsMet = nextStep.dependsOn.every(depId => newDrillData[depId]?.status?.startsWith('Completed'));
-                        if (allDepsMet) {
-                             newDrillData[nextStepId] = { ...nextStepState, status: 'InProgress', started_at: new Date().toISOString(), assignee: user.name };
-                        }
-                    }
-                });
-            }
-
-            return { ...prev, [drill.id]: newDrillData };
-        });
+        const currentStepState = executionData[drill.id]?.[stepId] || {};
+        updateExecutionStep({
+            drill_id: drill.id,
+            step_id: stepId,
+            status: result.status,
+            completed_at: new Date().toISOString(),
+            result_text: result.text,
+            started_at: currentStepState.started_at, 
+            assignee: currentStepState.assignee,
+        }, true); // Pass true for isCompletion
         setCompletionModal(null);
     };
     
-    const handleScenarioConfirmation = (scenId, finalStatus, finalReason) => {
-        // In a real app, this would be an API call
-        setExecutionData(prev => {
-            const drillData = prev[drill.id] || {};
-            return { ...prev, [drill.id]: { ...drillData, [scenId]: { ...drillData[scenId], finalStatus, finalReason } } };
-        });
+    const handleScenarioConfirmation = async (scenId, finalStatus, finalReason) => {
+        try {
+            const response = await fetch('/api/execution/scenario', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    drill_id: drill.id,
+                    scenario_id: scenId,
+                    final_status: finalStatus,
+                    final_reason: finalReason
+                })
+            });
+            if (!response.ok) throw new Error('Failed to confirm scenario');
+            const confirmedScenario = await response.json();
+            onExecutionUpdate(drill.id, confirmedScenario.scenario_id, confirmedScenario);
+        } catch (error) {
+            console.error(error);
+            alert('Lỗi xác nhận kịch bản.');
+        }
     };
 
     const getStepState = (stepId) => executionData[drill.id]?.[stepId] || { status: 'Pending' };
@@ -819,20 +973,20 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, executionData,
     return (
         <>
             <div>
-                <button onClick={onBack} className="text-yellow-300 hover:underline mb-4">&larr; {t('backToDashboard')}</button>
+                <button onClick={onBack} className="text-[#00558F] hover:underline mb-4">&larr; {t('backToDashboard')}</button>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-1 bg-[#334A52]/80 backdrop-blur-sm p-4 rounded-xl border border-[#506771]">
-                        <h2 className="text-lg font-bold text-white mb-3">{t('scenarios')}</h2>
+                    <div className="lg:col-span-1 bg-white p-4 rounded-xl shadow-lg">
+                        <h2 className="text-lg font-bold text-gray-900 mb-3">{t('scenarios')}</h2>
                         <div className="space-y-2">
                             {scenariosWithLockStatus.map(scen => (
-                                <button key={scen.id} onClick={() => setActiveScenarioId(scen.id)} disabled={scen.isLocked} className={`w-full text-left p-3 rounded-lg border transition-all duration-200 ${activeScenarioId === scen.id ? 'bg-yellow-400/10 border-yellow-400' : 'bg-[#22333B]/50 border-[#506771] hover:border-gray-600'} ${scen.isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                    <h4 className="font-semibold text-white flex items-center">{scen.isLocked && <LockIcon />}{scen.name}</h4>
-                                    <span className={`text-xs px-2 py-0.5 rounded-full ${scen.role === 'TECHNICAL' ? 'bg-purple-500/20 text-purple-300' : 'bg-orange-500/20 text-orange-300'}`}>{scen.role}</span>
+                                <button key={scen.id} onClick={() => setActiveScenarioId(scen.id)} disabled={scen.isLocked} className={`w-full text-left p-3 rounded-lg border transition-all duration-200 ${activeScenarioId === scen.id ? 'bg-sky-100 border-[#00558F]' : 'bg-gray-50 border-gray-200 hover:border-gray-400'} ${scen.isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                    <h4 className="font-semibold text-gray-900 flex items-center">{scen.isLocked && <LockIcon />}{scen.name}</h4>
+                                    <span className={`text-xs px-2 py-0.5 rounded-full ${scen.role === 'TECHNICAL' ? 'bg-purple-100 text-purple-800' : 'bg-orange-100 text-orange-800'}`}>{scen.role}</span>
                                 </button>
                             ))}
                         </div>
                     </div>
-                    <div className="lg:col-span-2 bg-[#334A52]/80 backdrop-blur-sm p-6 rounded-xl border border-[#506771]">
+                    <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg">
                         {activeScenario ? (
                             <ScenarioDetail 
                                 scenario={activeScenario}
@@ -868,7 +1022,7 @@ const ScenarioDetail = ({ scenario, steps, getStepState, handleStepStart, setCom
     const scenarioSteps = scenario.steps.map(stepId => getStepState(stepId));
     const allStepsDone = scenarioSteps.every(s => s.status && s.status.startsWith('Completed'));
     const hasFailedStep = scenarioSteps.some(s => s.status === 'Completed-Failure' || s.status === 'Completed-Blocked');
-    const isConfirmed = !!drillExecData[scenario.id]?.finalStatus;
+    const isConfirmed = !!drillExecData[scenario.id]?.final_status;
 
     const [finalStatus, setFinalStatus] = useState('Failure-Confirmed');
     const [finalReason, setFinalReason] = useState('');
@@ -886,38 +1040,38 @@ const ScenarioDetail = ({ scenario, steps, getStepState, handleStepStart, setCom
         return (
             <div className="flex flex-col items-center justify-center h-full text-center">
                 <LockIcon />
-                <h3 className="text-xl font-bold text-white mt-4">{t('scenarioLocked')}</h3>
-                <p className="text-gray-400">{t('scenarioLockedMessage', { scenarioName: dependencyName })}</p>
+                <h3 className="text-xl font-bold text-gray-900 mt-4">{t('scenarioLocked')}</h3>
+                <p className="text-gray-500">{t('scenarioLockedMessage', { scenarioName: dependencyName })}</p>
             </div>
         )
     }
 
     return (
         <div>
-            <h2 className="text-2xl font-bold text-white mb-4">{scenario.name}</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">{scenario.name}</h2>
             <div className="space-y-3">
                 {scenario.steps.map(stepId => {
                     const step = steps[stepId];
                     if (!step) return null; // Guard against missing step data
                     const state = getStepState(stepId);
-                    let statusIcon = '🕒'; let borderColor = 'border-[#506771]';
+                    let statusIcon = '🕒'; let borderColor = 'border-gray-300';
                     if (state.status === 'InProgress') { statusIcon = '▶️'; borderColor = 'border-blue-500'; }
                     if (state.status === 'Completed-Success') { statusIcon = '✅'; borderColor = 'border-green-500'; }
                     if (state.status === 'Completed-Failure' || state.status === 'Completed-Blocked') { statusIcon = '❌'; borderColor = 'border-red-500'; }
 
                     return (
-                        <div key={stepId} className={`p-4 rounded-lg border-l-4 bg-[#22333B]/50 ${borderColor} ${state.status?.includes('Failure') || state.status?.includes('Blocked') ? 'bg-red-500/10' : ''}`}>
+                        <div key={stepId} className={`p-4 rounded-lg border-l-4 bg-gray-50 ${borderColor} ${state.status?.includes('Failure') || state.status?.includes('Blocked') ? 'bg-red-50' : ''}`}>
                             <div className="flex justify-between items-start">
                                 <div>
                                     <div className="flex items-center justify-between">
-                                        <h4 className="font-bold text-lg text-white">{statusIcon} {step.title}</h4>
-                                        {step.estimated_time && <span className="text-sm text-gray-400 ml-4 flex items-center"><ClockIcon />{step.estimated_time}</span>}
+                                        <h4 className="font-bold text-lg text-gray-900">{statusIcon} {step.title}</h4>
+                                        {step.estimated_time && <span className="text-sm text-gray-500 ml-4 flex items-center"><ClockIcon />{step.estimated_time}</span>}
                                     </div>
-                                    <div className="prose prose-sm prose-invert mt-2 max-w-none" dangerouslySetInnerHTML={{ __html: step.description }} />
+                                    <div className="prose prose-sm mt-2 max-w-none text-gray-600" dangerouslySetInnerHTML={{ __html: step.description }} />
                                 </div>
                                 <div className="text-right flex-shrink-0 ml-4">
-                                    {state.status === 'Pending' && <button onClick={() => handleStepStart(stepId)} className="bg-blue-500/80 text-white text-sm font-semibold py-1 px-3 rounded-lg hover:bg-blue-500">{t('start')}</button>}
-                                    {state.status === 'InProgress' && <button onClick={() => setCompletionModal({ stepId })} className="bg-green-500/80 text-white text-sm font-semibold py-1 px-3 rounded-lg hover:bg-green-500">{t('complete')}</button>}
+                                    {state.status === 'Pending' && <button onClick={() => handleStepStart(stepId)} className="bg-blue-500 text-white text-sm font-semibold py-1 px-3 rounded-lg hover:bg-blue-600">{t('start')}</button>}
+                                    {state.status === 'InProgress' && <button onClick={() => setCompletionModal({ stepId })} className="bg-green-500 text-white text-sm font-semibold py-1 px-3 rounded-lg hover:bg-green-600">{t('complete')}</button>}
                                 </div>
                             </div>
                         </div>
@@ -925,23 +1079,23 @@ const ScenarioDetail = ({ scenario, steps, getStepState, handleStepStart, setCom
                 })}
             </div>
             {allStepsDone && hasFailedStep && !isConfirmed && (
-                <div className="mt-6 border-t border-[#506771] pt-4">
-                    <h3 className="text-lg font-bold text-red-400">{t('confirmScenarioResult')}</h3>
-                    <p className="text-sm text-gray-400 mb-2">{t('confirmScenarioResultMessage')}</p>
+                <div className="mt-6 border-t border-gray-200 pt-4">
+                    <h3 className="text-lg font-bold text-red-600">{t('confirmScenarioResult')}</h3>
+                    <p className="text-sm text-gray-600 mb-2">{t('confirmScenarioResultMessage')}</p>
                      <div className="mb-2">
-                        <label className="block text-sm font-medium text-gray-400">{t('finalResult')}</label>
-                        <select value={finalStatus} onChange={(e) => setFinalStatus(e.target.value)} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none">
+                        <label className="block text-sm font-medium text-gray-700">{t('finalResult')}</label>
+                        <select value={finalStatus} onChange={(e) => setFinalStatus(e.target.value)} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none">
                             <option value="Failure-Confirmed">{t('failureConfirmed')}</option>
                             <option value="Success-Overridden">{t('successOverridden')}</option>
                         </select>
                     </div>
-                    <textarea value={finalReason} onChange={(e) => setFinalReason(e.target.value)} rows="3" className="w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none" placeholder={t('reasonPlaceholder')}></textarea>
+                    <textarea value={finalReason} onChange={(e) => setFinalReason(e.target.value)} rows="3" className="w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none" placeholder={t('reasonPlaceholder')}></textarea>
                     <button onClick={handleConfirm} className="mt-2 bg-yellow-400 text-black font-bold py-2 px-4 rounded-lg hover:bg-yellow-500">{t('confirmResult')}</button>
                 </div>
             )}
             {isConfirmed && (
-                <div className="mt-6 border-t border-[#506771] pt-4">
-                     <h3 className="text-lg font-bold text-green-400">{t('resultConfirmed')}</h3>
+                <div className="mt-6 border-t border-gray-200 pt-4">
+                     <h3 className="text-lg font-bold text-green-600">{t('resultConfirmed')}</h3>
                 </div>
             )}
         </div>
@@ -959,24 +1113,24 @@ const CompletionModal = ({ step, onComplete, onClose }) => {
     };
 
     return (
-        <div className="bg-[#334A52] p-8 rounded-2xl shadow-2xl shadow-black/30 border border-[#506771] w-full max-w-md">
-            <h3 className="text-lg font-bold text-white mb-4">{t('completeStepTitle', { stepTitle: step.title })}</h3>
+        <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">{t('completeStepTitle', { stepTitle: step.title })}</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-400">{t('status')}</label>
-                    <select value={status} onChange={(e) => setStatus(e.target.value)} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none">
+                    <label className="block text-sm font-medium text-gray-700">{t('status')}</label>
+                    <select value={status} onChange={(e) => setStatus(e.target.value)} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none">
                         <option value="Completed-Success">{t('success')}</option>
                         <option value="Completed-Failure">{t('failure')}</option>
                         <option value="Completed-Blocked">{t('blocked')}</option>
                     </select>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-400">{t('resultNotes')}</label>
-                    <textarea value={resultText} onChange={(e) => setResultText(e.target.value)} rows="4" className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none"/>
+                    <label className="block text-sm font-medium text-gray-700">{t('resultNotes')}</label>
+                    <textarea value={resultText} onChange={(e) => setResultText(e.target.value)} rows="4" className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"/>
                 </div>
                 <div className="flex justify-end space-x-2 pt-4">
-                    <button type="button" onClick={onClose} className="bg-gray-700 py-2 px-4 rounded-lg text-gray-300 hover:bg-gray-600">{t('cancel')}</button>
-                    <button type="submit" className="bg-yellow-400 text-black font-semibold py-2 px-4 rounded-lg hover:bg-yellow-500">{t('submit')}</button>
+                    <button type="button" onClick={onClose} className="bg-gray-200 py-2 px-4 rounded-lg text-gray-800 hover:bg-gray-300">{t('cancel')}</button>
+                    <button type="submit" className="bg-[#00558F] hover:bg-[#004472] text-white font-semibold py-2 px-4 rounded-lg">{t('submit')}</button>
                 </div>
             </form>
         </div>
@@ -984,13 +1138,13 @@ const CompletionModal = ({ step, onComplete, onClose }) => {
 };
 
 const KpiCard = ({ title, value, icon, iconBgColor }) => (
-    <div className="bg-[#22333B]/50 p-4 rounded-lg border border-[#506771] flex items-center">
+    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex items-center">
         <div className={`p-3 rounded-full mr-4 ${iconBgColor}`}>
             {icon}
         </div>
         <div>
-            <p className="text-sm text-gray-400">{title}</p>
-            <p className="text-2xl font-bold text-white">{value}</p>
+            <p className="text-sm text-gray-500">{title}</p>
+            <p className="text-2xl font-bold text-gray-900">{value}</p>
         </div>
     </div>
 );
@@ -1021,28 +1175,28 @@ const ReportScreen = ({ drill, executionData, scenarios, steps, onBack }) => {
 
     return (
         <div>
-            <button onClick={onBack} className="text-yellow-300 hover:underline mb-4">&larr; {t('backToDashboard')}</button>
+            <button onClick={onBack} className="text-[#00558F] hover:underline mb-4">&larr; {t('backToDashboard')}</button>
             <div className="space-y-6">
-                <div className="bg-[#334A52]/80 backdrop-blur-sm p-6 rounded-xl border border-[#506771]">
-                    <h2 className="text-2xl font-bold text-white mb-4">{t('drillReportTitle', { drillName: drill.name })}</h2>
+                <div className="bg-white p-6 rounded-xl shadow-lg">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('drillReportTitle', { drillName: drill.name })}</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                        <KpiCard title={t('totalTime')} value={totalDuration} icon={<ClockIcon />} iconBgColor="bg-blue-500/30" />
-                        <KpiCard title={t('participants')} value={participants.length} icon={<UsersIcon />} iconBgColor="bg-purple-500/30" />
-                        <KpiCard title={t('successfulSteps')} value={successfulSteps} icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>} iconBgColor="bg-green-500/30" />
-                        <KpiCard title={t('failedSteps')} value={failedSteps} icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>} iconBgColor="bg-red-500/30" />
+                        <KpiCard title={t('totalTime')} value={totalDuration} icon={<ClockIcon />} iconBgColor="bg-blue-100" />
+                        <KpiCard title={t('participants')} value={participants.length} icon={<UsersIcon />} iconBgColor="bg-purple-100" />
+                        <KpiCard title={t('successfulSteps')} value={successfulSteps} icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>} iconBgColor="bg-green-100" />
+                        <KpiCard title={t('failedSteps')} value={failedSteps} icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>} iconBgColor="bg-red-100" />
                     </div>
                 </div>
 
-                <div className="bg-[#334A52]/80 backdrop-blur-sm p-6 rounded-xl border border-[#506771]">
-                    <h3 className="text-xl font-bold text-white mb-4">{t('scenarioSummary')}</h3>
+                <div className="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 className="text-xl font-bold text-gray-900 mb-4">{t('scenarioSummary')}</h3>
                     <div className="overflow-x-auto">
                         <table className="min-w-full">
-                            <thead className="border-b border-[#506771]">
+                            <thead className="border-b border-gray-200">
                                 <tr>
                                     <th className="py-2 px-4 w-12"></th>
-                                    <th className="py-2 px-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('scenarioName')}</th>
-                                    <th className="py-2 px-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('totalTime')}</th>
-                                    <th className="py-2 px-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('status')}</th>
+                                    <th className="py-2 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('scenarioName')}</th>
+                                    <th className="py-2 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('totalTime')}</th>
+                                    <th className="py-2 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('status')}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1059,7 +1213,7 @@ const ReportScreen = ({ drill, executionData, scenarios, steps, onBack }) => {
                                     let scenarioStatus = t('notCompleted');
                                     if (allStepsDone) {
                                         if (hasFailed) {
-                                            if (drillExecData[scenId]?.finalStatus === 'Success-Overridden') {
+                                            if (drillExecData[scenId]?.final_status === 'Success-Overridden') {
                                                 scenarioStatus = t('completedWithOverride');
                                             } else {
                                                 scenarioStatus = t('failure');
@@ -1076,17 +1230,17 @@ const ReportScreen = ({ drill, executionData, scenarios, steps, onBack }) => {
                                         : 'N/A';
 
                                     const getScenarioStatusClass = (status) => {
-                                        if (status === t('complete')) return 'bg-green-500/20 text-green-300';
-                                        if (status.includes(t('failure'))) return 'bg-red-500/20 text-red-300';
-                                        if (status.includes(t('completedWithOverride'))) return 'bg-yellow-500/20 text-yellow-300';
-                                        return 'bg-gray-700 text-gray-300';
+                                        if (status === t('complete')) return 'bg-green-100 text-green-800';
+                                        if (status.includes(t('failure'))) return 'bg-red-100 text-red-800';
+                                        if (status.includes(t('completedWithOverride'))) return 'bg-yellow-100 text-yellow-800';
+                                        return 'bg-gray-100 text-gray-800';
                                     }
 
                                     return (
                                         <React.Fragment key={scenId}>
-                                            <tr className="border-t border-[#506771] cursor-pointer hover:bg-[#334A52]/50" onClick={() => toggleScenario(scenId)}>
+                                            <tr className="border-t border-gray-100 cursor-pointer hover:bg-gray-50" onClick={() => toggleScenario(scenId)}>
                                                 <td className="py-3 px-4 text-center"><svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg></td>
-                                                <td className="py-3 px-4 font-semibold text-white">{scenario.name}</td>
+                                                <td className="py-3 px-4 font-semibold text-gray-800">{scenario.name}</td>
                                                 <td className="py-3 px-4">{scenarioDuration}</td>
                                                 <td className="py-3 px-4">
                                                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getScenarioStatusClass(scenarioStatus)}`}>
@@ -1095,13 +1249,13 @@ const ReportScreen = ({ drill, executionData, scenarios, steps, onBack }) => {
                                                 </td>
                                             </tr>
                                             {isExpanded && (
-                                                <tr className="bg-[#22333B]/50">
+                                                <tr className="bg-gray-50">
                                                     <td colSpan="4" className="p-4">
-                                                        <div className="p-2 bg-[#334A52] rounded-md">
-                                                            {drillExecData[scenId]?.finalReason && (
-                                                                <div className="mb-2 p-2 bg-yellow-500/10 border-l-4 border-yellow-400 text-yellow-300">
+                                                        <div className="p-2 bg-white rounded-md">
+                                                            {drillExecData[scenId]?.final_reason && (
+                                                                <div className="mb-2 p-2 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800">
                                                                     <p className="font-bold text-sm">{t('confirmationReason')}</p>
-                                                                    <p className="text-sm">{drillExecData[scenId].finalReason}</p>
+                                                                    <p className="text-sm">{drillExecData[scenId].final_reason}</p>
                                                                 </div>
                                                             )}
                                                             <table className="min-w-full">
@@ -1112,10 +1266,10 @@ const ReportScreen = ({ drill, executionData, scenarios, steps, onBack }) => {
                                                                     const state = drillExecData[stepId] || {};
                                                                     return (
                                                                         <tr key={stepId}>
-                                                                            <td className="py-1 pl-4 w-1/2 text-gray-300">{step.title}</td>
-                                                                            <td className="py-1 text-gray-400">{state.status || 'Pending'}</td>
-                                                                            <td className="py-1 text-gray-400">{formatStepDuration(state.started_at, state.completed_at)}</td>
-                                                                            <td className="py-1 text-gray-400">{state.assignee || 'N/A'}</td>
+                                                                            <td className="py-1 pl-4 w-1/2 text-gray-600">{step.title}</td>
+                                                                            <td className="py-1 text-gray-500">{state.status || 'Pending'}</td>
+                                                                            <td className="py-1 text-gray-500">{formatStepDuration(state.started_at, state.completed_at)}</td>
+                                                                            <td className="py-1 text-gray-500">{state.assignee || 'N/A'}</td>
                                                                         </tr>
                                                                     )
                                                                 })}
@@ -1137,7 +1291,7 @@ const ReportScreen = ({ drill, executionData, scenarios, steps, onBack }) => {
     )
 };
 
-const CreateDrillScreen = ({ setActiveScreen, setDb, db, user, drillToEdit, onDoneEditing }) => {
+const CreateDrillScreen = ({ setActiveScreen, onDataRefresh, db, user, drillToEdit, onDoneEditing }) => {
     const { t } = useTranslation();
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
@@ -1156,8 +1310,8 @@ const CreateDrillScreen = ({ setActiveScreen, setDb, db, user, drillToEdit, onDo
             setDescription(drillToEdit.description);
             setBasis(drillToEdit.basis);
             setStatus(drillToEdit.status);
-            setStartDate(drillToEdit.start_date || new Date().toISOString().split('T')[0]);
-            setEndDate(drillToEdit.end_date || new Date().toISOString().split('T')[0]);
+            setStartDate(new Date(drillToEdit.start_date).toISOString().split('T')[0]);
+            setEndDate(new Date(drillToEdit.end_date).toISOString().split('T')[0]);
             const selectedIds = new Set(drillToEdit.scenarios.map(s => s.id));
             const selected = drillToEdit.scenarios.map(s => ({ ...db.scenarios[s.id], dependsOn: s.dependsOn }));
             setSelectedScenarios(selected);
@@ -1190,7 +1344,7 @@ const CreateDrillScreen = ({ setActiveScreen, setDb, db, user, drillToEdit, onDo
             setAvailableScenarios([...availableScenarios, { ...draggedItem }]);
             const newSelected = selectedScenarios.filter(s => s.id !== draggedItem.id);
             const updatedSelected = newSelected.map(s => {
-                const newDependsOn = s.dependsOn.filter(depId => depId !== draggedItem.id);
+                const newDependsOn = (s.dependsOn || []).filter(depId => depId !== draggedItem.id);
                 return { ...s, dependsOn: newDependsOn };
             });
             setSelectedScenarios(updatedSelected);
@@ -1229,101 +1383,105 @@ const CreateDrillScreen = ({ setActiveScreen, setDb, db, user, drillToEdit, onDo
         setSelectedScenarios(selectedScenarios.map(s => s.id === scenarioId ? { ...s, dependsOn: dependencyIds } : s));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!name) {
             alert('Vui lòng nhập tên Drill.');
             return;
         }
 
-        const drillData = {
+        const payload = {
             name,
             description,
             basis,
             start_date: startDate,
             end_date: endDate,
             status: basis ? status : 'Draft',
-            execution_status: drillToEdit ? drillToEdit.execution_status : 'Scheduled',
             scenarios: selectedScenarios.map(({ id, dependsOn }) => ({ id, dependsOn })),
-            opened_at: drillToEdit ? drillToEdit.opened_at : null,
-            closed_at: drillToEdit ? drillToEdit.closed_at : null,
         };
-        
-        // In a real app, this would be a POST/PUT API call
-        if (drillToEdit && drillToEdit.id) {
-            setDb(prevDb => ({
-                ...prevDb,
-                drills: prevDb.drills.map(d => d.id === drillToEdit.id ? { ...d, ...drillData } : d)
-            }));
-        } else {
-            const newDrill = { ...drillData, id: `drill-${Date.now()}` };
-            setDb(prevDb => ({
-                ...prevDb,
-                drills: [...prevDb.drills, newDrill]
-            }));
+
+        try {
+            let response;
+            if (drillToEdit && drillToEdit.id) {
+                response = await fetch(`/api/drills/${drillToEdit.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } else {
+                 response = await fetch('/api/drills', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            }
+            if (!response.ok) throw new Error('Failed to save drill');
+            onDataRefresh();
+            onDoneEditing();
+        } catch (error) {
+            console.error(error);
+            alert('Lỗi lưu Drill.');
         }
-        
-        onDoneEditing();
     };
 
     return (
-        <div className="bg-[#334A52]/80 backdrop-blur-sm p-6 rounded-2xl shadow-2xl shadow-black/20 border border-[#506771]">
-            <button onClick={onDoneEditing} className="text-yellow-300 hover:underline mb-4">&larr; {t('back')}</button>
-            <h2 className="text-2xl font-bold text-white mb-6">{drillToEdit ? t('editDrillTitle') : t('createDrillTitle')}</h2>
+        <div className="bg-white p-6 rounded-2xl shadow-lg">
+            <button onClick={onDoneEditing} className="text-[#00558F] hover:underline mb-4">&larr; {t('back')}</button>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">{drillToEdit ? t('editDrillTitle') : t('createDrillTitle')}</h2>
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-sm font-medium text-[#C5D2D8] mb-1">{t('drillName')}</label>
-                        <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full px-4 py-2 bg-[#22333B] border border-[#506771] rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none transition" required />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('drillName')}</label>
+                        <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none transition" required />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-[#C5D2D8] mb-1">{t('drillStatus')}</label>
-                        <select value={status} onChange={e => setStatus(e.target.value)} disabled={!basis} className="w-full px-4 py-2 bg-[#22333B] border border-[#506771] rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none transition disabled:opacity-50">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('drillStatus')}</label>
+                        <select value={status} onChange={e => setStatus(e.target.value)} disabled={!basis} className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none transition disabled:opacity-50">
                             <option value="Draft">{t('draft')}</option>
                             <option value="Active">{t('active')}</option>
                         </select>
-                         {!basis && <p className="text-xs text-yellow-400 mt-1">{t('basisRequiredMessage')}</p>}
+                         {!basis && <p className="text-xs text-yellow-600 mt-1">{t('basisRequiredMessage')}</p>}
                     </div>
                 </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-sm font-medium text-[#C5D2D8] mb-1">{t('startDate')}</label>
-                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-4 py-2 bg-[#22333B] border border-[#506771] rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none transition" required />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('startDate')}</label>
+                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none transition" required />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-[#C5D2D8] mb-1">{t('endDate')}</label>
-                        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full px-4 py-2 bg-[#22333B] border border-[#506771] rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none transition" required />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('endDate')}</label>
+                        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none transition" required />
                     </div>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-[#C5D2D8] mb-1">{t('description')}</label>
-                    <textarea value={description} onChange={e => setDescription(e.target.value)} rows="2" className="w-full px-4 py-2 bg-[#22333B] border border-[#506771] rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none transition" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('description')}</label>
+                    <textarea value={description} onChange={e => setDescription(e.target.value)} rows="2" className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none transition" />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-[#C5D2D8] mb-1">{t('basisForConstruction')}</label>
-                    <textarea value={basis} onChange={e => setBasis(e.target.value)} rows="2" className="w-full px-4 py-2 bg-[#22333B] border border-[#506771] rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none transition" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('basisForConstruction')}</label>
+                    <textarea value={basis} onChange={e => setBasis(e.target.value)} rows="2" className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none transition" />
                 </div>
 
 
                 <div className="flex space-x-6">
                     <div className="w-1/3">
-                        <h3 className="font-bold text-white mb-2">{t('availableScenarios')}</h3>
-                        <div onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, 'available')} className="bg-[#22333B]/50 p-4 rounded-lg min-h-[300px] border-dashed border-2 border-gray-700 space-y-2">
+                        <h3 className="font-bold text-gray-900 mb-2">{t('availableScenarios')}</h3>
+                        <div onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, 'available')} className="bg-gray-100 p-4 rounded-lg min-h-[300px] border-dashed border-2 border-gray-300 space-y-2">
                             {availableScenarios.map(scen => (
-                                <div key={scen.id} draggable onDragStart={(e) => handleDragStart(e, scen, 'available')} className="p-3 bg-[#334A52] border border-[#506771] rounded-md cursor-move shadow-sm hover:bg-gray-700/50 wiggle-on-drag">
-                                    <p className="font-semibold text-white">{scen.name}</p>
-                                    <p className="text-xs text-gray-400">{scen.role}</p>
+                                <div key={scen.id} draggable onDragStart={(e) => handleDragStart(e, scen, 'available')} className="p-3 bg-white border border-gray-200 rounded-md cursor-move shadow-sm hover:bg-gray-50 wiggle-on-drag">
+                                    <p className="font-semibold text-gray-800">{scen.name}</p>
+                                    <p className="text-xs text-gray-500">{scen.role}</p>
                                 </div>
                             ))}
                         </div>
                     </div>
                     <div className="w-2/3">
-                        <h3 className="font-bold text-white mb-2">{t('scenariosInDrill')}</h3>
-                        <div onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, 'selected')} className="bg-yellow-900/10 p-4 rounded-lg min-h-[300px] border-dashed border-2 border-yellow-400/50 space-y-2">
+                        <h3 className="font-bold text-gray-900 mb-2">{t('scenariosInDrill')}</h3>
+                        <div onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, 'selected')} className="bg-sky-50 p-4 rounded-lg min-h-[300px] border-dashed border-2 border-sky-300 space-y-2">
                             {selectedScenarios.length === 0 && <p className="text-gray-500 text-center pt-16">{t('dragScenarioHere')}</p>}
                             {selectedScenarios.map((scen, index) => (
-                                <div key={scen.id} draggable onDragStart={(e) => handleDragStart(e, scen, 'selected')} onDragOver={handleDragOver} onDrop={(e) => handleDropOnItem(e, scen.id)} className="p-3 bg-[#334A52] border border-[#506771] rounded-md shadow-sm cursor-move wiggle-on-drag">
-                                    <p className="font-semibold text-white">{index + 1}. {scen.name}</p>
+                                <div key={scen.id} draggable onDragStart={(e) => handleDragStart(e, scen, 'selected')} onDragOver={handleDragOver} onDrop={(e) => handleDropOnItem(e, scen.id)} className="p-3 bg-white border border-gray-200 rounded-md shadow-sm cursor-move wiggle-on-drag">
+                                    <p className="font-semibold text-gray-800">{index + 1}. {scen.name}</p>
                                     <DependencySelector 
                                         item={scen}
                                         itemList={selectedScenarios}
@@ -1337,7 +1495,7 @@ const CreateDrillScreen = ({ setActiveScreen, setDb, db, user, drillToEdit, onDo
                 </div>
 
                 <div className="flex justify-end">
-                    <button type="submit" className="bg-[#FFDE59] text-black font-bold py-2 px-6 rounded-lg hover:bg-yellow-300 transition-all duration-300 shadow-lg shadow-yellow-400/20 hover:shadow-xl hover:shadow-yellow-400/30">{drillToEdit ? t('saveChanges') : t('createDrill')}</button>
+                    <button type="submit" className="bg-[#00558F] text-white font-bold py-2 px-6 rounded-lg hover:bg-[#004472] transition-all duration-300 shadow-lg shadow-blue-900/20 hover:shadow-xl hover:shadow-blue-800/30">{drillToEdit ? t('saveChanges') : t('createDrill')}</button>
                 </div>
             </form>
         </div>
@@ -1364,47 +1522,49 @@ const RichTextEditor = ({ value, onChange }) => {
     };
 
     return (
-        <div className="border border-[#506771] rounded-md bg-[#22333B] text-gray-300">
-            <div className="flex items-center p-1 border-b border-[#506771] space-x-1">
-                <select onChange={(e) => handleCommand('fontName', e.target.value)} className="text-xs bg-[#334A52] border-[#506771] rounded-md p-1 focus:ring-yellow-400 focus:outline-none">
+        <div className="border border-gray-300 rounded-md bg-white text-gray-800">
+            <div className="flex items-center p-1 border-b border-gray-200 space-x-1">
+                <select onChange={(e) => handleCommand('fontName', e.target.value)} className="text-xs bg-gray-100 border-gray-300 rounded-md p-1 focus:ring-sky-500 focus:outline-none">
                     <option value="Inter">Inter</option>
                     <option value="Arial">Arial</option>
                     <option value="Georgia">Georgia</option>
                     <option value="Verdana">Verdana</option>
                 </select>
-                <button type="button" onClick={() => handleCommand('bold')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-700 rounded text-gray-300"><BoldIcon /></button>
-                <button type="button" onClick={() => handleCommand('italic')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-700 rounded text-gray-300"><ItalicIcon /></button>
-                <button type="button" onClick={() => handleCommand('underline')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-700 rounded text-gray-300"><UnderlineIcon /></button>
-                <button type="button" onClick={() => handleCommand('justifyLeft')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-700 rounded text-gray-300"><AlignLeftIcon /></button>
-                <button type="button" onClick={() => handleCommand('justifyCenter')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-700 rounded text-gray-300"><AlignCenterIcon /></button>
-                <button type="button" onClick={() => handleCommand('justifyRight')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-700 rounded text-gray-300"><AlignRightIcon /></button>
+                <button type="button" onClick={() => handleCommand('bold')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-600"><BoldIcon /></button>
+                <button type="button" onClick={() => handleCommand('italic')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-600"><ItalicIcon /></button>
+                <button type="button" onClick={() => handleCommand('underline')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-600"><UnderlineIcon /></button>
+                <button type="button" onClick={() => handleCommand('justifyLeft')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-600"><AlignLeftIcon /></button>
+                <button type="button" onClick={() => handleCommand('justifyCenter')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-600"><AlignCenterIcon /></button>
+                <button type="button" onClick={() => handleCommand('justifyRight')} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-gray-600"><AlignRightIcon /></button>
             </div>
             <div
                 ref={editorRef}
                 onInput={handleInput}
                 contentEditable={true}
-                className="p-2 min-h-[100px] focus:outline-none prose prose-sm prose-invert max-w-none"
+                className="p-2 min-h-[100px] focus:outline-none prose prose-sm max-w-none"
             />
         </div>
     );
 };
 
 
-const ScenarioManagementScreen = ({ db, setDb, user }) => {
+const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady }) => {
     const { t } = useTranslation();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingScenario, setEditingScenario] = useState(null);
     const [draggedStepIndex, setDraggedStepIndex] = useState(null);
     const [expandedStepIndex, setExpandedStepIndex] = useState(0);
+    const [isImporting, setIsImporting] = useState(false);
+    const fileInputRef = useRef(null);
     
     const initialFormState = { name: '', role: user.role === 'ADMIN' ? 'TECHNICAL' : user.role, basis: '', status: 'Draft' };
-    const initialStepState = [{ title: '', description: '', estimatedTime: '', dependsOn: [] }];
+    const initialStepState = [{ id: `temp-${Date.now()}`, title: '', description: '', estimatedTime: '', dependsOn: [] }];
 
     const [formData, setFormData] = useState(initialFormState);
     const [stepInputs, setStepInputs] = useState(initialStepState);
 
     const handleAddStep = () => {
-        setStepInputs([...stepInputs, { title: '', description: '', estimatedTime: '', dependsOn: [] }]);
+        setStepInputs([...stepInputs, { id: `temp-${Date.now()}`, title: '', description: '', estimatedTime: '', dependsOn: [] }]);
         setExpandedStepIndex(stepInputs.length); // Expand the new step
     };
     
@@ -1425,8 +1585,12 @@ const ScenarioManagementScreen = ({ db, setDb, user }) => {
         setStepInputs(newSteps);
     };
 
-    const handleOpenModal = (scenarioToEdit = null, isClone = false) => {
-        if (scenarioToEdit) {
+    const handleOpenModal = (scenarioToEdit = null, isClone = false, importedData = null) => {
+        if (importedData) {
+            setEditingScenario(null);
+            setFormData({ ...initialFormState, name: importedData.name });
+            setStepInputs(importedData.steps);
+        } else if (scenarioToEdit) {
             setEditingScenario(isClone ? null : scenarioToEdit);
             setFormData({ 
                 name: isClone ? `${scenarioToEdit.name} (Copy)` : scenarioToEdit.name, 
@@ -1435,9 +1599,7 @@ const ScenarioManagementScreen = ({ db, setDb, user }) => {
                 status: 'Draft' 
             });
             const stepsForScenario = (scenarioToEdit.steps || []).map(stepId => {
-                const newStep = {...db.steps[stepId]};
-                delete newStep.id; // Remove old ID for cloning
-                return newStep;
+                return { ...db.steps[stepId] };
             });
             setStepInputs(stepsForScenario.length > 0 ? stepsForScenario : initialStepState);
         } else {
@@ -1449,9 +1611,9 @@ const ScenarioManagementScreen = ({ db, setDb, user }) => {
         setIsModalOpen(true);
     };
 
-    const handleSave = (e) => {
+    const handleSave = async (e) => {
         e.preventDefault();
-        // This would be an API call in a real app
+        
         for (const step of stepInputs) {
             if (!step.title.trim() || !step.description.trim() || step.description.trim() === "<p><br></p>") {
                 alert('Vui lòng nhập đầy đủ Tên bước và Mô tả cho tất cả các bước.');
@@ -1459,77 +1621,58 @@ const ScenarioManagementScreen = ({ db, setDb, user }) => {
             }
         }
         
-        let finalStatus = formData.status;
-        if (!formData.basis) {
-            finalStatus = 'Draft';
+        const payload = {
+            ...formData,
+            status: formData.basis ? formData.status : 'Draft',
+            created_by: user.id,
+            steps: stepInputs,
+        };
+
+        try {
+            let response;
+            if (editingScenario) {
+                response = await fetch(`/api/scenarios/${editingScenario.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } else {
+                response = await fetch('/api/scenarios', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            }
+            if (!response.ok) throw new Error('Failed to save scenario');
+            
+            setIsModalOpen(false);
+            onDataRefresh(); // Reload all data to ensure consistency
+        } catch (error) {
+            console.error(error);
+            alert('Lỗi lưu kịch bản.');
         }
-
-        if (editingScenario) {
-            const updatedSteps = {};
-            const updatedStepIds = stepInputs.map((step, index) => {
-                const stepId = step.id || `step-${Date.now()}-${index}`;
-                updatedSteps[stepId] = { ...step, id: stepId };
-                return stepId;
-            });
-
-            const updatedScenario = {
-                ...editingScenario,
-                name: formData.name,
-                role: formData.role,
-                basis: formData.basis,
-                status: finalStatus,
-                steps: updatedStepIds,
-                last_updated_at: new Date().toISOString(),
-            };
-
-            setDb(prevDb => ({
-                ...prevDb,
-                scenarios: { ...prevDb.scenarios, [editingScenario.id]: updatedScenario },
-                steps: { ...prevDb.steps, ...updatedSteps }
-            }));
-
-        } else { // New or Cloned
-            const newStepIds = [];
-            const newStepsData = {};
-            stepInputs.forEach((stepInput, index) => {
-                if (stepInput.title) {
-                    const stepId = `step-${Date.now()}-${index}`;
-                    newStepIds.push(stepId);
-                    newStepsData[stepId] = { id: stepId, ...stepInput };
-                }
-            });
-
-            const newScenarioId = `scen-${Date.now()}`;
-            const newScenario = {
-                id: newScenarioId,
-                name: formData.name,
-                role: formData.role,
-                basis: formData.basis,
-                status: finalStatus,
-                steps: newStepIds,
-                created_by: user.id,
-                created_at: new Date().toISOString(),
-                last_updated_at: new Date().toISOString(),
-            };
-
-            setDb(prevDb => ({
-                ...prevDb,
-                scenarios: { ...prevDb.scenarios, [newScenarioId]: newScenario },
-                steps: { ...prevDb.steps, ...newStepsData }
-            }));
-        }
-
-        setIsModalOpen(false);
     };
     
-    const handleStatusChange = (scenarioId, newStatus) => {
-        // This would be an API call
-        setDb(prevDb => {
-            const newScenarios = { ...prevDb.scenarios };
-            newScenarios[scenarioId].status = newStatus;
-            newScenarios[scenarioId].last_updated_at = new Date().toISOString();
-            return { ...prevDb, scenarios: newScenarios };
-        });
+    const handleStatusChange = async (scenarioId, newStatus) => {
+        try {
+            const response = await fetch(`/api/scenarios/${scenarioId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus }),
+            });
+            if (!response.ok) throw new Error('Failed to update scenario status');
+            const updatedScenario = await response.json();
+            setDb(prevDb => ({
+                ...prevDb,
+                scenarios: {
+                    ...prevDb.scenarios,
+                    [updatedScenario.id]: { ...prevDb.scenarios[updatedScenario.id], ...updatedScenario }
+                }
+            }));
+        } catch (error) {
+            console.error(error);
+            alert('Lỗi cập nhật trạng thái kịch bản.');
+        }
     };
 
     const filteredScenarios = Object.values(db.scenarios).filter(s => {
@@ -1568,55 +1711,137 @@ const ScenarioManagementScreen = ({ db, setDb, user }) => {
 
     const getStatusClass = (status) => {
         switch(status) {
-            case 'Active': return 'bg-green-500/20 text-green-300';
-            case 'Pending Approval': return 'bg-yellow-500/20 text-yellow-300';
-            case 'Rejected': return 'bg-red-500/20 text-red-300';
-            default: return 'bg-gray-500/20 text-gray-300';
+            case 'Active': return 'bg-green-100 text-green-800';
+            case 'Pending Approval': return 'bg-yellow-100 text-yellow-800';
+            case 'Rejected': return 'bg-red-100 text-red-800';
+            default: return 'bg-gray-100 text-gray-800';
         }
+    };
+
+    const handleDownloadTemplate = () => {
+        if (typeof window.XLSX === 'undefined') {
+            alert(t('excelLibraryNotReady'));
+            return;
+        }
+        const headers = ['STT', 'Tên bước', 'Mô tả (HTML)', 'Thời gian dự kiến (hh:mm:ss)', 'Phụ thuộc (STT bước trước, cách nhau bởi dấu phẩy)'];
+        const sampleData = [
+            [1, 'Khởi động hệ thống A', '<p>Bật nguồn và kiểm tra đèn tín hiệu.</p>', '00:10:00', ''],
+            [2, 'Đăng nhập vào hệ thống B', '<p>Sử dụng tài khoản <b>admin</b> để đăng nhập.</p>', '00:05:00', '1'],
+            [3, 'Kiểm tra dịch vụ C', '<p>Gửi request và xác nhận response 200 OK.</p>', '00:03:00', '1, 2']
+        ];
+        const data = [headers, ...sampleData];
+        const ws = window.XLSX.utils.aoa_to_sheet(data);
+        const wb = window.XLSX.utils.book_new();
+        window.XLSX.utils.book_append_sheet(wb, ws, "Scenario Template");
+        window.XLSX.writeFile(wb, "Scenario_Template.xlsx");
+    };
+
+    const handleFileImport = (e) => {
+        if (typeof window.XLSX === 'undefined') {
+            alert(t('excelLibraryNotReady'));
+            return;
+        }
+        const file = e.target.files[0];
+        if (!file) return;
+        setIsImporting(true);
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const data = new Uint8Array(event.target.result);
+                const workbook = window.XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const json = window.XLSX.utils.sheet_to_json(worksheet);
+
+                const tempSteps = json.map((row, index) => ({
+                    id: `temp-import-${Date.now()}-${index}`,
+                    stt: row['STT'],
+                    title: row['Tên bước'] || '',
+                    description: row['Mô tả (HTML)'] || '',
+                    estimated_time: row['Thời gian dự kiến (hh:mm:ss)'] || '',
+                    dependsOnRaw: String(row['Phụ thuộc (STT bước trước, cách nhau bởi dấu phẩy)'] || '').trim(),
+                }));
+
+                const finalSteps = tempSteps.map(step => {
+                    let dependsOn = [];
+                    if (step.dependsOnRaw) {
+                        const depNumbers = step.dependsOnRaw.split(',').map(n => parseInt(n.trim(), 10));
+                        depNumbers.forEach(num => {
+                            const foundDep = tempSteps.find(s => s.stt === num);
+                            if (foundDep) {
+                                dependsOn.push(foundDep.id);
+                            }
+                        });
+                    }
+                    return { id: step.id, title: step.title, description: step.description, estimated_time: step.estimated_time, dependsOn };
+                });
+
+                const scenarioName = file.name.replace(/\.(xlsx|xls|csv)$/i, '');
+                handleOpenModal(null, false, { name: scenarioName, steps: finalSteps });
+
+            } catch (error) {
+                console.error("Error parsing Excel file:", error);
+                alert(t('importError'));
+            } finally {
+                setIsImporting(false);
+                e.target.value = null; // Reset file input
+            }
+        };
+        reader.readAsArrayBuffer(file);
     };
 
     return (
         <>
-            <div className="bg-[#334A52]/80 backdrop-blur-sm p-6 rounded-2xl shadow-2xl shadow-black/20 border border-[#506771]">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold text-white">{t('scenarioList')}</h2>
-                    <button onClick={() => handleOpenModal()} className="bg-[#FFDE59] text-black font-bold py-2 px-4 rounded-lg hover:bg-yellow-300 transition-all duration-300 shadow-lg shadow-yellow-400/20 hover:shadow-xl hover:shadow-yellow-400/30">{t('createNewScenario')}</button>
+            <div className="bg-white p-6 rounded-2xl shadow-lg">
+                <div className="flex flex-wrap justify-between items-center mb-4 gap-2">
+                    <h2 className="text-xl font-bold text-gray-900">{t('scenarioList')}</h2>
+                    <div className="flex items-center space-x-2">
+                        <button onClick={handleDownloadTemplate} disabled={!isXlsxReady || isImporting} className="flex items-center bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            <DownloadIcon /> {t('downloadTemplate')}
+                        </button>
+                        <button onClick={() => fileInputRef.current.click()} disabled={!isXlsxReady || isImporting} className="flex items-center bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            {isImporting ? t('importing') : <><UploadIcon /> {t('importFromExcel')}</>}
+                        </button>
+                        <input type="file" ref={fileInputRef} onChange={handleFileImport} className="hidden" accept=".xlsx, .xls" />
+                        <button onClick={() => handleOpenModal()} className="bg-[#00558F] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#004472] transition-all duration-300 shadow-lg shadow-blue-900/20 hover:shadow-xl hover:shadow-blue-800/30">{t('createNewScenario')}</button>
+                    </div>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="min-w-full">
-                         <thead className="border-b border-[#506771]">
+                         <thead className="border-b border-gray-200">
                             <tr>
-                                <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('scenarioName')}</th>
-                                <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('status')}</th>
-                                <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('creator')}</th>
-                                <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('lastUpdated')}</th>
-                                <th className="py-3 px-4 text-left text-xs font-semibold text-[#C5D2D8] uppercase tracking-wider">{t('action')}</th>
+                                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('scenarioName')}</th>
+                                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('status')}</th>
+                                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('creator')}</th>
+                                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('lastUpdated')}</th>
+                                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('action')}</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredScenarios.map(s => {
                                 const creator = db.users.find(u => u.id === s.created_by);
                                 return (
-                                <tr key={s.id} className="border-b border-[#334A52] hover:bg-[#334A52]/50">
-                                    <td className="py-3 px-4 text-white">{s.name}</td>
+                                <tr key={s.id} className="border-b border-gray-100 hover:bg-gray-50">
+                                    <td className="py-3 px-4 text-gray-800">{s.name}</td>
                                     <td className="py-3 px-4"><span className={`text-xs px-2 py-1 rounded-full font-semibold ${getStatusClass(s.status)}`}>{s.status}</span></td>
-                                    <td className="py-3 px-4 text-gray-300">{creator ? creator.username : 'N/A'}</td>
-                                    <td className="py-3 px-4 text-gray-300">{formatDate(s.last_updated_at)}</td>
+                                    <td className="py-3 px-4 text-gray-600">{creator ? creator.username : 'N/A'}</td>
+                                    <td className="py-3 px-4 text-gray-600">{formatDate(s.last_updated_at)}</td>
                                     <td className="py-3 px-4">
                                         <div className="flex items-center space-x-2">
                                             {(user.role === 'ADMIN' || user.id === s.created_by) && (
                                                 <>
-                                                    <button onClick={() => handleOpenModal(s)} title={t('edit')} className="p-2 rounded-lg text-yellow-300 bg-yellow-500/10 hover:bg-yellow-500/20"><EditIcon /></button>
-                                                    <button onClick={() => handleOpenModal(s, true)} title={t('clone')} className="p-2 rounded-lg text-purple-300 bg-purple-500/10 hover:bg-purple-500/20"><CloneIcon /></button>
+                                                    <button onClick={() => handleOpenModal(s)} title={t('edit')} className="p-2 rounded-lg text-yellow-600 bg-yellow-100 hover:bg-yellow-200"><EditIcon /></button>
+                                                    <button onClick={() => handleOpenModal(s, true)} title={t('clone')} className="p-2 rounded-lg text-purple-600 bg-purple-100 hover:bg-purple-200"><CloneIcon /></button>
                                                 </>
                                             )}
                                             {user.role !== 'ADMIN' && s.status === 'Draft' && s.basis && (
-                                                <button onClick={() => handleStatusChange(s.id, 'Pending Approval')} title={t('submitForApproval')} className="p-2 rounded-lg text-blue-300 bg-blue-500/10 hover:bg-blue-500/20"><SubmitApprovalIcon /></button>
+                                                <button onClick={() => handleStatusChange(s.id, 'Pending Approval')} title={t('submitForApproval')} className="p-2 rounded-lg text-blue-600 bg-blue-100 hover:bg-blue-200"><SubmitApprovalIcon /></button>
                                             )}
                                             {user.role === 'ADMIN' && s.status === 'Pending Approval' && (
                                                 <>
-                                                    <button onClick={() => handleStatusChange(s.id, 'Active')} title={t('approve')} className="p-2 rounded-lg text-green-300 bg-green-500/10 hover:bg-green-500/20"><ApproveIcon /></button>
-                                                    <button onClick={() => handleStatusChange(s.id, 'Rejected')} title={t('reject')} className="p-2 rounded-lg text-red-400 bg-red-500/10 hover:bg-red-500/20"><RejectIcon /></button>
+                                                    <button onClick={() => handleStatusChange(s.id, 'Active')} title={t('approve')} className="p-2 rounded-lg text-green-600 bg-green-100 hover:bg-green-200"><ApproveIcon /></button>
+                                                    <button onClick={() => handleStatusChange(s.id, 'Rejected')} title={t('reject')} className="p-2 rounded-lg text-red-600 bg-red-100 hover:bg-red-200"><RejectIcon /></button>
                                                 </>
                                             )}
                                         </div>
@@ -1629,62 +1854,62 @@ const ScenarioManagementScreen = ({ db, setDb, user }) => {
             </div>
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className="bg-[#334A52] p-6 rounded-2xl shadow-2xl shadow-black/30 border border-[#506771] w-full max-w-4xl max-h-[90vh] flex flex-col">
-                        <h3 className="text-lg font-bold text-white mb-4 flex-shrink-0">{editingScenario ? t('editScenario') : t('createScenario')}</h3>
+                    <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex-shrink-0">{editingScenario ? t('editScenario') : t('createScenario')}</h3>
                         <form onSubmit={handleSave} className="flex-1 overflow-y-auto pr-2">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-[#C5D2D8]">{t('scenarioName')}</label>
-                                    <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none" required/>
+                                    <label className="block text-sm font-medium text-gray-700">{t('scenarioName')}</label>
+                                    <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none" required/>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-[#C5D2D8]">{t('role')}</label>
+                                    <label className="block text-sm font-medium text-gray-700">{t('role')}</label>
                                     {user.role === 'ADMIN' ? (
-                                        <select value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none">
+                                        <select value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none">
                                             <option value="TECHNICAL">TECHNICAL</option>
                                             <option value="BUSINESS">BUSINESS</option>
                                         </select>
                                     ) : (
-                                        <input type="text" value={formData.role} className="mt-1 block w-full bg-[#22333B]/50 border border-[#506771] rounded-md p-2 text-gray-400" readOnly/>
+                                        <input type="text" value={formData.role} className="mt-1 block w-full bg-gray-200 border border-gray-300 rounded-md p-2 text-gray-500" readOnly/>
                                     )}
                                 </div>
                             </div>
                             <div className="mb-4">
-                                <label className="block text-sm font-medium text-[#C5D2D8]">{t('basisForConstruction')}</label>
-                                <textarea value={formData.basis} onChange={(e) => setFormData({...formData, basis: e.target.value})} rows="2" className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none" />
+                                <label className="block text-sm font-medium text-gray-700">{t('basisForConstruction')}</label>
+                                <textarea value={formData.basis} onChange={(e) => setFormData({...formData, basis: e.target.value})} rows="2" className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
                             </div>
                             {user.role === 'ADMIN' && (
                                 <div className="mb-4">
-                                    <label className="block text-sm font-medium text-[#C5D2D8]">{t('scenarioStatus')}</label>
-                                    <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} disabled={!formData.basis} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none disabled:opacity-50">
+                                    <label className="block text-sm font-medium text-gray-700">{t('scenarioStatus')}</label>
+                                    <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} disabled={!formData.basis} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none disabled:opacity-50">
                                         <option value="Draft">{t('draft')}</option>
                                         <option value="Active">{t('active')}</option>
                                     </select>
-                                    {!formData.basis && <p className="text-xs text-yellow-400 mt-1">{t('basisRequiredMessage')}</p>}
+                                    {!formData.basis && <p className="text-xs text-yellow-600 mt-1">{t('basisRequiredMessage')}</p>}
                                 </div>
                             )}
 
-                            <h4 className="font-bold text-white mt-6 mb-2">{t('steps')}</h4>
+                            <h4 className="font-bold text-gray-900 mt-6 mb-2">{t('steps')}</h4>
                             <div className="space-y-2">
                                 {stepInputs.map((step, index) => (
                                     <div 
-                                        key={index} 
-                                        className={`border border-[#506771] rounded-md bg-[#22333B]/50 transition-all duration-300 ${draggedStepIndex === index ? 'opacity-50' : ''}`}
+                                        key={step.id || index} 
+                                        className={`border border-gray-200 rounded-md bg-gray-50 transition-all duration-300 ${draggedStepIndex === index ? 'opacity-50' : ''}`}
                                         draggable
                                         onDragStart={(e) => handleDragStart(e, index)}
                                         onDragOver={handleDragOver}
                                         onDrop={(e) => handleDrop(e, index)}
                                     >
                                         <div className="p-2 flex items-center space-x-2">
-                                            <div className="cursor-move text-gray-500 wiggle-on-drag">
+                                            <div className="cursor-move text-gray-400 wiggle-on-drag">
                                                 <DragHandleIcon />
                                             </div>
                                             <div className="flex-1 cursor-pointer" onClick={() => setExpandedStepIndex(expandedStepIndex === index ? null : index)}>
                                                 <div className="flex justify-between items-center">
-                                                    <h4 className="font-bold text-white">{t('step')} {index + 1}: {step.title || t('noTitle')}</h4>
+                                                    <h4 className="font-bold text-gray-800">{t('step')} {index + 1}: {step.title || t('noTitle')}</h4>
                                                     <div className="flex items-center space-x-4">
                                                     {stepInputs.length > 1 && (
-                                                        <button type="button" onClick={(e) => { e.stopPropagation(); handleRemoveStep(index); }} className="text-red-400 hover:text-red-300 font-bold text-xl">&times;</button>
+                                                        <button type="button" onClick={(e) => { e.stopPropagation(); handleRemoveStep(index); }} className="text-red-500 hover:text-red-700 font-bold text-xl">&times;</button>
                                                     )}
                                                     <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 transition-transform ${expandedStepIndex === index ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                                                     </div>
@@ -1692,19 +1917,19 @@ const ScenarioManagementScreen = ({ db, setDb, user }) => {
                                             </div>
                                         </div>
                                         {expandedStepIndex === index && (
-                                            <div className="p-4 border-t border-[#506771] space-y-4">
+                                            <div className="p-4 border-t border-gray-200 space-y-4">
                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                     <div className="md:col-span-2">
-                                                        <label className="block text-xs font-medium text-[#C5D2D8]">{t('stepName')} <span className="text-red-400">{t('requiredField')}</span></label>
-                                                        <input type="text" placeholder={t('stepTitlePlaceholder')} value={step.title} onChange={e => handleStepChange(index, 'title', e.target.value)} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none" required />
+                                                        <label className="block text-xs font-medium text-gray-600">{t('stepName')} <span className="text-red-500">{t('requiredField')}</span></label>
+                                                        <input type="text" placeholder={t('stepTitlePlaceholder')} value={step.title} onChange={e => handleStepChange(index, 'title', e.target.value)} className="mt-1 block w-full bg-white border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none" required />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-xs font-medium text-[#C5D2D8]">{t('estimatedTime')}</label>
-                                                        <input type="text" placeholder="hh:mm:ss" value={step.estimatedTime} onChange={e => handleStepChange(index, 'estimatedTime', e.target.value)} className="mt-1 block w-full bg-[#22333B] border border-[#506771] rounded-md p-2 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none" />
+                                                        <label className="block text-xs font-medium text-gray-600">{t('estimatedTime')}</label>
+                                                        <input type="text" placeholder="hh:mm:ss" value={step.estimated_time} onChange={e => handleStepChange(index, 'estimated_time', e.target.value)} className="mt-1 block w-full bg-white border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-xs font-medium text-[#C5D2D8]">{t('stepDescription')} <span className="text-red-400">{t('requiredField')}</span></label>
+                                                    <label className="block text-xs font-medium text-gray-600">{t('stepDescription')} <span className="text-red-500">{t('requiredField')}</span></label>
                                                     <RichTextEditor value={step.description} onChange={value => handleStepChange(index, 'description', value)} />
                                                 </div>
                                                 <DependencySelector 
@@ -1718,10 +1943,10 @@ const ScenarioManagementScreen = ({ db, setDb, user }) => {
                                     </div>
                                 ))}
                             </div>
-                            <button type="button" onClick={handleAddStep} className="mt-4 text-yellow-300 hover:underline text-sm font-semibold">{t('addStep')}</button>
-                            <div className="flex justify-end space-x-2 mt-6 border-t border-[#506771] pt-4 flex-shrink-0">
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="bg-gray-700 py-2 px-4 rounded-lg text-gray-300 hover:bg-gray-600">{t('cancel')}</button>
-                                <button type="submit" className="bg-yellow-400 text-black font-semibold py-2 px-4 rounded-lg hover:bg-yellow-500">{editingScenario ? t('saveChanges') : t('saveScenario')}</button>
+                            <button type="button" onClick={handleAddStep} className="mt-4 text-[#00558F] hover:underline text-sm font-semibold">{t('addStep')}</button>
+                            <div className="flex justify-end space-x-2 mt-6 border-t border-gray-200 pt-4 flex-shrink-0">
+                                <button type="button" onClick={() => setIsModalOpen(false)} className="bg-gray-200 py-2 px-4 rounded-lg text-gray-800 hover:bg-gray-300">{t('cancel')}</button>
+                                <button type="submit" className="bg-[#00558F] hover:bg-[#004472] text-white font-semibold py-2 px-4 rounded-lg">{editingScenario ? t('saveChanges') : t('saveScenario')}</button>
                             </div>
                         </form>
                     </div>
@@ -1896,7 +2121,10 @@ const PublicDashboard = ({ drills, scenarios, steps, executionData, onLoginReque
                             <div key={scenario.id} className="bg-[#2A3A3F]/80 rounded-xl border border-[#3D4F56] backdrop-blur-sm">
                                 <div className="p-4 cursor-pointer" onClick={() => toggleScenario(scenario.id)}>
                                     <div className="flex justify-between items-center">
-                                        <h3 className="text-xl font-bold text-yellow-300">{scenario.name}</h3>
+                                        <div className="flex items-center">
+                                            <h3 className="text-xl font-bold text-yellow-300">{scenario.name}</h3>
+                                            <span className="ml-4 text-sm font-bold text-yellow-300 bg-yellow-500/10 px-2 py-1 rounded-md">{stats.progress.toFixed(0)}%</span>
+                                        </div>
                                         <div className="flex items-center space-x-4">
                                             <span className="text-sm text-gray-300">{stats.status}</span>
                                             <span className="text-sm font-mono text-gray-400">{t('elapsedTime')}: {stats.elapsedTime}</span>
@@ -1962,6 +2190,69 @@ const PublicDashboard = ({ drills, scenarios, steps, executionData, onLoginReque
     );
 };
 
+const ChangePasswordModal = ({ user, onClose }) => {
+    const { t } = useTranslation();
+    const [oldPassword, setOldPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+        if (newPassword !== confirmPassword) {
+            setError(t('passwordMismatch'));
+            return;
+        }
+        try {
+            const response = await fetch('/api/user/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id, oldPassword, newPassword }),
+            });
+            if (!response.ok) {
+                 const errData = await response.json();
+                 throw new Error(errData.error || 'Failed to change password');
+            }
+            setSuccess(t('passwordChangedSuccess'));
+            setTimeout(() => onClose(), 2000);
+        } catch (err) {
+            setError(t('passwordChangedError'));
+            console.error(err);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">{t('changePassword')}</h3>
+                {error && <p className="text-red-500 text-sm my-2">{error}</p>}
+                {success && <p className="text-green-600 text-sm my-2">{success}</p>}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">{t('oldPassword')}</label>
+                        <input type="password" value={oldPassword} onChange={e => setOldPassword(e.target.value)} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none" required />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">{t('newPassword')}</label>
+                        <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none" required />
+                    </div>
+                     <div>
+                        <label className="block text-sm font-medium text-gray-700">{t('confirmNewPassword')}</label>
+                        <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none" required />
+                    </div>
+                    <div className="flex justify-end space-x-2 pt-4">
+                        <button type="button" onClick={onClose} className="bg-gray-200 py-2 px-4 rounded-lg text-gray-800 hover:bg-gray-300">{t('cancel')}</button>
+                        <button type="submit" className="bg-[#00558F] hover:bg-[#004472] text-white font-semibold py-2 px-4 rounded-lg">{t('saveChanges')}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
 
 // --- Main App Component ---
 
@@ -1981,42 +2272,10 @@ export default function App() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isXlsxReady, setIsXlsxReady] = useState(false);
 
-  useEffect(() => {
-    const link = document.createElement('link');
-    link.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap";
-    link.rel = "stylesheet";
-    document.head.appendChild(link);
-
-    const style = document.createElement('style');
-    style.innerHTML = `
-      body { font-family: 'Inter', sans-serif; }
-      .prose-invert {
-        --tw-prose-body: #C5D2D8;
-        --tw-prose-headings: #fff;
-        --tw-prose-bold: #fff;
-        --tw-prose-bullets: #C5D2D8;
-      }
-      @keyframes wiggle {
-        0%, 100% { transform: rotate(-0.5deg); }
-        50% { transform: rotate(0.5deg); }
-      }
-      .wiggle-on-drag:active {
-        animation: wiggle 0.2s linear infinite;
-        cursor: grabbing !important;
-      }
-    `;
-    document.head.appendChild(style);
-
-    return () => {
-        if(document.head.contains(link)) document.head.removeChild(link);
-        if(document.head.contains(style)) document.head.removeChild(style);
-    };
-  }, []);
-
-  // Fetch data from backend on component mount
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchData = async () => {
+      setLoading(true);
       try {
         const response = await fetch('/api/data');
         if (!response.ok) {
@@ -2032,7 +2291,55 @@ export default function App() {
       }
     };
 
+  useEffect(() => {
+    // Add Google Fonts
+    const link = document.createElement('link');
+    link.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap";
+    link.rel = "stylesheet";
+    document.head.appendChild(link);
+
+    // Add custom styles
+    const style = document.createElement('style');
+    style.innerHTML = `
+      body { font-family: 'Inter', sans-serif; }
+      .prose {
+        --tw-prose-body: #374151;
+        --tw-prose-headings: #111827;
+        --tw-prose-bold: #111827;
+        --tw-prose-bullets: #374151;
+      }
+      @keyframes wiggle {
+        0%, 100% { transform: rotate(-0.5deg); }
+        50% { transform: rotate(0.5deg); }
+      }
+      .wiggle-on-drag:active {
+        animation: wiggle 0.2s linear infinite;
+        cursor: grabbing !important;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Add SheetJS library for Excel import/export
+    const xlsxScript = document.createElement('script');
+    xlsxScript.src = "https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js";
+    xlsxScript.async = true;
+    xlsxScript.onload = () => {
+        console.log("SheetJS library loaded.");
+        setIsXlsxReady(true);
+    };
+    xlsxScript.onerror = () => {
+        console.error("Failed to load SheetJS library.");
+    };
+    document.head.appendChild(xlsxScript);
+
+
     fetchData();
+
+    return () => {
+        if(document.head.contains(link)) document.head.removeChild(link);
+        if(document.head.contains(style)) document.head.removeChild(style);
+        if(document.head.contains(xlsxScript)) document.head.removeChild(xlsxScript);
+    };
   }, []);
 
   useEffect(() => {
@@ -2101,14 +2408,19 @@ export default function App() {
       setActiveScreen('dashboard');
   }
 
-  const handleSetExecutionData = (updater) => {
-    // In a real app, updates to execution data would also be API calls.
-    // For now, we'll update the local state to keep the UI interactive.
+  const handleExecutionUpdate = (drillId, entityId, newData) => {
     setDb(prevDb => {
-        const newExecutionData = typeof updater === 'function' 
-            ? updater(prevDb.executionData) 
-            : updater;
-        return { ...prevDb, executionData: newExecutionData };
+        // Create a deep copy to avoid mutation issues
+        const newExecutionData = JSON.parse(JSON.stringify(prevDb.executionData));
+        if (!newExecutionData[drillId]) {
+            newExecutionData[drillId] = {};
+        }
+        newExecutionData[drillId][entityId] = newData;
+
+        return {
+            ...prevDb,
+            executionData: newExecutionData
+        };
     });
   };
 
@@ -2138,9 +2450,9 @@ export default function App() {
   const renderScreen = () => {
     switch(activeScreen) {
         case 'dashboard':
-            return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} />;
+            return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={fetchData} />;
         case 'execution':
-            if (!activeDrill) return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} />;
+            if (!activeDrill) return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={fetchData} />;
             return <ExecutionScreen 
                 user={user} 
                 drill={activeDrill} 
@@ -2148,10 +2460,11 @@ export default function App() {
                 scenarios={db.scenarios} 
                 steps={db.steps}
                 executionData={db.executionData}
-                setExecutionData={handleSetExecutionData}
+                onExecutionUpdate={handleExecutionUpdate}
+                onDataRefresh={fetchData}
               />;
         case 'report':
-            if (!activeDrill) return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} />;
+            if (!activeDrill) return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={fetchData} />;
             return <ReportScreen 
                 drill={activeDrill} 
                 onBack={handleBackToDashboard} 
@@ -2160,24 +2473,23 @@ export default function App() {
                 executionData={db.executionData}
               />;
         case 'user-management':
-             if (user.role !== 'ADMIN') return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} />;
-            return <UserManagementScreen users={db.users} setUsers={(newUsers) => setDb({...db, users: newUsers})} />;
+             if (user.role !== 'ADMIN') return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={fetchData} />;
+            return <UserManagementScreen users={db.users} setUsers={(newUsers) => setDb({...db, users: newUsers})} onDataRefresh={fetchData} />;
         case 'scenarios':
-            return <ScenarioManagementScreen db={db} setDb={setDb} user={user} />;
+            return <ScenarioManagementScreen db={db} setDb={setDb} user={user} onDataRefresh={fetchData} isXlsxReady={isXlsxReady} />;
         case 'create-drill':
-             if (user.role !== 'ADMIN') return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} />;
-            return <CreateDrillScreen setActiveScreen={setActiveScreen} setDb={setDb} db={db} user={user} drillToEdit={editingDrill} onDoneEditing={() => setActiveScreen('dashboard')} />;
+             if (user.role !== 'ADMIN') return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={fetchData} />;
+            return <CreateDrillScreen setActiveScreen={setActiveScreen} setDb={setDb} db={db} user={user} drillToEdit={editingDrill} onDoneEditing={() => setActiveScreen('dashboard')} onDataRefresh={fetchData} />;
         default:
-            return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios}/>;
+            return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onDataRefresh={fetchData}/>;
     }
   }
 
   return (
     <LanguageProvider>
-        <AppLayout user={user} onLogout={handleLogout} activeScreen={activeScreen} setActiveScreen={setActiveScreen}>
+        <AppLayout user={user} onLogout={handleLogout} activeScreen={activeScreen} setActiveScreen={setActiveScreen} isXlsxReady={isXlsxReady}>
         {renderScreen()}
         </AppLayout>
     </LanguageProvider>
   );
 }
-

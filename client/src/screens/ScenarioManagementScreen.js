@@ -1,8 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
 import RichTextEditor from '../components/common/RichTextEditor';
 import DependencySelector from '../components/common/DependencySelector';
-import { EditIcon, CloneIcon, SubmitApprovalIcon, ApproveIcon, RejectIcon, DragHandleIcon, DownloadIcon, UploadIcon, PaperClipIcon } from '../components/icons';
+import { EditIcon, CloneIcon, SubmitApprovalIcon, ApproveIcon, RejectIcon, DragHandleIcon, DownloadIcon, UploadIcon, PaperClipIcon, DeleteIcon } from '../components/icons';
 
 const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady }) => {
     const { t } = useTranslation();
@@ -12,8 +12,11 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
     const [expandedStepIndex, setExpandedStepIndex] = useState(0);
     const [isImporting, setIsImporting] = useState(false);
     const fileInputRef = useRef(null);
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, message: '', onConfirm: null });
     
     const [scenarioAttachment, setScenarioAttachment] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedScenarios, setSelectedScenarios] = useState([]);
 
     const initialFormState = { name: '', role: user.role === 'ADMIN' ? 'TECHNICAL' : user.role, basis: '', status: 'Draft' };
     const initialStepState = [{ id: `temp-${Date.now()}`, title: '', description: '', estimatedTime: '', dependsOn: [] }];
@@ -80,7 +83,7 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
                 name: isClone ? `${scenarioToEdit.name} (Copy)` : scenarioToEdit.name, 
                 role: scenarioToEdit.role, 
                 basis: scenarioToEdit.basis, 
-                status: 'Draft' 
+                status: scenarioToEdit.status 
             });
             setScenarioAttachment(scenarioToEdit.attachment || null);
             
@@ -191,24 +194,123 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
                 body: JSON.stringify({ status: newStatus }),
             });
             if (!response.ok) throw new Error('Failed to update scenario status');
-            const updatedScenario = await response.json();
-            setDb(prevDb => ({
-                ...prevDb,
-                scenarios: {
-                    ...prevDb.scenarios,
-                    [updatedScenario.id]: { ...prevDb.scenarios[updatedScenario.id], ...updatedScenario }
-                }
-            }));
+            onDataRefresh();
         } catch (error) {
             console.error(error);
             alert('Lỗi cập nhật trạng thái kịch bản.');
         }
     };
 
-    const filteredScenarios = Object.values(db.scenarios).filter(s => {
-        if (user.role === 'ADMIN') return true;
-        return s.created_by === user.id;
-    });
+    const isScenarioInUse = (scenarioId) => {
+        const drillsUsingScenario = Object.values(db.drills).filter(drill => 
+            drill.scenarios.some(s => s.id === scenarioId)
+        );
+        return drillsUsingScenario;
+    };
+
+    const handleRequestDeletion = (scenarioId) => {
+        const drillsInUse = isScenarioInUse(scenarioId);
+        if (drillsInUse.length > 0) {
+            const drillNames = drillsInUse.map(d => d.name).join(', ');
+            alert(`Không thể yêu cầu xóa. Kịch bản đang được sử dụng trong các drill sau: ${drillNames}`);
+            return;
+        }
+
+        setConfirmModal({
+            isOpen: true,
+            message: t('requestDeleteConfirmation'),
+            onConfirm: () => {
+                handleStatusChange(scenarioId, 'Pending Deletion');
+                setConfirmModal({ isOpen: false, message: '', onConfirm: null });
+            }
+        });
+    };
+    
+    const handleApproveDeletion = (scenarioId) => {
+        const drillsInUse = isScenarioInUse(scenarioId);
+        if (drillsInUse.length > 0) {
+            const drillNames = drillsInUse.map(d => d.name).join(', ');
+            alert(`Không thể xóa. Kịch bản đang được sử dụng trong các drill sau: ${drillNames}`);
+            return;
+        }
+
+        setConfirmModal({
+            isOpen: true,
+            message: t('deleteConfirmation'),
+            onConfirm: async () => {
+                try {
+                    const response = await fetch(`/api/scenarios/${scenarioId}`, { method: 'DELETE' });
+                    if (!response.ok) throw new Error('Failed to delete scenario');
+                    onDataRefresh();
+                } catch (error) {
+                    console.error(error);
+                    alert('Lỗi xóa kịch bản.');
+                } finally {
+                    setConfirmModal({ isOpen: false, message: '', onConfirm: null });
+                }
+            }
+        });
+    };
+    
+    const handleRejectDeletion = (scenarioId) => {
+        handleStatusChange(scenarioId, 'Draft');
+    };
+
+    const filteredScenarios = useMemo(() => Object.values(db.scenarios).filter(s => {
+        const userFilter = user.role === 'ADMIN' || s.created_by === user.id;
+        const searchFilter = searchTerm === '' || s.name.toLowerCase().includes(searchTerm.toLowerCase());
+        return userFilter && searchFilter;
+    }), [db.scenarios, user.role, user.id, searchTerm]);
+
+    const handleSelectScenario = (scenarioId) => {
+        setSelectedScenarios(prev => 
+            prev.includes(scenarioId) 
+            ? prev.filter(id => id !== scenarioId)
+            : [...prev, scenarioId]
+        );
+    };
+
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            setSelectedScenarios(filteredScenarios.map(s => s.id));
+        } else {
+            setSelectedScenarios([]);
+        }
+    };
+
+    const handleDeleteSelected = () => {
+        const scenariosInUse = selectedScenarios.map(id => ({ id, drills: isScenarioInUse(id) })).filter(s => s.drills.length > 0);
+
+        if (scenariosInUse.length > 0) {
+            let alertMessage = 'Không thể xóa các kịch bản sau vì chúng đang được sử dụng:\n';
+            scenariosInUse.forEach(s => {
+                const scenarioName = db.scenarios[s.id]?.name;
+                const drillNames = s.drills.map(d => d.name).join(', ');
+                alertMessage += `\n- ${scenarioName} (trong các drill: ${drillNames})`;
+            });
+            alert(alertMessage);
+            return;
+        }
+
+        setConfirmModal({
+            isOpen: true,
+            message: `Bạn có chắc chắn muốn xóa vĩnh viễn ${selectedScenarios.length} kịch bản đã chọn không? Thao tác này không thể hoàn tác.`,
+            onConfirm: async () => {
+                try {
+                    await Promise.all(selectedScenarios.map(id => 
+                        fetch(`/api/scenarios/${id}`, { method: 'DELETE' })
+                    ));
+                    onDataRefresh();
+                    setSelectedScenarios([]);
+                } catch (error) {
+                    console.error(error);
+                    alert('Lỗi khi xóa các kịch bản đã chọn.');
+                } finally {
+                    setConfirmModal({ isOpen: false, message: '', onConfirm: null });
+                }
+            }
+        });
+    };
 
     const handleDragStart = (e, index) => {
         setDraggedStepIndex(index);
@@ -244,6 +346,7 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
             case 'Active': return 'bg-green-100 text-green-800';
             case 'Pending Approval': return 'bg-yellow-100 text-yellow-800';
             case 'Rejected': return 'bg-red-100 text-red-800';
+            case 'Pending Deletion': return 'bg-orange-100 text-orange-800';
             default: return 'bg-gray-100 text-gray-800';
         }
     };
@@ -255,9 +358,8 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
         }
         const headers = ['STT', 'Tên bước', 'Mô tả (HTML)', 'Thời gian dự kiến (hh:mm:ss)', 'Phụ thuộc (STT bước trước, cách nhau bởi dấu phẩy)'];
         const sampleData = [
-            [1, 'Khởi động hệ thống A', '<p>Bật nguồn và kiểm tra đèn tín hiệu.</p>', '00:10:00', ''],
-            [2, 'Đăng nhập vào hệ thống B', '<p>Sử dụng tài khoản <b>admin</b> để đăng nhập.</p>', '00:05:00', '1'],
-            [3, 'Kiểm tra dịch vụ C', '<p>Gửi request và xác nhận response 200 OK.</p>', '00:03:00', '1, 2']
+            [1, 'Khởi động hệ thống A', 'Bước 1: Bật nguồn.\nBước 2: Kiểm tra đèn.', '00:10:00', ''],
+            [2, 'Đăng nhập vào hệ thống B', 'Sử dụng tài khoản admin để đăng nhập.', '00:05:00', '1'],
         ];
         const data = [headers, ...sampleData];
         const ws = window.XLSX.utils.aoa_to_sheet(data);
@@ -288,7 +390,7 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
                     id: `temp-import-${Date.now()}-${index}`,
                     stt: row['STT'],
                     title: row['Tên bước'] || '',
-                    description: row['Mô tả (HTML)'] || '',
+                    description: (row['Mô tả (HTML)'] || '').replace(/\r?\n/g, '<br />'),
                     estimated_time: row['Thời gian dự kiến (hh:mm:ss)'] || '',
                     dependsOnRaw: String(row['Phụ thuộc (STT bước trước, cách nhau bởi dấu phẩy)'] || '').trim(),
                 }));
@@ -324,23 +426,48 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
     return (
         <>
             <div className="bg-white p-6 rounded-2xl shadow-lg">
-                <div className="flex flex-wrap justify-between items-center mb-4 gap-2">
+                <div className="flex flex-wrap justify-between items-center mb-4 gap-4">
                     <h2 className="text-xl font-bold text-gray-900">{t('scenarioList')}</h2>
                     <div className="flex items-center space-x-2">
-                        <button onClick={handleDownloadTemplate} disabled={!isXlsxReady || isImporting} className="flex items-center bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                            <DownloadIcon /> {t('downloadTemplate')}
-                        </button>
-                        <button onClick={() => fileInputRef.current.click()} disabled={!isXlsxReady || isImporting} className="flex items-center bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                            {isImporting ? t('importing') : <><UploadIcon /> {t('importFromExcel')}</>}
-                        </button>
-                        <input type="file" ref={fileInputRef} onChange={handleFileImport} className="hidden" accept=".xlsx, .xls" />
-                        <button onClick={() => handleOpenModal()} className="bg-[#00558F] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#004472] transition-all duration-300 shadow-lg shadow-blue-900/20 hover:shadow-xl hover:shadow-blue-800/30">{t('createNewScenario')}</button>
+                        <input 
+                            type="text"
+                            placeholder="Tìm kiếm theo tên..."
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            className="bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                        />
+                        {selectedScenarios.length > 0 && user.role === 'ADMIN' ? (
+                             <button onClick={handleDeleteSelected} className="flex items-center bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors">
+                                <DeleteIcon /> <span className="ml-2">Xóa ({selectedScenarios.length})</span>
+                            </button>
+                        ) : (
+                            <>
+                                <button onClick={handleDownloadTemplate} disabled={!isXlsxReady || isImporting} className="flex items-center bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <DownloadIcon /> <span className="hidden sm:inline ml-2">{t('downloadTemplate')}</span>
+                                </button>
+                                <button onClick={() => fileInputRef.current.click()} disabled={!isXlsxReady || isImporting} className="flex items-center bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                    {isImporting ? t('importing') : <><UploadIcon /> <span className="hidden sm:inline ml-2">{t('importFromExcel')}</span></>}
+                                </button>
+                                <input type="file" ref={fileInputRef} onChange={handleFileImport} className="hidden" accept=".xlsx, .xls" />
+                                <button onClick={() => handleOpenModal()} className="bg-[#00558F] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#004472]">{t('createNewScenario')}</button>
+                            </>
+                        )}
                     </div>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="min-w-full">
                          <thead className="border-b border-gray-200">
                             <tr>
+                                {user.role === 'ADMIN' && (
+                                    <th className="py-3 px-4 w-12">
+                                        <input 
+                                            type="checkbox"
+                                            className="rounded"
+                                            onChange={handleSelectAll}
+                                            checked={filteredScenarios.length > 0 && selectedScenarios.length === filteredScenarios.length}
+                                        />
+                                    </th>
+                                )}
                                 <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('scenarioName')}</th>
                                 <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('status')}</th>
                                 <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('creator')}</th>
@@ -351,27 +478,54 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
                         <tbody>
                             {filteredScenarios.map(s => {
                                 const creator = db.users.find(u => u.id === s.created_by);
+                                const isSelected = selectedScenarios.includes(s.id);
                                 return (
-                                <tr key={s.id} className="border-b border-gray-100 hover:bg-gray-50">
+                                <tr key={s.id} className={`border-b border-gray-100 ${isSelected ? 'bg-sky-50' : 'hover:bg-gray-50'}`}>
+                                    {user.role === 'ADMIN' && (
+                                        <td className="py-3 px-4">
+                                            <input 
+                                                type="checkbox"
+                                                className="rounded"
+                                                checked={isSelected}
+                                                onChange={() => handleSelectScenario(s.id)}
+                                            />
+                                        </td>
+                                    )}
                                     <td className="py-3 px-4 text-gray-800">{s.name}</td>
-                                    <td className="py-3 px-4"><span className={`text-xs px-2 py-1 rounded-full font-semibold ${getStatusClass(s.status)}`}>{s.status}</span></td>
+                                    <td className="py-3 px-4"><span className={`text-xs px-2 py-1 rounded-full font-semibold ${getStatusClass(s.status)}`}>{t(s.status.toLowerCase().replace(' ', '')) || s.status}</span></td>
                                     <td className="py-3 px-4 text-gray-600">{creator ? creator.username : 'N/A'}</td>
                                     <td className="py-3 px-4 text-gray-600">{formatDate(s.last_updated_at)}</td>
                                     <td className="py-3 px-4">
                                         <div className="flex items-center space-x-2">
-                                            {(user.role === 'ADMIN' || user.id === s.created_by) && (
+                                            {selectedScenarios.length === 0 && (
                                                 <>
-                                                    <button onClick={() => handleOpenModal(s)} title={t('edit')} className="p-2 rounded-lg text-yellow-600 bg-yellow-100 hover:bg-yellow-200"><EditIcon /></button>
-                                                    <button onClick={() => handleOpenModal(s, true)} title={t('clone')} className="p-2 rounded-lg text-purple-600 bg-purple-100 hover:bg-purple-200"><CloneIcon /></button>
-                                                </>
-                                            )}
-                                            {user.role !== 'ADMIN' && s.status === 'Draft' && s.basis && (
-                                                <button onClick={() => handleStatusChange(s.id, 'Pending Approval')} title={t('submitForApproval')} className="p-2 rounded-lg text-blue-600 bg-blue-100 hover:bg-blue-200"><SubmitApprovalIcon /></button>
-                                            )}
-                                            {user.role === 'ADMIN' && s.status === 'Pending Approval' && (
-                                                <>
-                                                    <button onClick={() => handleStatusChange(s.id, 'Active')} title={t('approve')} className="p-2 rounded-lg text-green-600 bg-green-100 hover:bg-green-200"><ApproveIcon /></button>
-                                                    <button onClick={() => handleStatusChange(s.id, 'Rejected')} title={t('reject')} className="p-2 rounded-lg text-red-600 bg-red-100 hover:bg-red-200"><RejectIcon /></button>
+                                                    {(user.role === 'ADMIN' || user.id === s.created_by) && s.status !== 'Pending Deletion' && (
+                                                        <>
+                                                            <button onClick={() => handleOpenModal(s)} title={t('edit')} className="p-2 rounded-lg text-yellow-600 bg-yellow-100 hover:bg-yellow-200"><EditIcon /></button>
+                                                            <button onClick={() => handleOpenModal(s, true)} title={t('clone')} className="p-2 rounded-lg text-purple-600 bg-purple-100 hover:bg-purple-200"><CloneIcon /></button>
+                                                        </>
+                                                    )}
+                                                    {user.role !== 'ADMIN' && s.status === 'Draft' && s.basis && (
+                                                        <button onClick={() => handleStatusChange(s.id, 'Pending Approval')} title={t('submitForApproval')} className="p-2 rounded-lg text-blue-600 bg-blue-100 hover:bg-blue-200"><SubmitApprovalIcon /></button>
+                                                    )}
+                                                    {user.role === 'ADMIN' && s.status === 'Pending Approval' && (
+                                                        <>
+                                                            <button onClick={() => handleStatusChange(s.id, 'Active')} title={t('approve')} className="p-2 rounded-lg text-green-600 bg-green-100 hover:bg-green-200"><ApproveIcon /></button>
+                                                            <button onClick={() => handleStatusChange(s.id, 'Rejected')} title={t('reject')} className="p-2 rounded-lg text-red-600 bg-red-100 hover:bg-red-200"><RejectIcon /></button>
+                                                        </>
+                                                    )}
+                                                    {user.role !== 'ADMIN' && (user.id === s.created_by) && s.status !== 'Pending Deletion' && (
+                                                        <button onClick={() => handleRequestDeletion(s.id)} title={t('requestDeletion')} className="p-2 rounded-lg text-red-600 bg-red-100 hover:bg-red-200"><DeleteIcon /></button>
+                                                    )}
+                                                    {user.role === 'ADMIN' && s.status !== 'Pending Deletion' && (
+                                                        <button onClick={() => handleApproveDeletion(s.id)} title={t('delete')} className="p-2 rounded-lg text-red-600 bg-red-100 hover:bg-red-200"><DeleteIcon /></button>
+                                                    )}
+                                                    {user.role === 'ADMIN' && s.status === 'Pending Deletion' && (
+                                                        <>
+                                                            <button onClick={() => handleApproveDeletion(s.id)} title={t('approveDeletion')} className="p-2 rounded-lg text-green-600 bg-green-100 hover:bg-green-200"><ApproveIcon /></button>
+                                                            <button onClick={() => handleRejectDeletion(s.id)} title={t('rejectDeletion')} className="p-2 rounded-lg text-red-600 bg-red-100 hover:bg-red-200"><RejectIcon /></button>
+                                                        </>
+                                                    )}
                                                 </>
                                             )}
                                         </div>
@@ -382,6 +536,7 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
                     </table>
                 </div>
             </div>
+
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                     <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
@@ -501,6 +656,19 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
                                 <button type="submit" className="bg-[#00558F] hover:bg-[#004472] text-white font-semibold py-2 px-4 rounded-lg">{editingScenario ? t('saveChanges') : t('saveScenario')}</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {confirmModal.isOpen && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-sm">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">{t('confirm')}</h3>
+                        <p className="text-gray-600 mb-6">{confirmModal.message}</p>
+                        <div className="flex justify-end space-x-2">
+                            <button onClick={() => setConfirmModal({ isOpen: false, message: '', onConfirm: null })} className="bg-gray-200 py-2 px-4 rounded-lg text-gray-800 hover:bg-gray-300">{t('cancel')}</button>
+                            <button onClick={confirmModal.onConfirm} className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg">{t('confirm')}</button> 
+                        </div>
                     </div>
                 </div>
             )}

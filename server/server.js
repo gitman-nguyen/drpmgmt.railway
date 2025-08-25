@@ -11,7 +11,7 @@ const pool = new Pool({
 });
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // --- API ĐỌC DỮ LIỆU ---
 
@@ -183,13 +183,13 @@ app.post('/api/user/change-password', async (req, res) => {
 // --- API SCENARIOS ---
 
 app.post('/api/scenarios', async (req, res) => {
-    const { name, role, basis, status, created_by, steps } = req.body;
+    const { name, role, basis, status, created_by, steps, attachment } = req.body;
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
         const scenarioId = `scen-${Date.now()}`;
-        const scenarioQuery = 'INSERT INTO scenarios (id, name, role, basis, status, created_by) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *';
-        await client.query(scenarioQuery, [scenarioId, name, role, basis, status, created_by]);
+        const scenarioQuery = 'INSERT INTO scenarios (id, name, role, basis, status, created_by, attachment) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *';
+        await client.query(scenarioQuery, [scenarioId, name, role, basis, status, created_by, attachment]);
 
         if (steps && steps.length > 0) {
             const tempIdToDbId = {};
@@ -226,12 +226,12 @@ app.post('/api/scenarios', async (req, res) => {
 
 app.put('/api/scenarios/:id', async (req, res) => {
     const { id } = req.params;
-    const { name, role, basis, status, steps } = req.body;
+    const { name, role, basis, status, steps, attachment } = req.body;
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-        const scenarioQuery = 'UPDATE scenarios SET name = $1, role = $2, basis = $3, status = $4, last_updated_at = NOW() WHERE id = $5';
-        await client.query(scenarioQuery, [name, role, basis, status, id]);
+        const scenarioQuery = 'UPDATE scenarios SET name = $1, role = $2, basis = $3, status = $4, last_updated_at = NOW(), attachment = $5 WHERE id = $6';
+        await client.query(scenarioQuery, [name, role, basis, status, attachment, id]);
 
         await client.query('DELETE FROM step_dependencies WHERE step_id IN (SELECT id FROM steps WHERE scenario_id = $1)', [id]);
         await client.query('DELETE FROM steps WHERE scenario_id = $1', [id]);
@@ -262,6 +262,50 @@ app.put('/api/scenarios/:id', async (req, res) => {
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('Update scenario error:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        client.release();
+    }
+});
+
+app.put('/api/scenarios/:id/status', async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    try {
+        const result = await pool.query(
+            'UPDATE scenarios SET status = $1, last_updated_at = NOW() WHERE id = $2 RETURNING *',
+            [status, id]
+        );
+        if (result.rows.length > 0) res.json(result.rows[0]);
+        else res.status(404).json({ error: 'Scenario not found' });
+    } catch (err) {
+        console.error('Update scenario status error:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.delete('/api/scenarios/:id', async (req, res) => {
+    const { id } = req.params;
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        await client.query('DELETE FROM drill_scenario_dependencies WHERE scenario_id = $1 OR depends_on_scenario_id = $1', [id]);
+        await client.query('DELETE FROM drill_scenarios WHERE scenario_id = $1', [id]);
+        await client.query('DELETE FROM step_dependencies WHERE step_id IN (SELECT id FROM steps WHERE scenario_id = $1)', [id]);
+        await client.query('DELETE FROM execution_steps WHERE step_id IN (SELECT id FROM steps WHERE scenario_id = $1)', [id]);
+        await client.query('DELETE FROM execution_scenarios WHERE scenario_id = $1', [id]);
+        await client.query('DELETE FROM steps WHERE scenario_id = $1', [id]);
+        const result = await client.query('DELETE FROM scenarios WHERE id = $1', [id]);
+        await client.query('COMMIT');
+
+        if (result.rowCount > 0) {
+            res.status(200).json({ message: 'Scenario deleted successfully' });
+        } else {
+            res.status(404).json({ error: 'Scenario not found' });
+        }
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Delete scenario error:', err);
         res.status(500).json({ error: 'Internal server error' });
     } finally {
         client.release();
@@ -356,22 +400,6 @@ app.put('/api/drills/:id/status', async (req, res) => {
     }
 });
 
-app.put('/api/scenarios/:id/status', async (req, res) => {
-    const { id } = req.params;
-    const { status } = req.body;
-    try {
-        const result = await pool.query(
-            'UPDATE scenarios SET status = $1, last_updated_at = NOW() WHERE id = $2 RETURNING *',
-            [status, id]
-        );
-        if (result.rows.length > 0) res.json(result.rows[0]);
-        else res.status(404).json({ error: 'Scenario not found' });
-    } catch (err) {
-        console.error('Update scenario status error:', err);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
 app.post('/api/execution/step', async (req, res) => {
     const { drill_id, step_id, status, started_at, completed_at, assignee, result_text } = req.body;
     try {
@@ -412,6 +440,143 @@ app.post('/api/execution/scenario', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+
+// --- API QUẢN TRỊ ---
+
+app.post('/api/admin/cleanup-history', async (req, res) => {
+    const { months } = req.body;
+    // Cần kiểm tra quyền Admin ở đây trong ứng dụng thực tế
+    
+    if (![3, 6, 12].includes(parseInt(months))) {
+        return res.status(400).json({ error: 'Invalid time period.' });
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const cutoffDate = new Date();
+        cutoffDate.setMonth(cutoffDate.getMonth() - parseInt(months));
+
+        const drillsToDeleteQuery = `SELECT id FROM drills WHERE status = 'Closed' AND closed_at < $1`;
+        const drillsResult = await client.query(drillsToDeleteQuery, [cutoffDate]);
+        const drillIdsToDelete = drillsResult.rows.map(r => r.id);
+
+        if (drillIdsToDelete.length > 0) {
+            await client.query('DELETE FROM execution_steps WHERE drill_id = ANY($1::text[])', [drillIdsToDelete]);
+            await client.query('DELETE FROM execution_scenarios WHERE drill_id = ANY($1::text[])', [drillIdsToDelete]);
+        }
+        
+        await client.query('COMMIT');
+        res.status(200).json({ message: `Successfully cleaned up execution data for ${drillIdsToDelete.length} drills.` });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Cleanup history error:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        client.release();
+    }
+});
+
+app.post('/api/admin/reset-system', async (req, res) => {
+    // Cần kiểm tra quyền Admin ở đây trong ứng dụng thực tế
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        
+        // Truncate xóa toàn bộ dữ liệu và reset lại sequence
+        await client.query('TRUNCATE drills, drill_scenarios, drill_scenario_dependencies, execution_steps, execution_scenarios RESTART IDENTITY');
+        
+        await client.query('COMMIT');
+        res.status(200).json({ message: 'System has been reset successfully.' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('System reset error:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        client.release();
+    }
+});
+
+app.post('/api/admin/seed-demo-data', async (req, res) => {
+    // Cần kiểm tra quyền Admin ở đây trong ứng dụng thực tế
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // --- THAY ĐỔI: Không xóa dữ liệu cũ, chỉ chèn nếu chưa tồn tại ---
+        
+        await client.query(`
+            INSERT INTO users (id, username, password, role, first_name, last_name, description) VALUES
+            ('user-1', 'admin', 'password', 'ADMIN', 'Admin', 'User', 'System Administrator'),
+            ('user-2', 'tech_user', 'password', 'TECHNICAL', 'Tech', 'User', 'Database Specialist'),
+            ('user-3', 'biz_user', 'password', 'BUSINESS', 'Business', 'User', 'Communications Lead')
+            ON CONFLICT (id) DO NOTHING;
+        `);
+        
+        await client.query(`
+            INSERT INTO scenarios (id, name, role, created_by, created_at, last_updated_at, status, basis) VALUES
+            ('scen-1', 'Chuyển đổi dự phòng Database', 'TECHNICAL', 'user-2', '2025-08-10T10:00:00Z', '2025-08-11T14:30:00Z', 'Active', 'Kế hoạch DR năm 2025'),
+            ('scen-2', 'Truyền thông Khách hàng', 'BUSINESS', 'user-3', '2025-08-10T11:00:00Z', '2025-08-10T11:00:00Z', 'Active', 'Kế hoạch DR năm 2025'),
+            ('scen-3', 'Kiểm tra hiệu năng hệ thống', 'TECHNICAL', 'user-2', '2025-08-11T09:00:00Z', '2025-08-12T11:00:00Z', 'Draft', '')
+            ON CONFLICT (id) DO NOTHING;
+        `);
+
+        await client.query(`
+            INSERT INTO steps (id, scenario_id, title, description, estimated_time, step_order) VALUES
+            ('step-101', 'scen-1', 'Khởi tạo nâng cấp Read Replica của RDS', 'Promote the standby RDS instance in us-west-2 to become the new primary.', '00:15:00', 1),
+            ('step-102', 'scen-1', 'Cập nhật bản ghi DNS', 'Point the primary DB CNAME record to the new primary instance endpoint.', '00:05:00', 2),
+            ('step-103', 'scen-1', 'Xác minh kết nối ứng dụng', 'Run health checks on all critical applications to ensure they can connect to the new database.', '00:10:00', 3),
+            ('step-201', 'scen-2', 'Soạn thảo cập nhật trạng thái nội bộ', 'Prepare an internal communication for all staff about the ongoing DR drill.', '00:20:00', 1),
+            ('step-202', 'scen-2', 'Đăng lên trang trạng thái công khai', 'Update the public status page to inform customers about scheduled maintenance (simulated).', '00:05:00', 2),
+            ('step-301', 'scen-3', 'Chạy bài test tải', 'Use JMeter to run a load test against the new primary application servers.', '01:00:00', 1)
+            ON CONFLICT (id) DO NOTHING;
+        `);
+
+        await client.query(`
+            INSERT INTO step_dependencies (step_id, depends_on_step_id) VALUES
+            ('step-102', 'step-101'),
+            ('step-103', 'step-102'),
+            ('step-202', 'step-201')
+            ON CONFLICT (step_id, depends_on_step_id) DO NOTHING;
+        `);
+
+        await client.query(`
+            INSERT INTO drills (id, name, description, status, execution_status, basis, start_date, end_date, opened_at, closed_at) VALUES
+            ('drill-1', 'Diễn tập chuyển đổi dự phòng AWS Quý 3', 'Mô phỏng chuyển đổi dự phòng toàn bộ khu vực cho các dịch vụ quan trọng.', 'Active', 'InProgress', 'Quyết định số 123/QĐ-NHNN ngày 01/01/2025', '2025-08-16', '2025-08-18', '2025-08-16T10:00:00Z', NULL)
+            ON CONFLICT (id) DO NOTHING;
+        `);
+
+        await client.query(`
+            INSERT INTO drill_scenarios (drill_id, scenario_id, scenario_order) VALUES
+            ('drill-1', 'scen-1', 1),
+            ('drill-1', 'scen-2', 2)
+            ON CONFLICT (drill_id, scenario_id) DO NOTHING;
+        `);
+
+        await client.query(`
+            INSERT INTO drill_scenario_dependencies (drill_id, scenario_id, depends_on_scenario_id) VALUES
+            ('drill-1', 'scen-2', 'scen-1')
+            ON CONFLICT (drill_id, scenario_id, depends_on_scenario_id) DO NOTHING;
+        `);
+
+        await client.query(`
+            INSERT INTO execution_steps (drill_id, step_id, status, started_at, completed_at, assignee) VALUES
+            ('drill-1', 'step-101', 'Completed-Success', '2025-08-16T10:00:00Z', '2025-08-16T10:14:00Z', 'tech_user'),
+            ('drill-1', 'step-102', 'InProgress', '2025-08-16T10:15:00Z', NULL, 'tech_user')
+            ON CONFLICT (drill_id, step_id) DO NOTHING;
+        `);
+        
+        await client.query('COMMIT');
+        res.status(200).json({ message: 'Demo data seeded successfully.' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Seed demo data error:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    } finally {
+        client.release();
+    }
+});
+
 
 // --- Phục vụ Frontend ---
 app.use(express.static(path.join(__dirname, 'client/build')));

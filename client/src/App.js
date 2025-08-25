@@ -9,7 +9,8 @@ import ScenarioManagementScreen from './screens/ScenarioManagementScreen';
 import CreateDrillScreen from './screens/CreateDrillScreen';
 import ExecutionScreen from './screens/ExecutionScreen';
 import ReportScreen from './screens/ReportScreen';
-import './assets/styles.css'; // Import global styles
+import AdminScreen from './screens/AdminScreen';
+import './assets/styles.css';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -47,13 +48,11 @@ export default function App() {
     };
 
   useEffect(() => {
-    // Add Google Fonts
     const link = document.createElement('link');
     link.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap";
     link.rel = "stylesheet";
     document.head.appendChild(link);
     
-    // Add SheetJS library for Excel import/export
     const xlsxScript = document.createElement('script');
     xlsxScript.src = "https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js";
     xlsxScript.async = true;
@@ -88,7 +87,7 @@ export default function App() {
             body: JSON.stringify({ username, password })
         });
         if (!response.ok) {
-            return false; // Login failed
+            return false;
         }
         const foundUser = await response.json();
         setUser(foundUser);
@@ -130,7 +129,7 @@ export default function App() {
           closed_at: null,
           status: 'Draft',
       };
-      delete clonedDrill.id; // Let the creation screen handle it as a new drill
+      delete clonedDrill.id;
       setEditingDrill(clonedDrill);
       setActiveScreen('create-drill');
   };
@@ -142,7 +141,6 @@ export default function App() {
 
   const handleExecutionUpdate = (drillId, entityId, newData) => {
     setDb(prevDb => {
-        // Create a deep copy to avoid mutation issues
         const newExecutionData = JSON.parse(JSON.stringify(prevDb.executionData));
         if (!newExecutionData[drillId]) {
             newExecutionData[drillId] = {};
@@ -212,6 +210,9 @@ export default function App() {
         case 'create-drill':
              if (user.role !== 'ADMIN') return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={fetchData} />;
             return <CreateDrillScreen setActiveScreen={setActiveScreen} setDb={setDb} db={db} user={user} drillToEdit={editingDrill} onDoneEditing={() => setActiveScreen('dashboard')} onDataRefresh={fetchData} />;
+        case 'admin':
+            if (user.role !== 'ADMIN') return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={fetchData} />;
+            return <AdminScreen onDataRefresh={fetchData} />;
         default:
             return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onDataRefresh={fetchData}/>;
     }
