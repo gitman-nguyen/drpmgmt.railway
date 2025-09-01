@@ -1,11 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
 
 const AdminScreen = ({ onDataRefresh }) => {
     const { t } = useTranslation();
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, message: '', onConfirm: null });
-    const [cleanupPeriod, setCleanupPeriod] = useState('3'); // Default to 3 months
+    const [cleanupPeriod, setCleanupPeriod] = useState('3');
     const [resetConfirmText, setResetConfirmText] = useState('');
+
+    // State for session timeout setting
+    const [sessionTimeout, setSessionTimeout] = useState('30'); // Default to 30
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Fetch current settings when component mounts
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const response = await fetch('/api/settings');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.sessionTimeout) {
+                       setSessionTimeout(data.sessionTimeout.toString());
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch settings:", error);
+                // Keep default value on error
+            }
+        };
+        fetchSettings();
+    }, []);
+
+    const handleSaveSettings = async () => {
+        setIsSaving(true);
+        try {
+            const timeoutValue = parseInt(sessionTimeout, 10);
+            if (isNaN(timeoutValue) || timeoutValue <= 0) {
+                alert('Vui lòng nhập một số phút hợp lệ.');
+                return;
+            }
+            const response = await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionTimeout: timeoutValue })
+            });
+            if (!response.ok) throw new Error('Failed to save settings');
+            alert('Lưu cài đặt thành công!');
+            onDataRefresh(); // Refresh data in App.js to apply new settings
+        } catch (error) {
+            alert('Lỗi khi lưu cài đặt.');
+            console.error("Save settings error:", error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const handleCleanupHistory = () => {
         const periodTextMap = { '3': t('threeMonths'), '6': t('sixMonths'), '12': t('oneYear') };
@@ -81,6 +128,28 @@ const AdminScreen = ({ onDataRefresh }) => {
             <div className="bg-white p-6 rounded-2xl shadow-lg">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">{t('adminTools')}</h2>
                 <div className="space-y-8">
+                    {/* Session Timeout Settings */}
+                    <div className="border border-gray-200 p-4 rounded-lg">
+                        <h3 className="font-bold text-lg text-gray-800">Cài đặt Phiên làm việc</h3>
+                        <p className="text-sm text-gray-600 mt-1 mb-4">Cấu hình thời gian tự động đăng xuất nếu người dùng không có hoạt động.</p>
+                        <div className="flex items-center gap-4">
+                             <div className="w-1/3">
+                                <label htmlFor="sessionTimeout" className="block text-sm font-medium text-gray-700">Thời gian tự động đăng xuất (phút)</label>
+                                <input 
+                                    type="number"
+                                    id="sessionTimeout"
+                                    value={sessionTimeout}
+                                    onChange={e => setSessionTimeout(e.target.value)}
+                                    className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2"
+                                    min="1"
+                                />
+                            </div>
+                            <button onClick={handleSaveSettings} disabled={isSaving} className="self-end bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                                {isSaving ? 'Đang lưu...' : 'Lưu'}
+                            </button>
+                        </div>
+                    </div>
+
                     {/* Cleanup History */}
                     <div className="border border-gray-200 p-4 rounded-lg">
                         <h3 className="font-bold text-lg text-gray-800">{t('cleanupHistory')}</h3>

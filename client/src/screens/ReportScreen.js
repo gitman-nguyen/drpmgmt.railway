@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
 import KpiCard from '../components/common/KpiCard';
-import { ClockIcon, UsersIcon } from '../components/icons';
+// BỔ SUNG: Thêm các icon cần thiết cho phần Checkpoint
+import { ClockIcon, UsersIcon, CheckpointIcon, CheckCircleIcon, XCircleIcon, UserIcon } from '../components/icons';
 
-const ReportScreen = ({ drill, executionData, scenarios, steps, onBack }) => {
+// BỔ SUNG: Thêm prop `users` để lấy thông tin người đánh giá checkpoint
+const ReportScreen = ({ drill, executionData, scenarios, steps, users, onBack }) => {
     const { t } = useTranslation();
     const [expandedScenarios, setExpandedScenarios] = useState([]);
 
@@ -28,8 +30,26 @@ const ReportScreen = ({ drill, executionData, scenarios, steps, onBack }) => {
     };
 
     return (
-        <div>
+        <div className="p-6 bg-gray-50 min-h-screen">
             <button onClick={onBack} className="text-[#00558F] hover:underline mb-4">&larr; {t('backToDashboard')}</button>
+            
+            {/* ============================================ */}
+            {/* 1. Drill Status Header (UPDATED)             */}
+            {/* ============================================ */}
+            {drill.execution_status === 'Closed' && (
+                <div className="bg-green-100 border-l-4 border-green-500 text-green-800 p-4 rounded-xl shadow-md mb-6" role="alert">
+                    <h2 className="font-bold text-xl">{t('drillCompletedSuccessfully')}</h2>
+                </div>
+            )}
+            {drill.execution_status === 'Failed' && (
+                <div className="bg-red-100 border-l-4 border-red-500 text-red-800 p-4 rounded-xl shadow-md mb-6" role="alert">
+                    <h2 className="font-bold text-xl">{t('drillEndedInFailure')}</h2>
+                    {drill.failure_reason && (
+                       <p className="mt-1 text-sm">{t('reason')}: {drill.failure_reason}</p>
+                    )}
+                </div>
+            )}
+
             <div className="space-y-6">
                 <div className="bg-white p-6 rounded-xl shadow-lg">
                     <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('drillReportTitle', { drillName: drill.name })}</h2>
@@ -140,8 +160,53 @@ const ReportScreen = ({ drill, executionData, scenarios, steps, onBack }) => {
                         </table>
                     </div>
                 </div>
+
+                {/* ============================================ */}
+                {/* 2. Checkpoints Section (UPDATED)             */}
+                {/* ============================================ */}
+                {drill.checkpoints && Object.keys(drill.checkpoints).length > 0 && (
+                    <div className="bg-white p-6 rounded-xl shadow-lg">
+                        <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-3">
+                             <CheckpointIcon className="w-6 h-6 text-yellow-500" /> {t('checkpointResults')}
+                        </h3>
+                        <div className="space-y-4">
+                        {Object.values(drill.checkpoints).map(checkpoint => {
+                            const afterScenario = scenarios[checkpoint.after_scenario_id];
+                            return (
+                                <div key={checkpoint.id} className="p-4 border rounded-lg bg-gray-50 border-gray-200">
+                                    <h4 className="font-bold text-lg text-gray-800">{checkpoint.title}</h4>
+                                    {afterScenario && <p className="text-sm text-gray-500 mb-3">{t('evaluatedAfter')}: "{afterScenario.name}"</p>}
+                                    
+                                    <ul className="space-y-2">
+                                        {checkpoint.criteria.map(criterion => {
+                                            const state = drillExecData[criterion.id];
+                                            const checkedByUser = state?.checked_by && users ? users.find(u => u.id === state.checked_by) : null;
+                                            const isPass = state?.status === 'Pass';
+                                            return (
+                                                <li key={criterion.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-white rounded-md shadow-sm gap-2">
+                                                    <p className="text-gray-700 flex-1 mr-4">{criterion.criterion_text}</p>
+                                                    {state ? (
+                                                        <div className={`flex-shrink-0 w-full sm:w-auto flex items-center justify-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${isPass ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                                            {isPass ? <CheckCircleIcon className="w-5 h-5"/> : <XCircleIcon className="w-5 h-5"/>}
+                                                            <span>{isPass ? t('pass') : t('fail')}</span>
+                                                            {checkedByUser && <span className="text-gray-500 text-xs font-normal ml-2">({checkedByUser.fullname || checkedByUser.username})</span>}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="flex-shrink-0 w-full sm:w-auto text-center text-xs font-semibold text-gray-500 bg-gray-200 px-3 py-1 rounded-full">{t('notEvaluated')}</span>
+                                                    )}
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </div>
+                            );
+                        })}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     )
 };
 export default ReportScreen;
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { LanguageProvider } from './contexts/LanguageContext';
 import AppLayout from './components/layout/AppLayout';
 import LoginPage from './components/auth/LoginPage';
@@ -26,19 +26,30 @@ export default function App() {
     steps: {},
     executionData: {}
   });
+  const [settings, setSettings] = useState({ sessionTimeout: 30 }); // Thêm state cho settings
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isXlsxReady, setIsXlsxReady] = useState(false);
 
   const fetchData = async () => {
-      setLoading(true);
+      // Don't set loading to true if we are just refreshing in the background
+      // setLoading(true); 
       try {
-        const response = await fetch('/api/data');
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        // Lấy dữ liệu chính của ứng dụng
+        const dataResponse = await fetch('/api/data');
+        if (!dataResponse.ok) {
+            throw new Error(`HTTP error! status: ${dataResponse.status}`);
         }
-        const data = await response.json();
+        const data = await dataResponse.json();
         setDb(data);
+
+        // Lấy dữ liệu cài đặt (bao gồm session timeout)
+        const settingsResponse = await fetch('/api/settings');
+        if (settingsResponse.ok) {
+            const appSettings = await settingsResponse.json();
+            setSettings(appSettings);
+        }
+
       } catch (e) {
         console.error("Failed to fetch data:", e);
         setError("Không thể tải dữ liệu từ server. Vui lòng kiểm tra lại backend.");
@@ -47,7 +58,28 @@ export default function App() {
       }
     };
 
+  // Effect to load initial data and restore session
   useEffect(() => {
+    try {
+        const savedUser = localStorage.getItem('drillAppUser');
+        if (savedUser) {
+            setUser(JSON.parse(savedUser));
+        }
+
+        const savedScreen = localStorage.getItem('drillAppScreen');
+        if(savedScreen) {
+            setActiveScreen(savedScreen);
+        }
+
+        const savedDrill = localStorage.getItem('drillAppDrill');
+        if(savedDrill) {
+            setActiveDrill(JSON.parse(savedDrill));
+        }
+    } catch(e) {
+        console.error("Failed to restore session from localStorage", e);
+        localStorage.clear(); // Clear corrupted data
+    }
+
     const link = document.createElement('link');
     link.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap";
     link.rel = "stylesheet";
@@ -73,6 +105,34 @@ export default function App() {
     };
   }, []);
 
+  // Effect to save session state to localStorage whenever it changes
+  useEffect(() => {
+    try {
+        if (user) {
+            localStorage.setItem('drillAppScreen', activeScreen);
+            if (activeDrill) {
+                // Only save the ID to avoid stale complex data
+                localStorage.setItem('drillAppDrillId', activeDrill.id);
+            } else {
+                localStorage.removeItem('drillAppDrillId');
+            }
+        }
+    } catch (e) {
+        console.error("Failed to save session to localStorage", e);
+    }
+  }, [activeScreen, activeDrill, user]);
+
+
+  useEffect(() => {
+    // When data is refreshed, ensure activeDrill is the full, up-to-date object
+    if (activeDrill) {
+        const freshDrill = db.drills.find(d => d.id === activeDrill.id);
+        if (freshDrill) {
+            setActiveDrill(freshDrill);
+        }
+    }
+  }, [db.drills]);
+
   useEffect(() => {
     if (activeScreen !== 'create-drill') {
         setEditingDrill(null);
@@ -90,6 +150,7 @@ export default function App() {
             return false;
         }
         const foundUser = await response.json();
+        localStorage.setItem('drillAppUser', JSON.stringify(foundUser));
         setUser(foundUser);
         setShowLogin(false);
         return true;
@@ -99,11 +160,51 @@ export default function App() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('drillAppUser');
+    localStorage.removeItem('drillAppScreen');
+    localStorage.removeItem('drillAppDrillId');
     setUser(null);
     setActiveScreen('dashboard');
     setActiveDrill(null);
-  };
+  }, []);
+
+  // Effect để xử lý tự động đăng xuất
+  useEffect(() => {
+      if (!user || !settings.sessionTimeout) {
+          return; // Không chạy nếu chưa đăng nhập hoặc chưa tải được setting
+      }
+
+      let inactivityTimer;
+
+      const resetTimer = () => {
+          clearTimeout(inactivityTimer);
+          inactivityTimer = setTimeout(() => {
+              alert("Bạn đã không hoạt động trong một khoảng thời gian. Phiên làm việc sẽ tự động kết thúc.");
+              handleLogout();
+          }, settings.sessionTimeout * 60 * 1000); // Chuyển phút sang mili giây
+      };
+
+      const activityListener = () => {
+          resetTimer();
+      };
+      
+      const activityEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
+      
+      activityEvents.forEach(event => {
+          window.addEventListener(event, activityListener);
+      });
+
+      resetTimer(); // Bắt đầu đếm giờ
+
+      // Dọn dẹp khi component unmount hoặc user thay đổi
+      return () => {
+          clearTimeout(inactivityTimer);
+          activityEvents.forEach(event => {
+              window.removeEventListener(event, activityListener);
+          });
+      };
+  }, [user, settings.sessionTimeout, handleLogout]);
   
   const handleExecuteDrill = (drill) => {
     setActiveDrill(drill);
@@ -154,6 +255,28 @@ export default function App() {
     });
   };
 
+  // Function to handle drill completion, ensuring the full drill object is used
+  const handleDrillCompletion = (updatedDrillData) => {
+    const fullDrill = db.drills.find(d => d.id === updatedDrillData.id);
+    if (fullDrill) {
+        const newlyCompletedDrill = { ...fullDrill, ...updatedDrillData };
+        setActiveDrill(newlyCompletedDrill);
+        setActiveScreen('report');
+        // Also update the main drills list
+        setDb(prevDb => ({
+            ...prevDb,
+            drills: prevDb.drills.map(d => d.id === newlyCompletedDrill.id ? newlyCompletedDrill : d)
+        }));
+    } else {
+        // Fallback: refresh all data if the drill isn't found in the current state
+        fetchData().then(() => {
+            setActiveDrill(updatedDrillData); // Set the partial data for now
+            setActiveScreen('report'); // Navigate immediately
+        });
+    }
+  };
+
+
   if (loading) {
     return <div className="flex items-center justify-center h-screen bg-[#1D2A2E] text-white">Đang tải dữ liệu...</div>;
   }
@@ -170,6 +293,7 @@ export default function App() {
                 scenarios={db.scenarios}
                 steps={db.steps}
                 executionData={db.executionData}
+                users={db.users}
                 onLoginRequest={() => setShowLogin(true)}
             />
             {showLogin && <LoginPage onLogin={handleLogin} onCancel={() => setShowLogin(false)} />}
@@ -189,17 +313,28 @@ export default function App() {
                 onBack={handleBackToDashboard} 
                 scenarios={db.scenarios} 
                 steps={db.steps}
+                users={db.users}
                 executionData={db.executionData}
                 onExecutionUpdate={handleExecutionUpdate}
                 onDataRefresh={fetchData}
+                // SỬA LỖI: Truyền các hàm xử lý state từ App.js
+                setActiveDrill={setActiveDrill}
+                setActiveScreen={setActiveScreen}
+                onDrillEnded={handleDrillCompletion}
               />;
         case 'report':
             if (!activeDrill) return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={fetchData} />;
+            
+            // SỬA LỖI: Đảm bảo drill object luôn đầy đủ trước khi render ReportScreen
+            const fullDrillForReport = db.drills.find(d => d.id === activeDrill.id) || activeDrill;
+            const drillToRender = { ...fullDrillForReport, ...activeDrill };
+
             return <ReportScreen 
-                drill={activeDrill} 
+                drill={drillToRender}
                 onBack={handleBackToDashboard} 
                 scenarios={db.scenarios} 
                 steps={db.steps}
+                users={db.users}
                 executionData={db.executionData}
               />;
         case 'user-management':
@@ -226,3 +361,4 @@ export default function App() {
     </LanguageProvider>
   );
 }
+

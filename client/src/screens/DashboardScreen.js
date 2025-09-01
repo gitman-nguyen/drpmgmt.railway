@@ -1,27 +1,78 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
-import { OpenIcon, CloseIcon, ExecuteIcon, ReportIcon, EditIcon, CloneIcon } from '../components/icons';
+import { OpenIcon, CloseIcon, ExecuteIcon, ReportIcon, EditIcon, CloneIcon, ArrowUpIcon, ArrowDownIcon } from '../components/icons';
 
 const DashboardScreen = ({ user, drills, setDrills, onExecuteDrill, onViewReport, onEditDrill, onCloneDrill, executionData, scenarios, onCreateDrill, onDataRefresh }) => {
   const { t } = useTranslation();
+  const [sortConfig, setSortConfig] = useState({ key: 'start_date', direction: 'descending' });
+
+  // Simplified sorting logic as per user's confirmation that closed_at is always available.
+  const sortedDrills = useMemo(() => {
+    let sortableDrills = [...drills];
+    if (sortConfig !== null) {
+        sortableDrills.sort((a, b) => {
+            let aValue = a[sortConfig.key];
+            let bValue = b[sortConfig.key];
+
+            if (sortConfig.key.includes('_date') || sortConfig.key.includes('_at')) {
+                // Handle null or undefined dates for robust sorting
+                aValue = aValue ? new Date(aValue) : new Date(0); // Treat null dates as very old
+                bValue = bValue ? new Date(bValue) : new Date(0);
+            }
+
+            if (aValue < bValue) {
+                return sortConfig.direction === 'ascending' ? -1 : 1;
+            }
+            if (aValue > bValue) {
+                return sortConfig.direction === 'ascending' ? 1 : -1;
+            }
+            return 0;
+        });
+    }
+    return sortableDrills;
+  }, [drills, sortConfig]);
+
+
+  const requestSort = (key) => {
+    let direction = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+        direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (name) => {
+    if (sortConfig.key !== name) {
+      return <span className="w-4 h-4 inline-block"></span>;
+    }
+    if (sortConfig.direction === 'ascending') {
+      return <ArrowUpIcon />;
+    }
+    return <ArrowDownIcon />;
+  };
   
   const getStatusClass = (status) => {
     if (status === 'Active') return 'bg-green-100 text-green-800';
+    if (status === 'Draft') return 'bg-yellow-100 text-yellow-800';
     return 'bg-gray-100 text-gray-700';
   };
   
   const getExecStatusClass = (status) => {
     if (status === 'InProgress') return 'bg-blue-100 text-blue-800';
     if (status === 'Closed') return 'bg-green-100 text-green-800';
-    return 'bg-yellow-100 text-yellow-800';
+    return 'bg-gray-100 text-gray-700'; // Default for 'Scheduled'
   };
 
   const handleDrillStatusUpdate = async (drill, newStatus) => {
     try {
+        const body = { 
+            execution_status: newStatus, 
+            timestamp: new Date().toISOString() 
+        };
         const response = await fetch(`/api/drills/${drill.id}/status`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ execution_status: newStatus, timestamp: new Date().toISOString() }),
+            body: JSON.stringify(body),
         });
         if (!response.ok) throw new Error('Failed to update drill status');
         await onDataRefresh();
@@ -32,12 +83,7 @@ const DashboardScreen = ({ user, drills, setDrills, onExecuteDrill, onViewReport
   };
 
   const handleOpenDrill = (drill) => {
-    const today = new Date().toISOString().split('T')[0];
-    if (drill.start_date && drill.end_date && today >= drill.start_date.split('T')[0] && today <= drill.end_date.split('T')[0]) {
-        handleDrillStatusUpdate(drill, 'InProgress');
-    } else {
-        alert(t('notInTimeframe'));
-    }
+    handleDrillStatusUpdate(drill, 'InProgress');
   };
   
   const handleCloseDrill = (drillId) => {
@@ -81,13 +127,21 @@ const DashboardScreen = ({ user, drills, setDrills, onExecuteDrill, onViewReport
         <table className="min-w-full">
             <thead className="border-b border-gray-200">
                 <tr>
-                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('drillName')}</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('name')}>
+                        <div className="flex items-center">{t('drillName')} {getSortIcon('name')}</div>
+                    </th>
                     <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('status')}</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('opened_at')}>
+                        <div className="flex items-center">{t('startTime')} {getSortIcon('opened_at')}</div>
+                    </th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('closed_at')}>
+                        <div className="flex items-center">{t('endTime')} {getSortIcon('closed_at')}</div>
+                    </th>
                     <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('action')}</th>
                 </tr>
             </thead>
             <tbody>
-                {drills.map(drill => {
+                {sortedDrills.map(drill => {
                     const inTime = isDrillInTimeframe(drill);
                     return (
                         <tr key={drill.id} className="border-b border-gray-100 hover:bg-gray-50">
@@ -97,15 +151,41 @@ const DashboardScreen = ({ user, drills, setDrills, onExecuteDrill, onViewReport
                                 <p className="text-xs text-gray-400 mt-1">{t('startDate')}: {new Date(drill.start_date).toLocaleDateString()} - {t('endDate')}: {new Date(drill.end_date).toLocaleDateString()}</p>
                             </td>
                             <td className="py-3 px-4">
-                                <div className="flex flex-col items-start space-y-1">
-                                    <span className={`font-semibold px-2 py-0.5 rounded-full text-xs ${getStatusClass(drill.status)}`}>{t(drill.status.toLowerCase())}</span>
-                                    <span className={`font-semibold px-2 py-0.5 rounded-full text-xs ${getExecStatusClass(drill.execution_status)}`}>{drill.execution_status}</span>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className={`font-semibold px-2 py-0.5 rounded-full text-xs ${getStatusClass(drill.status)}`}>
+                                        {t(drill.status ? drill.status.toLowerCase() : 'unknown')}
+                                    </span>
+                                    <span className={`font-semibold px-2 py-0.5 rounded-full text-xs ${getExecStatusClass(drill.execution_status)}`}>
+                                        {t(drill.execution_status ? drill.execution_status.toLowerCase() : 'unknown')}
+                                    </span>
                                 </div>
+                            </td>
+                            <td className="py-3 px-4 text-sm text-gray-500">
+                                {drill.opened_at && (
+                                    <p>{new Date(drill.opened_at).toLocaleString()}</p>
+                                )}
+                            </td>
+                            <td className="py-3 px-4 text-sm text-gray-500">
+                                {drill.closed_at && (
+                                    <p>{new Date(drill.closed_at).toLocaleString()}</p>
+                                )}
                             </td>
                             <td className="py-3 px-4">
                                 <div className="flex items-center space-x-2">
-                                    {user.role === 'ADMIN' && drill.status === 'Active' && drill.execution_status === 'Scheduled' && (
-                                        <button onClick={() => handleOpenDrill(drill)} disabled={!inTime} title={inTime ? t('openDrill') : t('notInTimeframe')} className="p-2 rounded-lg text-blue-600 bg-blue-100 hover:bg-blue-200 disabled:text-gray-400 disabled:bg-gray-100 disabled:cursor-not-allowed"><OpenIcon /></button>
+                                    {user.role === 'ADMIN' && drill.execution_status === 'Scheduled' && (
+                                        <button 
+                                            onClick={() => handleOpenDrill(drill)} 
+                                            disabled={!inTime || drill.status !== 'Active'} 
+                                            title={
+                                                drill.status !== 'Active' 
+                                                ? t('drillMustBeActive')
+                                                : !inTime 
+                                                ? t('notInTimeframe') 
+                                                : t('openDrill')
+                                            }
+                                            className="p-2 rounded-lg text-blue-600 bg-blue-100 hover:bg-blue-200 disabled:text-gray-400 disabled:bg-gray-100 disabled:cursor-not-allowed">
+                                            <OpenIcon />
+                                        </button>
                                     )}
                                     {user.role === 'ADMIN' && drill.execution_status === 'InProgress' && (
                                         <button onClick={() => handleCloseDrill(drill.id)} title={t('closeDrill')} className="p-2 rounded-lg text-red-600 bg-red-100 hover:bg-red-200"><CloseIcon /></button>
@@ -113,7 +193,7 @@ const DashboardScreen = ({ user, drills, setDrills, onExecuteDrill, onViewReport
                                     {drill.execution_status === 'InProgress' && (
                                         <button onClick={() => onExecuteDrill(drill)} title={t('execute')} className="p-2 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200"><ExecuteIcon /></button>
                                     )}
-                                    {drill.execution_status === 'Closed' && (
+                                    {drill.execution_status !== 'InProgress' && drill.execution_status !== 'Scheduled' && (
                                         <button onClick={() => onViewReport(drill)} title={t('viewReport')} className="p-2 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200"><ReportIcon /></button>
                                     )}
                                     {user.role === 'ADMIN' && (
@@ -134,3 +214,4 @@ const DashboardScreen = ({ user, drills, setDrills, onExecuteDrill, onViewReport
   );
 };
 export default DashboardScreen;
+

@@ -14,10 +14,40 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
 // --- API ĐỌC DỮ LIỆU ---
+// BỔ SUNG: Thêm các bảng checkpoints vào mô tả
+/*
+Database schema changes needed for this feature:
+
+1. Create drill_checkpoints table:
+CREATE TABLE drill_checkpoints (
+    id TEXT PRIMARY KEY,
+    drill_id TEXT REFERENCES drills(id) ON DELETE CASCADE,
+    after_scenario_id TEXT REFERENCES scenarios(id) ON DELETE CASCADE,
+    title TEXT NOT NULL
+);
+
+2. Create drill_checkpoint_criteria table:
+CREATE TABLE drill_checkpoint_criteria (
+    id TEXT PRIMARY KEY,
+    checkpoint_id TEXT REFERENCES drill_checkpoints(id) ON DELETE CASCADE,
+    criterion_text TEXT NOT NULL,
+    criterion_order INTEGER
+);
+
+3. Create execution_checkpoint_criteria table:
+CREATE TABLE execution_checkpoint_criteria (
+    drill_id TEXT NOT NULL,
+    criterion_id TEXT NOT NULL,
+    status TEXT, -- 'Pass', 'Fail'
+    checked_by TEXT REFERENCES users(id),
+    checked_at TIMESTAMPTZ,
+    PRIMARY KEY (drill_id, criterion_id)
+);
+*/
 
 app.get('/api/data', async (req, res) => {
     try {
-        const usersQuery = 'SELECT id, username, role, first_name, last_name, description FROM users';
+        const usersQuery = "SELECT id, username, role, first_name, last_name, description, first_name || ' ' || last_name AS fullname FROM users";
         const drillsQuery = 'SELECT * FROM drills ORDER BY start_date DESC';
         const scenariosQuery = `
             SELECT s.*, COALESCE(
@@ -29,6 +59,12 @@ app.get('/api/data', async (req, res) => {
         const stepDepsQuery = 'SELECT * FROM step_dependencies';
         const drillScenariosQuery = 'SELECT * FROM drill_scenarios';
         const drillScenarioDepsQuery = 'SELECT * FROM drill_scenario_dependencies';
+        const drillStepAssignmentsQuery = 'SELECT * FROM drill_step_assignments';
+        // BỔ SUNG: Queries cho checkpoints
+        const drillCheckpointsQuery = 'SELECT * FROM drill_checkpoints';
+        const drillCheckpointCriteriaQuery = 'SELECT * FROM drill_checkpoint_criteria ORDER BY criterion_order';
+        const executionCheckpointsQuery = 'SELECT * FROM execution_checkpoint_criteria';
+        
         const executionStepsQuery = 'SELECT * FROM execution_steps';
         const executionScenariosQuery = 'SELECT * FROM execution_scenarios';
 
@@ -39,6 +75,10 @@ app.get('/api/data', async (req, res) => {
             pool.query(stepDepsQuery),
             pool.query(drillScenariosQuery),
             pool.query(drillScenarioDepsQuery),
+            pool.query(drillStepAssignmentsQuery),
+            pool.query(drillCheckpointsQuery),
+            pool.query(drillCheckpointCriteriaQuery),
+            pool.query(executionCheckpointsQuery),
             pool.query(executionStepsQuery),
             pool.query(executionScenariosQuery)
         ]);
@@ -50,6 +90,10 @@ app.get('/api/data', async (req, res) => {
             stepDepsRes,
             drillScenariosRes,
             drillScenarioDepsRes,
+            drillStepAssignmentsRes,
+            drillCheckpointsRes,
+            drillCheckpointCriteriaRes,
+            executionCheckpointsRes,
             executionStepsRes,
             executionScenariosRes
         ] = results.map(r => r.rows);
@@ -69,6 +113,16 @@ app.get('/api/data', async (req, res) => {
             }
             scenarios[scen.id] = { ...scen, steps: stepIds };
         });
+        
+        // BỔ SUNG: Gom nhóm dữ liệu checkpoints
+        const checkpointsByDrill = {};
+        drillCheckpointsRes.forEach(cp => {
+            if (!checkpointsByDrill[cp.drill_id]) {
+                checkpointsByDrill[cp.drill_id] = {};
+            }
+            const criteria = drillCheckpointCriteriaRes.filter(crit => crit.checkpoint_id === cp.id);
+            checkpointsByDrill[cp.drill_id][cp.after_scenario_id] = { ...cp, criteria };
+        });
 
         const drills = drillsRes.map(drill => {
             const scenariosInDrill = drillScenariosRes
@@ -80,15 +134,26 @@ app.get('/api/data', async (req, res) => {
                         .map(dep => dep.depends_on_scenario_id);
                     return { id: ds.scenario_id, dependsOn };
                 });
-            return { ...drill, scenarios: scenariosInDrill };
+            
+            const step_assignments = {};
+            drillStepAssignmentsRes.filter(a => a.drill_id === drill.id).forEach(a => {
+                step_assignments[a.step_id] = a.assignee_id;
+            });
+
+            return { 
+                ...drill, 
+                scenarios: scenariosInDrill, 
+                step_assignments,
+                checkpoints: checkpointsByDrill[drill.id] || {} // Gán checkpoints vào drill
+            };
         });
         
         const executionData = {};
-        [...executionStepsRes, ...executionScenariosRes].forEach(exec => {
+        [...executionStepsRes, ...executionScenariosRes, ...executionCheckpointsRes].forEach(exec => {
             if (!executionData[exec.drill_id]) {
                 executionData[exec.drill_id] = {};
             }
-            const key = exec.step_id || exec.scenario_id;
+            const key = exec.step_id || exec.scenario_id || exec.criterion_id;
             executionData[exec.drill_id][key] = exec;
         });
 
@@ -100,20 +165,52 @@ app.get('/api/data', async (req, res) => {
     }
 });
 
-// --- API XÁC THỰC & USER ---
-
+// --- API Ghi Dữ liệu & Xử lý ---
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
-        const result = await pool.query('SELECT * FROM users WHERE username = $1 AND password = $2', [username, password]);
+        const result = await pool.query("SELECT *, first_name || ' ' || last_name AS fullname FROM users WHERE username = $1 AND password = $2", [username, password]);
         if (result.rows.length > 0) {
             const user = result.rows[0];
-            res.json({ id: user.id, name: user.username, role: user.role });
+            res.json({ id: user.id, username: user.username, role: user.role, fullname: user.fullname });
         } else {
             res.status(401).json({ error: 'Invalid credentials' });
         }
     } catch (err) {
         console.error('Login error:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Bổ sung: API để lấy giá trị cài đặt session timeout từ database
+app.get('/api/settings', async (req, res) => {
+    try {
+        const result = await pool.query("SELECT * FROM app_settings WHERE key = 'sessionTimeout'");
+        if (result.rows.length > 0) {
+            res.json({ sessionTimeout: parseInt(result.rows[0].value, 10) });
+        } else {
+            // Trả về giá trị mặc định nếu không tìm thấy trong database
+            res.json({ sessionTimeout: 30 }); 
+        }
+    } catch (err) {
+        console.error('Error fetching settings:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Bổ sung: API để lưu giá trị cài đặt session timeout
+app.post('/api/admin/settings', async (req, res) => {
+    const { sessionTimeout } = req.body;
+    try {
+        const query = `
+            INSERT INTO app_settings (key, value)
+            VALUES ('sessionTimeout', $1)
+            ON CONFLICT (key) DO UPDATE SET value = $1;
+        `;
+        await pool.query(query, [sessionTimeout.toString()]);
+        res.status(200).json({ message: 'Settings saved successfully' });
+    } catch (err) {
+        console.error('Save settings error:', err);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -179,8 +276,6 @@ app.post('/api/user/change-password', async (req, res) => {
     }
 });
 
-
-// --- API SCENARIOS ---
 
 app.post('/api/scenarios', async (req, res) => {
     const { name, role, basis, status, created_by, steps, attachment } = req.body;
@@ -290,6 +385,15 @@ app.delete('/api/scenarios/:id', async (req, res) => {
     try {
         await client.query('BEGIN');
         await client.query('DELETE FROM drill_scenario_dependencies WHERE scenario_id = $1 OR depends_on_scenario_id = $1', [id]);
+        const checkpointIdsQuery = 'SELECT id FROM drill_checkpoints WHERE after_scenario_id = $1';
+        const checkpointIdsResult = await client.query(checkpointIdsQuery, [id]);
+        const checkpointIds = checkpointIdsResult.rows.map(r => r.id);
+        if(checkpointIds.length > 0) {
+            await client.query('DELETE FROM execution_checkpoint_criteria WHERE criterion_id IN (SELECT id FROM drill_checkpoint_criteria WHERE checkpoint_id = ANY($1::text[]))', [checkpointIds]);
+            await client.query('DELETE FROM drill_checkpoint_criteria WHERE checkpoint_id = ANY($1::text[])', [checkpointIds]);
+            await client.query('DELETE FROM drill_checkpoints WHERE id = ANY($1::text[])', [checkpointIds]);
+        }
+        
         await client.query('DELETE FROM drill_scenarios WHERE scenario_id = $1', [id]);
         await client.query('DELETE FROM step_dependencies WHERE step_id IN (SELECT id FROM steps WHERE scenario_id = $1)', [id]);
         await client.query('DELETE FROM execution_steps WHERE step_id IN (SELECT id FROM steps WHERE scenario_id = $1)', [id]);
@@ -312,11 +416,8 @@ app.delete('/api/scenarios/:id', async (req, res) => {
     }
 });
 
-
-// --- API DRILLS & EXECUTION ---
-
 app.post('/api/drills', async (req, res) => {
-    const { name, description, basis, status, start_date, end_date, scenarios } = req.body;
+    const { name, description, basis, status, start_date, end_date, scenarios, step_assignments, checkpoints } = req.body;
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
@@ -334,6 +435,30 @@ app.post('/api/drills', async (req, res) => {
                 }
             }
         }
+        
+        if (step_assignments) {
+            for (const [stepId, assigneeId] of Object.entries(step_assignments)) {
+                if (assigneeId) {
+                    await client.query('INSERT INTO drill_step_assignments (drill_id, step_id, assignee_id) VALUES ($1, $2, $3)', [drillId, stepId, assigneeId]);
+                }
+            }
+        }
+
+        if (checkpoints) {
+            for (const [scenarioId, cp] of Object.entries(checkpoints)) {
+                if (cp && cp.title) {
+                    const checkpointId = `cp-${Date.now()}-${scenarioId}`;
+                    await client.query('INSERT INTO drill_checkpoints (id, drill_id, after_scenario_id, title) VALUES ($1, $2, $3, $4)', [checkpointId, drillId, scenarioId, cp.title]);
+                    if (cp.criteria && cp.criteria.length > 0) {
+                        for (const [index, criterion] of cp.criteria.entries()) {
+                            const criterionId = `crit-${Date.now()}-${index}`;
+                            await client.query('INSERT INTO drill_checkpoint_criteria (id, checkpoint_id, criterion_text, criterion_order) VALUES ($1, $2, $3, $4)', [criterionId, checkpointId, criterion.text, index + 1]);
+                        }
+                    }
+                }
+            }
+        }
+
         await client.query('COMMIT');
         res.status(201).json({ message: 'Drill created successfully' });
     } catch (err) {
@@ -347,7 +472,7 @@ app.post('/api/drills', async (req, res) => {
 
 app.put('/api/drills/:id', async (req, res) => {
     const { id } = req.params;
-    const { name, description, basis, status, start_date, end_date, scenarios } = req.body;
+    const { name, description, basis, status, start_date, end_date, scenarios, step_assignments, checkpoints } = req.body;
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
@@ -356,6 +481,15 @@ app.put('/api/drills/:id', async (req, res) => {
 
         await client.query('DELETE FROM drill_scenario_dependencies WHERE drill_id = $1', [id]);
         await client.query('DELETE FROM drill_scenarios WHERE drill_id = $1', [id]);
+        await client.query('DELETE FROM drill_step_assignments WHERE drill_id = $1', [id]);
+        
+        const oldCheckpointIdsQuery = 'SELECT id FROM drill_checkpoints WHERE drill_id = $1';
+        const oldCheckpointIdsResult = await client.query(oldCheckpointIdsQuery, [id]);
+        const oldCheckpointIds = oldCheckpointIdsResult.rows.map(r => r.id);
+        if(oldCheckpointIds.length > 0) {
+            await client.query('DELETE FROM drill_checkpoint_criteria WHERE checkpoint_id = ANY($1::text[])', [oldCheckpointIds]);
+            await client.query('DELETE FROM drill_checkpoints WHERE drill_id = $1', [id]);
+        }
 
         if (scenarios && scenarios.length > 0) {
             for (const [index, scen] of scenarios.entries()) {
@@ -367,6 +501,30 @@ app.put('/api/drills/:id', async (req, res) => {
                 }
             }
         }
+        
+        if (step_assignments) {
+            for (const [stepId, assigneeId] of Object.entries(step_assignments)) {
+                if (assigneeId) {
+                    await client.query('INSERT INTO drill_step_assignments (drill_id, step_id, assignee_id) VALUES ($1, $2, $3)', [id, stepId, assigneeId]);
+                }
+            }
+        }
+
+        if (checkpoints) {
+            for (const [scenarioId, cp] of Object.entries(checkpoints)) {
+                 if (cp && cp.title) {
+                    const checkpointId = `cp-${Date.now()}-${scenarioId}`;
+                    await client.query('INSERT INTO drill_checkpoints (id, drill_id, after_scenario_id, title) VALUES ($1, $2, $3, $4)', [checkpointId, id, scenarioId, cp.title]);
+                    if (cp.criteria && cp.criteria.length > 0) {
+                        for (const [index, criterion] of cp.criteria.entries()) {
+                            const criterionId = `crit-${Date.now()}-${index}`;
+                            await client.query('INSERT INTO drill_checkpoint_criteria (id, checkpoint_id, criterion_text, criterion_order) VALUES ($1, $2, $3, $4)', [criterionId, checkpointId, criterion.text, index + 1]);
+                        }
+                    }
+                }
+            }
+        }
+        
         await client.query('COMMIT');
         res.status(200).json({ message: 'Drill updated successfully' });
     } catch (err) {
@@ -381,12 +539,15 @@ app.put('/api/drills/:id', async (req, res) => {
 
 app.put('/api/drills/:id/status', async (req, res) => {
     const { id } = req.params;
-    const { execution_status, timestamp } = req.body;
+    const { execution_status, timestamp, reason } = req.body;
     let query;
     if (execution_status === 'InProgress') {
         query = { text: 'UPDATE drills SET execution_status = $1, opened_at = $2 WHERE id = $3 RETURNING *', values: [execution_status, timestamp, id] };
-    } else if (execution_status === 'Closed') {
-        query = { text: 'UPDATE drills SET execution_status = $1, closed_at = $2 WHERE id = $3 RETURNING *', values: [execution_status, timestamp, id] };
+    } else if (execution_status === 'Closed' || execution_status === 'Failed') {
+        query = { 
+            text: 'UPDATE drills SET execution_status = $1, closed_at = $2, failure_reason = $3 WHERE id = $4 RETURNING *', 
+            values: [execution_status, timestamp, reason || null, id] 
+        };
     } else {
         return res.status(400).json({ error: 'Invalid status' });
     }
@@ -441,31 +602,43 @@ app.post('/api/execution/scenario', async (req, res) => {
     }
 });
 
-// --- API QUẢN TRỊ ---
+// BỔ SUNG: API mới để cập nhật trạng thái checkpoint
+app.post('/api/execution/checkpoint', async (req, res) => {
+    const { drill_id, criterion_id, status, checked_by } = req.body;
+    try {
+        const query = `
+            INSERT INTO execution_checkpoint_criteria (drill_id, criterion_id, status, checked_by, checked_at)
+            VALUES ($1, $2, $3, $4, NOW())
+            ON CONFLICT (drill_id, criterion_id)
+            DO UPDATE SET status = EXCLUDED.status, checked_by = EXCLUDED.checked_by, checked_at = NOW()
+            RETURNING *;
+        `;
+        const result = await pool.query(query, [drill_id, criterion_id, status, checked_by]);
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error('Upsert execution checkpoint error:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 
 app.post('/api/admin/cleanup-history', async (req, res) => {
     const { months } = req.body;
-    // Cần kiểm tra quyền Admin ở đây trong ứng dụng thực tế
-    
     if (![3, 6, 12].includes(parseInt(months))) {
         return res.status(400).json({ error: 'Invalid time period.' });
     }
-
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
         const cutoffDate = new Date();
         cutoffDate.setMonth(cutoffDate.getMonth() - parseInt(months));
-
-        const drillsToDeleteQuery = `SELECT id FROM drills WHERE status = 'Closed' AND closed_at < $1`;
+        const drillsToDeleteQuery = `SELECT id FROM drills WHERE (execution_status = 'Closed' OR execution_status = 'Failed') AND closed_at < $1`;
         const drillsResult = await client.query(drillsToDeleteQuery, [cutoffDate]);
         const drillIdsToDelete = drillsResult.rows.map(r => r.id);
-
         if (drillIdsToDelete.length > 0) {
             await client.query('DELETE FROM execution_steps WHERE drill_id = ANY($1::text[])', [drillIdsToDelete]);
             await client.query('DELETE FROM execution_scenarios WHERE drill_id = ANY($1::text[])', [drillIdsToDelete]);
+            await client.query('DELETE FROM execution_checkpoint_criteria WHERE drill_id = ANY($1::text[])', [drillIdsToDelete]);
         }
-        
         await client.query('COMMIT');
         res.status(200).json({ message: `Successfully cleaned up execution data for ${drillIdsToDelete.length} drills.` });
     } catch (err) {
@@ -478,14 +651,10 @@ app.post('/api/admin/cleanup-history', async (req, res) => {
 });
 
 app.post('/api/admin/reset-system', async (req, res) => {
-    // Cần kiểm tra quyền Admin ở đây trong ứng dụng thực tế
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-        
-        // Truncate xóa toàn bộ dữ liệu và reset lại sequence
-        await client.query('TRUNCATE drills, drill_scenarios, drill_scenario_dependencies, execution_steps, execution_scenarios RESTART IDENTITY');
-        
+        await client.query('TRUNCATE drills, drill_scenarios, drill_scenario_dependencies, execution_steps, execution_scenarios, drill_step_assignments, drill_checkpoints, drill_checkpoint_criteria, execution_checkpoint_criteria RESTART IDENTITY');
         await client.query('COMMIT');
         res.status(200).json({ message: 'System has been reset successfully.' });
     } catch (err) {
@@ -498,19 +667,22 @@ app.post('/api/admin/reset-system', async (req, res) => {
 });
 
 app.post('/api/admin/seed-demo-data', async (req, res) => {
-    // Cần kiểm tra quyền Admin ở đây trong ứng dụng thực tế
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-
-        // --- THAY ĐỔI: Không xóa dữ liệu cũ, chỉ chèn nếu chưa tồn tại ---
         
         await client.query(`
             INSERT INTO users (id, username, password, role, first_name, last_name, description) VALUES
             ('user-1', 'admin', 'password', 'ADMIN', 'Admin', 'User', 'System Administrator'),
             ('user-2', 'tech_user', 'password', 'TECHNICAL', 'Tech', 'User', 'Database Specialist'),
-            ('user-3', 'biz_user', 'password', 'BUSINESS', 'Business', 'User', 'Communications Lead')
-            ON CONFLICT (id) DO NOTHING;
+            ('user-3', 'biz_user', 'password', 'BUSINESS', 'User', 'Communications Lead')
+            ON CONFLICT (id) DO UPDATE SET 
+                username = EXCLUDED.username,
+                password = EXCLUDED.password,
+                role = EXCLUDED.role,
+                first_name = EXCLUDED.first_name,
+                last_name = EXCLUDED.last_name,
+                description = EXCLUDED.description;
         `);
         
         await client.query(`
@@ -558,12 +730,27 @@ app.post('/api/admin/seed-demo-data', async (req, res) => {
             ('drill-1', 'scen-2', 'scen-1')
             ON CONFLICT (drill_id, scenario_id, depends_on_scenario_id) DO NOTHING;
         `);
+        
+        await client.query(`
+            INSERT INTO drill_step_assignments (drill_id, step_id, assignee_id) VALUES
+            ('drill-1', 'step-101', 'user-2'),
+            ('drill-1', 'step-102', 'user-2'),
+            ('drill-1', 'step-103', 'user-2'),
+            ('drill-1', 'step-201', 'user-3'),
+            ('drill-1', 'step-202', 'user-3')
+            ON CONFLICT (drill_id, step_id) DO NOTHING;
+        `);
 
         await client.query(`
             INSERT INTO execution_steps (drill_id, step_id, status, started_at, completed_at, assignee) VALUES
-            ('drill-1', 'step-101', 'Completed-Success', '2025-08-16T10:00:00Z', '2025-08-16T10:14:00Z', 'tech_user'),
-            ('drill-1', 'step-102', 'InProgress', '2025-08-16T10:15:00Z', NULL, 'tech_user')
-            ON CONFLICT (drill_id, step_id) DO NOTHING;
+            ('drill-1', 'step-101', 'Completed-Success', '2025-08-16T10:00:00Z', '2025-08-16T10:14:00Z', 'user-2'),
+            ('drill-1', 'step-102', 'InProgress', '2025-08-16T10:15:00Z', NULL, 'user-2'),
+            ('drill-1', 'step-201', 'Completed-Success', '2025-08-16T10:16:00Z', '2025-08-16T10:20:00Z', 'user-3')
+            ON CONFLICT (drill_id, step_id) DO UPDATE SET 
+                status = EXCLUDED.status,
+                started_at = EXCLUDED.started_at,
+                completed_at = EXCLUDED.completed_at,
+                assignee = EXCLUDED.assignee;
         `);
         
         await client.query('COMMIT');
@@ -578,7 +765,6 @@ app.post('/api/admin/seed-demo-data', async (req, res) => {
 });
 
 
-// --- Phục vụ Frontend ---
 app.use(express.static(path.join(__dirname, 'client/build')));
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
