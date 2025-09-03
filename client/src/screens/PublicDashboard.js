@@ -356,7 +356,7 @@ const PublicDashboard = ({ onLoginRequest }) => {
 
     return (
         <div className="min-h-screen bg-[#1D2A2E] text-gray-200 font-sans p-4 sm:p-8 relative overflow-hidden">
-            <div className="absolute inset-0 bg-cover bg-center opacity-10" style={{ backgroundImage: `url('https://s-vnba-cdn.aicms.vn/vnba-media/24/7/10/bidv_668e534202e24.jpg')` }} ></div>
+            <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: `url('https://s-vnba-cdn.aicms.vn/vnba-media/24/7/10/bidv_668e534202e24.jpg')` }} ></div>
             <div className="absolute inset-0 bg-gradient-to-b from-[#1D2A2E]/50 to-[#1D2A2E]"></div>
             
             <header className="flex justify-between items-center mb-8 z-10 relative">
