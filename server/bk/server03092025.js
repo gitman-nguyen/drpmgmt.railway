@@ -17,8 +17,7 @@ app.use(express.json({ limit: '10mb' }));
 
 app.get('/api/data', async (req, res) => {
     try {
-        // Bổ sung các truy vấn còn thiếu
-        const usersQuery = 'SELECT id, username, role, first_name, last_name, description, first_name || \' \' || last_name AS fullname FROM users';
+        const usersQuery = 'SELECT id, username, role, first_name, last_name, description FROM users';
         const drillsQuery = 'SELECT * FROM drills ORDER BY start_date DESC';
         const scenariosQuery = `
             SELECT s.*, COALESCE(
@@ -30,9 +29,6 @@ app.get('/api/data', async (req, res) => {
         const stepDepsQuery = 'SELECT * FROM step_dependencies';
         const drillScenariosQuery = 'SELECT * FROM drill_scenarios';
         const drillScenarioDepsQuery = 'SELECT * FROM drill_scenario_dependencies';
-        const drillStepAssignmentsQuery = 'SELECT * FROM drill_step_assignments'; // THÊM MỚI
-        const drillCheckpointsQuery = 'SELECT * FROM drill_checkpoints'; // THÊM MỚI
-        const drillCheckpointCriteriaQuery = 'SELECT * FROM drill_checkpoint_criteria'; // THÊM MỚI
         const executionStepsQuery = 'SELECT * FROM execution_steps';
         const executionScenariosQuery = 'SELECT * FROM execution_scenarios';
 
@@ -43,9 +39,6 @@ app.get('/api/data', async (req, res) => {
             pool.query(stepDepsQuery),
             pool.query(drillScenariosQuery),
             pool.query(drillScenarioDepsQuery),
-            pool.query(drillStepAssignmentsQuery), // THÊM MỚI
-            pool.query(drillCheckpointsQuery), // THÊM MỚI
-            pool.query(drillCheckpointCriteriaQuery), // THÊM MỚI
             pool.query(executionStepsQuery),
             pool.query(executionScenariosQuery)
         ]);
@@ -57,9 +50,6 @@ app.get('/api/data', async (req, res) => {
             stepDepsRes,
             drillScenariosRes,
             drillScenarioDepsRes,
-            drillStepAssignmentsRes, // THÊM MỚI
-            drillCheckpointsRes, // THÊM MỚI
-            drillCheckpointCriteriaRes, // THÊM MỚI
             executionStepsRes,
             executionScenariosRes
         ] = results.map(r => r.rows);
@@ -80,17 +70,6 @@ app.get('/api/data', async (req, res) => {
             scenarios[scen.id] = { ...scen, steps: stepIds };
         });
 
-        // Bổ sung logic xử lý checkpoints
-        const checkpointsByDrill = {};
-        drillCheckpointsRes.forEach(cp => {
-            if (!checkpointsByDrill[cp.drill_id]) {
-                checkpointsByDrill[cp.drill_id] = {};
-            }
-            const criteria = drillCheckpointCriteriaRes.filter(crit => crit.checkpoint_id === cp.id);
-            checkpointsByDrill[cp.drill_id][cp.id] = { ...cp, criteria };
-        });
-
-        // Cập nhật logic map drill để thêm assignments và checkpoints
         const drills = drillsRes.map(drill => {
             const scenariosInDrill = drillScenariosRes
                 .filter(ds => ds.drill_id === drill.id)
@@ -101,20 +80,7 @@ app.get('/api/data', async (req, res) => {
                         .map(dep => dep.depends_on_scenario_id);
                     return { id: ds.scenario_id, dependsOn };
                 });
-
-            const step_assignments = drillStepAssignmentsRes
-                .filter(a => a.drill_id === drill.id)
-                .reduce((acc, a) => {
-                    acc[a.step_id] = a.assignee_id;
-                    return acc;
-                }, {});
-
-            return { 
-                ...drill, 
-                scenarios: scenariosInDrill,
-                step_assignments, // Thêm assignments vào drill
-                checkpoints: checkpointsByDrill[drill.id] || {} // Thêm checkpoints vào drill
-            };
+            return { ...drill, scenarios: scenariosInDrill };
         });
         
         const executionData = {};
@@ -149,6 +115,7 @@ app.get('/api/public/data', async (req, res) => {
         }
 
         const usersQuery = "SELECT id, username, role, first_name, last_name, description, first_name || ' ' || last_name AS fullname FROM users";
+        // PHỤC HỒI: Trả lại câu truy vấn đã hoạt động ổn định cho Public API
         const scenariosQuery = `
             SELECT 
                 s.id, s.name, s.role,
@@ -203,6 +170,7 @@ app.get('/api/public/data', async (req, res) => {
                         .map(dep => dep.depends_on_step_id);
                     steps[step.id] = { ...step, dependsOn };
                 });
+                 // Xóa trường description không cần thiết cho public dashboard
                 scen.steps.forEach(s => delete s.description);
             }
             scenarios[scen.id] = scen;
@@ -890,3 +858,4 @@ app.get('*', (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
+

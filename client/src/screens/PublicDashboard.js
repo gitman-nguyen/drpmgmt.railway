@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
 import { LogoIcon, UserIcon, CheckpointIcon, CheckCircleIcon, XCircleIcon, ClockIcon } from '../components/icons';
 
-const PieChart = ({ percentage, size = 80, strokeWidth = 8, colorClass = 'text-yellow-400' }) => {
+const PieChart = ({ percentage, size = 80, strokeWidth = 8, colorClass = 'text-yellow-400', textSizeClass = 'text-lg' }) => {
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (percentage / 100) * circumference;
@@ -13,7 +13,7 @@ const PieChart = ({ percentage, size = 80, strokeWidth = 8, colorClass = 'text-y
                 <circle className="text-gray-600" strokeWidth={strokeWidth} stroke="currentColor" fill="transparent" r={radius} cx={size/2} cy={size/2} />
                 <circle className={colorClass} strokeWidth={strokeWidth} strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" stroke="currentColor" fill="transparent" r={radius} cx={size/2} cy={size/2} style={{ transform: 'rotate(-90deg)', transformOrigin: 'center', transition: 'stroke-dashoffset 0.5s ease-in-out' }} />
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg">{`${Math.round(percentage)}%`}</span>
+            <span className={`absolute inset-0 flex items-center justify-center text-white font-bold ${textSizeClass}`}>{`${Math.round(percentage)}%`}</span>
         </div>
     );
 };
@@ -34,16 +34,44 @@ const simpleHash = (str) => {
 };
 
 
-const PublicDashboard = ({ drills, scenarios, steps, executionData, users, onLoginRequest }) => {
+const PublicDashboard = ({ onLoginRequest }) => {
     const { t, language, setLanguage } = useTranslation();
     const [selectedDrill, setSelectedDrill] = useState(null);
     const [activeNodeId, setActiveNodeId] = useState(null);
     const [now, setNow] = useState(Date.now());
+    
+    const [publicData, setPublicData] = useState({ drills: [], scenarios: {}, steps: {}, executionData: {}, users: [] });
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchPublicData = async () => {
+            setIsLoading(true);
+            try {
+                const response = await fetch('/api/public/data');
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const data = await response.json();
+                setPublicData(data);
+            } catch (err) {
+                console.error("Failed to fetch public data:", err);
+                setError(err.message);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchPublicData();
+        const intervalId = setInterval(fetchPublicData, 30000); // Auto-refresh every 30 seconds
+        return () => clearInterval(intervalId);
+    }, []);
 
     useEffect(() => {
         const timer = setInterval(() => setNow(Date.now()), 1000);
         return () => clearInterval(timer);
     }, []);
+
+    const { drills, scenarios, steps, executionData, users } = publicData;
 
     const userColorMap = useMemo(() => {
         const map = {};
@@ -123,45 +151,66 @@ const PublicDashboard = ({ drills, scenarios, steps, executionData, users, onLog
         return { workflowLevels: levels, allNodes: flatNodes, allStats: stats };
     }, [selectedDrill, scenarios, steps, executionData, users, now, t]);
 
-
     const calculateOverallProgress = (drill) => {
+        if (!drill || !drill.scenarios || !scenarios) return 0;
         const allScenariosInDrill = drill.scenarios.map(s => scenarios[s.id]).filter(Boolean);
         const allCheckpointsInDrill = Object.values(drill.checkpoints || {});
-        const allItems = [...allScenariosInDrill.flatMap(s => s.steps || []), ...allCheckpointsInDrill.flatMap(c => c.criteria?.map(crit => crit.id) || [])];
-        if (allItems.length === 0) return 0;
+        
+        const allStepIds = allScenariosInDrill.flatMap(s => s.steps.map(step => step.id));
+        const allCriterionIds = allCheckpointsInDrill.flatMap(c => c.criteria?.map(crit => crit.id) || []);
+        
+        const allItems = [...allStepIds, ...allCriterionIds];
+        if (allItems.length === 0) return 100;
+        
         const drillExecData = executionData[drill.id] || {};
-        const completedItems = allItems.filter(id => drillExecData[id]?.status?.startsWith('Completed') || drillExecData[id]?.status === 'Pass');
+        const completedItems = allItems.filter(id => {
+            const itemData = drillExecData[id];
+            return itemData?.status?.startsWith('Completed') || itemData?.status === 'Pass' || itemData?.status === 'Fail';
+        });
+
         return (completedItems.length / allItems.length) * 100;
     };
+
 
     const inProgressDrills = drills.filter(d => d.execution_status === 'InProgress');
 
     const renderDrillList = () => (
         <div className="w-full max-w-4xl mx-auto z-10 relative">
             <h1 className="text-3xl md:text-4xl font-bold text-white text-center mb-8">{t('publicDashboardTitle')}</h1>
-            {inProgressDrills.length > 0 ? (
-                <div className="space-y-4">
-                    {inProgressDrills.map(drill => (
-                        <div key={drill.id} className="bg-gradient-to-br from-[#2A3A3F]/80 to-[#1E292D]/80 p-6 rounded-2xl border border-[#3D4F56] hover:border-yellow-400/50 transition-all duration-300 backdrop-blur-sm shadow-2xl shadow-black/30">
-                            <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-                                <div className="flex-grow">
-                                    <h2 className="text-xl font-bold text-white">{drill.name}</h2>
-                                    <p className="text-gray-400 mt-1">{drill.description}</p>
+            {isLoading && <div className="text-center text-white">{t('loading', 'Loading...')}</div>}
+            {error && <div className="text-center text-red-400">{t('error', 'Error:')} {error}</div>}
+            {!isLoading && !error && (
+                inProgressDrills.length > 0 ? (
+                    <div className="space-y-4">
+                        {inProgressDrills.map(drill => {
+                            const progress = calculateOverallProgress(drill);
+                             let colorClass = 'text-gray-400';
+                             if (progress === 100) colorClass = 'text-green-400';
+                             else if (progress > 0) colorClass = 'text-blue-400';
+
+                            return (
+                                <div key={drill.id} className="bg-gradient-to-br from-[#2A3A3F]/80 to-[#1E292D]/80 p-6 rounded-2xl border border-[#3D4F56] hover:border-yellow-400/50 transition-all duration-300 backdrop-blur-sm shadow-2xl shadow-black/30">
+                                    <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                                        <div className="flex-grow">
+                                            <h2 className="text-xl font-bold text-white">{drill.name}</h2>
+                                            <p className="text-gray-400 mt-1">{drill.description}</p>
+                                        </div>
+                                        <div className="flex items-center gap-6">
+                                             <PieChart percentage={progress} size={150} strokeWidth={15} colorClass={colorClass} textSizeClass="text-4xl" />
+                                            <button onClick={() => { setSelectedDrill(drill); setActiveNodeId(null); }} className="flex-shrink-0 bg-yellow-400 text-black font-bold py-2 px-5 rounded-lg hover:bg-yellow-300 transition-all">
+                                                {t('viewProgress')}
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-6">
-                                     <PieChart percentage={calculateOverallProgress(drill)} size={60} strokeWidth={6} />
-                                    <button onClick={() => { setSelectedDrill(drill); setActiveNodeId(null); }} className="flex-shrink-0 bg-yellow-400 text-black font-bold py-2 px-5 rounded-lg hover:bg-yellow-300 transition-all">
-                                        {t('viewProgress')}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <div className="text-center py-16 bg-[#2A3A3F]/60 rounded-2xl">
-                    <p className="text-gray-400 text-lg">{t('noActiveDrills')}</p>
-                </div>
+                            )
+                        })}
+                    </div>
+                ) : (
+                    <div className="text-center py-16 bg-[#2A3A3F]/60 rounded-2xl">
+                        <p className="text-gray-400 text-lg">{t('noActiveDrills')}</p>
+                    </div>
+                )
             )}
         </div>
     );
@@ -171,13 +220,17 @@ const PublicDashboard = ({ drills, scenarios, steps, executionData, users, onLog
         const overallProgress = calculateOverallProgress(selectedDrill);
         const activeNode = activeNodeId ? allNodes[activeNodeId] : null;
         const totalElapsedTime = selectedDrill.opened_at ? formatDuration(now - new Date(selectedDrill.opened_at).getTime()) : '—';
+        
+        let overallColorClass = 'text-gray-400';
+        if (overallProgress === 100) overallColorClass = 'text-green-400';
+        else if (overallProgress > 0) overallColorClass = 'text-blue-400';
 
         return (
              <div className="w-full max-w-7xl mx-auto z-10 relative">
                 <button onClick={() => setSelectedDrill(null)} className="text-yellow-300 hover:underline mb-6 text-lg">&larr; {t('backToList')}</button>
                 
                 <div className="bg-[#2A3A3F]/80 p-6 rounded-2xl border border-[#3D4F56] backdrop-blur-sm mb-8 flex flex-col md:flex-row items-center gap-6">
-                    <div className="flex-shrink-0"><PieChart percentage={overallProgress} size={120} strokeWidth={10}/></div>
+                    <div className="flex-shrink-0"><PieChart percentage={overallProgress} size={120} strokeWidth={10} colorClass={overallColorClass} textSizeClass="text-2xl" /></div>
                     <div className="flex-grow text-center md:text-left">
                          <h1 className="text-3xl font-bold text-white">{selectedDrill.name}</h1>
                          <p className="text-gray-400 mt-1">{selectedDrill.description}</p>
@@ -198,10 +251,16 @@ const PublicDashboard = ({ drills, scenarios, steps, executionData, users, onLog
                                     <div className="flex flex-row flex-wrap justify-center items-stretch gap-6">
                                         {level.map(node => {
                                             const isActive = activeNodeId === node.id;
-                                            const progress = (node.steps || []).length > 0 ? (node.steps.filter(stepId => drillExecData[stepId]?.status?.startsWith('Completed')).length / node.steps.length) * 100 : 100;
+                                            const stepObjects = node.steps || [];
+                                            const progress = stepObjects.length > 0 ? (stepObjects.filter(step => drillExecData[step.id]?.status?.startsWith('Completed')).length / stepObjects.length) * 100 : 100;
+                                            
+                                            let colorClass = 'text-gray-500'; // 0%
+                                            if (progress === 100) colorClass = 'text-green-400';
+                                            else if (progress > 0) colorClass = 'text-sky-400';
+                                            
                                             return (
                                                 <button key={node.id} onClick={() => setActiveNodeId(node.id)} className={`w-64 p-3 rounded-lg text-left transition-all duration-200 border-2 ${isActive ? 'bg-sky-900/50 border-sky-400' : 'bg-[#3D4F56]/50 border-transparent hover:border-sky-600'}`}>
-                                                    <div className="flex items-center gap-4"><div className="flex-shrink-0"><PieChart percentage={progress} size={50} strokeWidth={5} colorClass="text-sky-400" /></div><div className="flex-grow min-w-0"><h3 className="font-bold text-white text-md truncate">{node.name}</h3></div></div>
+                                                    <div className="flex items-center gap-4"><div className="flex-shrink-0"><PieChart percentage={progress} size={50} strokeWidth={5} colorClass={colorClass} textSizeClass="text-sm" /></div><div className="flex-grow min-w-0"><h3 className="font-bold text-white text-md truncate">{node.name}</h3></div></div>
                                                 </button>
                                             );
                                         })}
@@ -229,6 +288,14 @@ const PublicDashboard = ({ drills, scenarios, steps, executionData, users, onLog
                                              </div>
                                         )
                                     })()}
+                                    
+                                    {levelIndex < workflowLevels.length - 1 && (
+                                        <div className="w-full flex justify-center my-4">
+                                            <svg className="w-8 h-8 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                            </svg>
+                                        </div>
+                                    )}
                                 </React.Fragment>
                             ))}
                         </div>
@@ -241,9 +308,9 @@ const PublicDashboard = ({ drills, scenarios, steps, executionData, users, onLog
                             <div className="space-y-3">
                                 {(activeNode.type === 'scenario' ? (activeNode.steps || []) : (activeNode.criteria || [])).map((item) => {
                                     const isStep = activeNode.type === 'scenario';
-                                    const itemId = isStep ? item : item.id;
-                                    const itemTitle = isStep ? steps[itemId]?.title : item.criterion_text;
-                                    const stats = allStats[itemId];
+                                    const itemId = item.id;
+                                    const itemTitle = isStep ? item.title : item.criterion_text;
+                                    const stats = isStep ? allStats[itemId] : null;
                                     
                                     if (isStep && !stats) return null;
 

@@ -127,17 +127,17 @@ const CreateDrillScreen = ({ setActiveScreen, onDataRefresh, db, user, drillToEd
             setAvailableScenarios(allScenarios.filter(s => !selectedIds.has(s.id)));
             setStepAssignments(drillToEdit.step_assignments || {});
             
-            // SỬA ĐỔI: Chuẩn hóa cấu trúc dữ liệu checkpoint khi tải
             const normalizedCheckpoints = {};
             if (drillToEdit.checkpoints) {
-                for (const scenarioId in drillToEdit.checkpoints) {
-                    const cp = drillToEdit.checkpoints[scenarioId];
-                    if (cp) {
-                        normalizedCheckpoints[scenarioId] = {
+                // The server sends checkpoints keyed by checkpoint.id. We need to re-key them by scenario.id for the UI.
+                for (const checkpointId in drillToEdit.checkpoints) {
+                    const cp = drillToEdit.checkpoints[checkpointId];
+                    if (cp && cp.after_scenario_id) {
+                        normalizedCheckpoints[cp.after_scenario_id] = {
                             ...cp,
                             criteria: (cp.criteria || []).map(c => ({
                                 id: c.id,
-                                text: c.criterion_text || c.text || '' // Luôn chuyển đổi về thuộc tính 'text'
+                                text: c.criterion_text || c.text || ''
                             }))
                         };
                     }
@@ -399,4 +399,3 @@ const CreateDrillScreen = ({ setActiveScreen, onDataRefresh, db, user, drillToEd
     );
 };
 export default CreateDrillScreen;
-

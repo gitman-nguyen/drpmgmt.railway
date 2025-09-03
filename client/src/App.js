@@ -26,16 +26,14 @@ export default function App() {
     steps: {},
     executionData: {}
   });
-  const [settings, setSettings] = useState({ sessionTimeout: 30 }); // Thêm state cho settings
+  const [settings, setSettings] = useState({ sessionTimeout: 30 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isXlsxReady, setIsXlsxReady] = useState(false);
 
-  const fetchData = async () => {
-      // Don't set loading to true if we are just refreshing in the background
-      // setLoading(true); 
+  // TÁCH BIỆT LOGIC: Hàm chỉ để lấy dữ liệu cho trang quản trị
+  const fetchAdminData = useCallback(async () => {
       try {
-        // Lấy dữ liệu chính của ứng dụng
         const dataResponse = await fetch('/api/data');
         if (!dataResponse.ok) {
             throw new Error(`HTTP error! status: ${dataResponse.status}`);
@@ -43,7 +41,6 @@ export default function App() {
         const data = await dataResponse.json();
         setDb(data);
 
-        // Lấy dữ liệu cài đặt (bao gồm session timeout)
         const settingsResponse = await fetch('/api/settings');
         if (settingsResponse.ok) {
             const appSettings = await settingsResponse.json();
@@ -51,19 +48,39 @@ export default function App() {
         }
 
       } catch (e) {
-        console.error("Failed to fetch data:", e);
-        setError("Không thể tải dữ liệu từ server. Vui lòng kiểm tra lại backend.");
+        console.error("Failed to fetch admin data:", e);
+        setError("Không thể tải dữ liệu quản trị từ server.");
       } finally {
         setLoading(false);
       }
-    };
+    }, []);
 
-  // Effect to load initial data and restore session
+  // TÁCH BIỆT LOGIC: Hàm chỉ để lấy dữ liệu cho trang public
+  const fetchPublicData = useCallback(async () => {
+      try {
+        const dataResponse = await fetch('/api/public/data');
+        if (!dataResponse.ok) {
+            throw new Error(`HTTP error! status: ${dataResponse.status}`);
+        }
+        const data = await dataResponse.json();
+        setDb(data);
+      } catch (e) {
+        console.error("Failed to fetch public data:", e);
+        setError("Không thể tải dữ liệu công khai từ server.");
+      } finally {
+        setLoading(false);
+      }
+  }, []);
+
+
+  // Effect để tải dữ liệu ban đầu và khôi phục session
   useEffect(() => {
+    let savedUser = null;
     try {
-        const savedUser = localStorage.getItem('drillAppUser');
-        if (savedUser) {
-            setUser(JSON.parse(savedUser));
+        const savedUserJSON = localStorage.getItem('drillAppUser');
+        if (savedUserJSON) {
+            savedUser = JSON.parse(savedUserJSON);
+            setUser(savedUser);
         }
 
         const savedScreen = localStorage.getItem('drillAppScreen');
@@ -78,6 +95,13 @@ export default function App() {
     } catch(e) {
         console.error("Failed to restore session from localStorage", e);
         localStorage.clear(); // Clear corrupted data
+    }
+    
+    // SỬA LOGIC: Quyết định API để gọi dựa trên trạng thái đăng nhập
+    if (savedUser) {
+        fetchAdminData();
+    } else {
+        fetchPublicData();
     }
 
     const link = document.createElement('link');
@@ -97,13 +121,11 @@ export default function App() {
     };
     document.head.appendChild(xlsxScript);
 
-    fetchData();
-
     return () => {
         if(document.head.contains(link)) document.head.removeChild(link);
         if(document.head.contains(xlsxScript)) document.head.removeChild(xlsxScript);
     };
-  }, []);
+  }, [fetchAdminData, fetchPublicData]);
 
   // Effect to save session state to localStorage whenever it changes
   useEffect(() => {
@@ -131,7 +153,7 @@ export default function App() {
             setActiveDrill(freshDrill);
         }
     }
-  }, [db.drills]);
+  }, [db.drills, activeDrill]);
 
   useEffect(() => {
     if (activeScreen !== 'create-drill') {
@@ -153,6 +175,7 @@ export default function App() {
         localStorage.setItem('drillAppUser', JSON.stringify(foundUser));
         setUser(foundUser);
         setShowLogin(false);
+        await fetchAdminData(); // SỬA LOGIC: Tải dữ liệu admin sau khi đăng nhập thành công
         return true;
     } catch (e) {
         console.error("Login error:", e);
@@ -167,12 +190,13 @@ export default function App() {
     setUser(null);
     setActiveScreen('dashboard');
     setActiveDrill(null);
-  }, []);
+    fetchPublicData(); // SỬA LOGIC: Tải lại dữ liệu public sau khi đăng xuất
+  }, [fetchPublicData]);
 
   // Effect để xử lý tự động đăng xuất
   useEffect(() => {
       if (!user || !settings.sessionTimeout) {
-          return; // Không chạy nếu chưa đăng nhập hoặc chưa tải được setting
+          return;
       }
 
       let inactivityTimer;
@@ -182,7 +206,7 @@ export default function App() {
           inactivityTimer = setTimeout(() => {
               alert("Bạn đã không hoạt động trong một khoảng thời gian. Phiên làm việc sẽ tự động kết thúc.");
               handleLogout();
-          }, settings.sessionTimeout * 60 * 1000); // Chuyển phút sang mili giây
+          }, settings.sessionTimeout * 60 * 1000);
       };
 
       const activityListener = () => {
@@ -195,9 +219,8 @@ export default function App() {
           window.addEventListener(event, activityListener);
       });
 
-      resetTimer(); // Bắt đầu đếm giờ
+      resetTimer();
 
-      // Dọn dẹp khi component unmount hoặc user thay đổi
       return () => {
           clearTimeout(inactivityTimer);
           activityEvents.forEach(event => {
@@ -255,23 +278,20 @@ export default function App() {
     });
   };
 
-  // Function to handle drill completion, ensuring the full drill object is used
   const handleDrillCompletion = (updatedDrillData) => {
     const fullDrill = db.drills.find(d => d.id === updatedDrillData.id);
     if (fullDrill) {
         const newlyCompletedDrill = { ...fullDrill, ...updatedDrillData };
         setActiveDrill(newlyCompletedDrill);
         setActiveScreen('report');
-        // Also update the main drills list
         setDb(prevDb => ({
             ...prevDb,
             drills: prevDb.drills.map(d => d.id === newlyCompletedDrill.id ? newlyCompletedDrill : d)
         }));
     } else {
-        // Fallback: refresh all data if the drill isn't found in the current state
-        fetchData().then(() => {
-            setActiveDrill(updatedDrillData); // Set the partial data for now
-            setActiveScreen('report'); // Navigate immediately
+        fetchAdminData().then(() => {
+            setActiveDrill(updatedDrillData);
+            setActiveScreen('report');
         });
     }
   };
@@ -302,11 +322,12 @@ export default function App() {
   }
 
   const renderScreen = () => {
+    const onDataRefresh = fetchAdminData; // Chỉ admin mới có thể refresh
     switch(activeScreen) {
         case 'dashboard':
-            return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={fetchData} />;
+            return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={onDataRefresh} />;
         case 'execution':
-            if (!activeDrill) return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={fetchData} />;
+            if (!activeDrill) return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={onDataRefresh} />;
             return <ExecutionScreen 
                 user={user} 
                 drill={activeDrill} 
@@ -316,16 +337,14 @@ export default function App() {
                 users={db.users}
                 executionData={db.executionData}
                 onExecutionUpdate={handleExecutionUpdate}
-                onDataRefresh={fetchData}
-                // SỬA LỖI: Truyền các hàm xử lý state từ App.js
+                onDataRefresh={onDataRefresh}
                 setActiveDrill={setActiveDrill}
                 setActiveScreen={setActiveScreen}
                 onDrillEnded={handleDrillCompletion}
               />;
         case 'report':
-            if (!activeDrill) return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={fetchData} />;
+            if (!activeDrill) return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={onDataRefresh} />;
             
-            // SỬA LỖI: Đảm bảo drill object luôn đầy đủ trước khi render ReportScreen
             const fullDrillForReport = db.drills.find(d => d.id === activeDrill.id) || activeDrill;
             const drillToRender = { ...fullDrillForReport, ...activeDrill };
 
@@ -338,18 +357,18 @@ export default function App() {
                 executionData={db.executionData}
               />;
         case 'user-management':
-             if (user.role !== 'ADMIN') return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={fetchData} />;
-            return <UserManagementScreen users={db.users} setUsers={(newUsers) => setDb({...db, users: newUsers})} onDataRefresh={fetchData} />;
+             if (user.role !== 'ADMIN') return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={onDataRefresh} />;
+            return <UserManagementScreen users={db.users} setUsers={(newUsers) => setDb({...db, users: newUsers})} onDataRefresh={onDataRefresh} />;
         case 'scenarios':
-            return <ScenarioManagementScreen db={db} setDb={setDb} user={user} onDataRefresh={fetchData} isXlsxReady={isXlsxReady} />;
+            return <ScenarioManagementScreen db={db} setDb={setDb} user={user} onDataRefresh={onDataRefresh} isXlsxReady={isXlsxReady} />;
         case 'create-drill':
-             if (user.role !== 'ADMIN') return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={fetchData} />;
-            return <CreateDrillScreen setActiveScreen={setActiveScreen} setDb={setDb} db={db} user={user} drillToEdit={editingDrill} onDoneEditing={() => setActiveScreen('dashboard')} onDataRefresh={fetchData} />;
+             if (user.role !== 'ADMIN') return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={onDataRefresh} />;
+            return <CreateDrillScreen setActiveScreen={setActiveScreen} setDb={setDb} db={db} user={user} drillToEdit={editingDrill} onDoneEditing={() => setActiveScreen('dashboard')} onDataRefresh={onDataRefresh} />;
         case 'admin':
-            if (user.role !== 'ADMIN') return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={fetchData} />;
-            return <AdminScreen onDataRefresh={fetchData} />;
+            if (user.role !== 'ADMIN') return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={onDataRefresh} />;
+            return <AdminScreen onDataRefresh={onDataRefresh} />;
         default:
-            return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onDataRefresh={fetchData}/>;
+            return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onDataRefresh={onDataRefresh}/>;
     }
   }
 
@@ -361,4 +380,3 @@ export default function App() {
     </LanguageProvider>
   );
 }
-

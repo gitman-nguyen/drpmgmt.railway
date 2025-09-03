@@ -3,6 +3,31 @@ import { useTranslation } from '../contexts/LanguageContext';
 import { LockIcon, ClockIcon, ExternalLinkIcon, UserIcon, CheckpointIcon, CheckCircleIcon, XCircleIcon } from '../components/icons';
 import CompletionModal from '../components/common/CompletionModal';
 
+// Helper function to open PDF data in a new window
+const viewPdfInNewWindow = (pdfDataUri, title) => {
+    if (!pdfDataUri) return;
+    const newWindow = window.open("", title, "width=800,height=600,resizable,scrollbars");
+    if (newWindow) {
+        newWindow.document.write(`
+            <html>
+                <head>
+                    <title>${title || 'PDF Viewer'}</title>
+                    <style>
+                        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+                        iframe { border: none; }
+                    </style>
+                </head>
+                <body>
+                    <iframe src="${pdfDataUri}" width="100%" height="100%"></iframe>
+                </body>
+            </html>
+        `);
+        newWindow.document.close();
+    } else {
+        alert('Vui lòng cho phép cửa sổ pop-up để xem tệp đính kèm.');
+    }
+};
+
 const userColorClasses = [
     { bg: 'bg-blue-100', text: 'text-blue-800' }, { bg: 'bg-green-100', text: 'text-green-800' },
     { bg: 'bg-yellow-100', text: 'text-yellow-800' }, { bg: 'bg-pink-100', text: 'text-pink-800' },
@@ -22,6 +47,8 @@ const DetailView = ({ node, user, drill, steps, users, getStepState, handleStepS
     const { t } = useTranslation();
     const [finalStatus, setFinalStatus] = useState('Failure-Confirmed');
     const [finalReason, setFinalReason] = useState('');
+    
+    // REMOVED: Unnecessary state and useEffect for fetching attachment, as data is passed directly in `node`.
 
     if (!node) return null;
 
@@ -49,67 +76,105 @@ const DetailView = ({ node, user, drill, steps, users, getStepState, handleStepS
             )
         }
         
+        // FIXED: Check for `scenario.attachment` directly instead of `scenario.has_attachment`
+        const hasAttachment = scenario.attachment && scenario.attachment.data;
+
         return (
             <div>
                  <h2 className="text-2xl font-bold text-gray-900 mb-4">{scenario.name}</h2>
-                 <div className="space-y-3">
-                    {scenario.steps.map(stepId => {
-                        const step = steps[stepId];
-                        if (!step) return null;
-                        const state = getStepState(stepId);
-                        let statusIcon = '🕒'; let borderColor = 'border-gray-300';
-                        if (state.status === 'InProgress') { statusIcon = '▶️'; borderColor = 'border-blue-500'; }
-                        if (state.status === 'Completed-Success') { statusIcon = '✅'; borderColor = 'border-green-500'; }
-                        if (state.status === 'Completed-Failure' || state.status === 'Completed-Blocked') { statusIcon = '❌'; borderColor = 'border-red-500'; }
-
-                        const assigneeId = state.assignee || drill.step_assignments?.[stepId];
-                        const assignee = assigneeId ? users.find(u => u.id === assigneeId) : null;
-                        const assigneeLabel = state.assignee ? t('executedBy') : t('assignedTo');
-                        const colorStyle = assignee ? userColorMap[assignee.id] : null;
-
-                        return (
-                            <div key={stepId} className={`p-4 rounded-lg border-l-4 bg-gray-50 ${borderColor}`}>
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <div className="flex items-center justify-between">
-                                            <h4 className="font-bold text-lg text-gray-900">{statusIcon} {step.title}</h4>
-                                            {step.estimated_time && <span className="text-sm text-gray-500 ml-4 flex items-center"><ClockIcon />{step.estimated_time}</span>}
-                                        </div>
-                                        <div className="prose prose-sm mt-2 max-w-none text-gray-600" dangerouslySetInnerHTML={{ __html: step.description }} />
-                                        {assignee && colorStyle && (
-                                            <div className="mt-3 flex items-center gap-2">
-                                                <UserIcon className="h-4 w-4 text-gray-500" />
-                                                <span className="text-xs font-medium text-gray-600">{assigneeLabel}:</span>
-                                                <span className={`text-xs px-2 py-0-5 rounded-full font-semibold ${colorStyle.bg} ${colorStyle.text}`}>
-                                                    {assignee.last_name && assignee.first_name ? `${assignee.last_name} ${assignee.first_name}` : (assignee.fullname || assignee.username)}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="text-right flex-shrink-0 ml-4">
-                                        {state.status === 'Pending' && <button onClick={() => handleStepStart(stepId)} className="bg-blue-500 text-white text-sm font-semibold py-1 px-3 rounded-lg hover:bg-blue-600">{t('start')}</button>}
-                                        {state.status === 'InProgress' && <button onClick={() => setCompletionModal({ stepId })} className="bg-green-500 text-white text-sm font-semibold py-1 px-3 rounded-lg hover:bg-green-600">{t('complete')}</button>}
-                                    </div>
-                                </div>
+                 <div className={`grid grid-cols-1 ${hasAttachment ? 'xl:grid-cols-2 gap-6' : ''}`}>
+                    {hasAttachment && (
+                        <div className="bg-gray-100 p-4 rounded-lg flex flex-col h-[75vh]">
+                             <div className="flex justify-between items-center mb-2 flex-shrink-0">
+                                <h3 className="font-bold text-gray-800">Tài liệu đính kèm</h3>
+                                <button 
+                                    onClick={() => viewPdfInNewWindow(scenario.attachment.data, scenario.attachment.name)}
+                                    disabled={!scenario.attachment.data}
+                                    className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                                >
+                                    <ExternalLinkIcon />
+                                    <span className="ml-2">{t('viewLarger', 'Xem lớn hơn')}</span> 
+                                </button>
                             </div>
-                        );
-                    })}
-                </div>
-                 {allStepsDone && hasFailedStep && !isConfirmed && (
-                    <div className="mt-6 border-t border-gray-200 pt-4">
-                        <h3 className="text-lg font-bold text-red-600">{t('confirmScenarioResult')}</h3>
-                        <p className="text-sm text-gray-600 mb-2">{t('confirmScenarioResultMessage')}</p>
-                         <div className="mb-2">
-                            <label className="block text-sm font-medium text-gray-700">{t('finalResult')}</label>
-                            <select value={finalStatus} onChange={(e) => setFinalStatus(e.target.value)} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none">
-                                <option value="Failure-Confirmed">{t('failureConfirmed')}</option>
-                                <option value="Success-Overridden">{t('successOverridden')}</option>
-                            </select>
+                            <div className="flex-grow border border-gray-300 rounded flex items-center justify-center bg-white">
+                                <iframe
+                                    src={scenario.attachment.data} // FIXED: Use the full Data URI directly
+                                    width="100%"
+                                    height="100%"
+                                    title={scenario.attachment.name || "PDF Viewer"}
+                                    className="border-0"
+                                ></iframe>
+                            </div>
                         </div>
-                        <textarea value={finalReason} onChange={(e) => setFinalReason(e.target.value)} rows="3" className="w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none" placeholder={t('reasonPlaceholder')}></textarea>
-                        <button onClick={handleConfirm} className="mt-2 bg-yellow-400 text-black font-bold py-2 px-4 rounded-lg hover:bg-yellow-500">{t('confirmResult')}</button>
+                    )}
+
+                    <div>
+                         <div className="space-y-3">
+                            {scenario.steps.map(stepId => {
+                                const step = steps[stepId];
+                                if (!step) return null;
+                                const state = getStepState(stepId);
+                                let statusIcon = '🕒'; let borderColor = 'border-gray-300';
+                                if (state.status === 'InProgress') { statusIcon = '▶️'; borderColor = 'border-blue-500'; }
+                                if (state.status === 'Completed-Success') { statusIcon = '✅'; borderColor = 'border-green-500'; }
+                                if (state.status === 'Completed-Failure' || state.status === 'Completed-Blocked') { statusIcon = '❌'; borderColor = 'border-red-500'; }
+
+                                const assigneeId = state.assignee || drill.step_assignments?.[stepId];
+                                const assignee = assigneeId ? users.find(u => u.id === assigneeId) : null;
+                                const assigneeLabel = state.assignee ? t('executedBy') : t('assignedTo');
+                                const colorStyle = assignee ? userColorMap[assignee.id] : null;
+
+                                const isAuthorizedToExecute = user.role === 'ADMIN' || user.role === scenario.role;
+
+                                return (
+                                    <div key={stepId} className={`p-4 rounded-lg border-l-4 bg-gray-50 ${borderColor}`}>
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <div className="flex items-center justify-between">
+                                                    <h4 className="font-bold text-lg text-gray-900">{statusIcon} {step.title}</h4>
+                                                    {step.estimated_time && <span className="text-sm text-gray-500 ml-4 flex items-center"><ClockIcon />{step.estimated_time}</span>}
+                                                </div>
+                                                <div className="prose prose-sm mt-2 max-w-none text-gray-600" dangerouslySetInnerHTML={{ __html: step.description }} />
+                                                {assignee && colorStyle && (
+                                                    <div className="mt-3 flex items-center gap-2">
+                                                        <UserIcon className="h-4 w-4 text-gray-500" />
+                                                        <span className="text-xs font-medium text-gray-600">{assigneeLabel}:</span>
+                                                        <span className={`text-xs px-2 py-0-5 rounded-full font-semibold ${colorStyle.bg} ${colorStyle.text}`}>
+                                                            {assignee.last_name && assignee.first_name ? `${assignee.last_name} ${assignee.first_name}` : (assignee.fullname || assignee.username)}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="text-right flex-shrink-0 ml-4">
+                                                {isAuthorizedToExecute && (
+                                                    <>
+                                                        {state.status === 'Pending' && <button onClick={() => handleStepStart(stepId)} className="bg-blue-500 text-white text-sm font-semibold py-1 px-3 rounded-lg hover:bg-blue-600">{t('start')}</button>}
+                                                        {state.status === 'InProgress' && <button onClick={() => setCompletionModal({ stepId })} className="bg-green-500 text-white text-sm font-semibold py-1 px-3 rounded-lg hover:bg-green-600">{t('complete')}</button>}
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                         {user.role === 'ADMIN' && allStepsDone && hasFailedStep && !isConfirmed && (
+                            <div className="mt-6 border-t border-gray-200 pt-4">
+                                <h3 className="text-lg font-bold text-red-600">{t('confirmScenarioResult')}</h3>
+                                <p className="text-sm text-gray-600 mb-2">{t('confirmScenarioResultMessage')}</p>
+                                 <div className="mb-2">
+                                    <label className="block text-sm font-medium text-gray-700">{t('finalResult')}</label>
+                                    <select value={finalStatus} onChange={(e) => setFinalStatus(e.target.value)} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                                        <option value="Failure-Confirmed">{t('failureConfirmed')}</option>
+                                        <option value="Success-Overridden">{t('successOverridden')}</option>
+                                    </select>
+                                </div>
+                                <textarea value={finalReason} onChange={(e) => setFinalReason(e.target.value)} rows="3" className="w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none" placeholder={t('reasonPlaceholder')}></textarea>
+                                <button onClick={handleConfirm} className="mt-2 bg-yellow-400 text-black font-bold py-2 px-4 rounded-lg hover:bg-yellow-500">{t('confirmResult')}</button>
+                            </div>
+                        )}
                     </div>
-                )}
+                 </div>
             </div>
         );
     }
@@ -187,18 +252,19 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, users, executi
     const handleMouseLeave = () => { setTooltip({ visible: false, content: '', x: 0, y: 0 }); };
     
     const { workflowLevels, allNodes } = useMemo(() => {
-        if (!drill.scenarios) return { workflowLevels: [], allNodes: {} };
+        if (!drill || !drill.scenarios) return { workflowLevels: [], allNodes: {} };
 
         const nodes = {};
         drill.scenarios.forEach(item => {
             const scenario = scenarios[item.id];
             if(scenario) {
+                const checkpoint = Object.values(drill.checkpoints || {}).find(c => c.after_scenario_id === item.id) || null;
                 nodes[item.id] = { 
                     ...scenario, 
                     type: 'scenario', 
                     dependsOn: item.dependsOn || [], 
                     executionStatus: 'Pending',
-                    checkpoint: Object.values(drill.checkpoints || {}).find(c => c.after_scenario_id === item.id) || null
+                    checkpoint: checkpoint
                 };
             }
         });
@@ -207,17 +273,24 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, users, executi
             const drillExec = executionData[drill.id] || {};
             
             node.isLocked = !(node.dependsOn || []).every(depId => {
-                const depNode = Object.values(nodes).find(n => n.id === depId);
-                if (!depNode) return true;
-                
-                const scenarioCompleted = depNode.steps.every(stepId => (drillExec[stepId]?.status?.startsWith('Completed')));
-                if (!scenarioCompleted) return false;
+                const depIsScenario = !!nodes[depId];
+                const depIsCheckpoint = !!(drill.checkpoints && Object.values(drill.checkpoints).find(c => c.id === depId));
 
-                if (depNode.checkpoint) {
-                    return depNode.checkpoint.criteria.every(c => drillExec[c.id]?.status === 'Pass');
+                if (depIsScenario) {
+                    const depNode = nodes[depId];
+                    const scenarioCompleted = depNode.steps.every(stepId => drillExec[stepId]?.status?.startsWith('Completed'));
+                    if (!scenarioCompleted) return false;
+
+                    if (depNode.checkpoint) {
+                        return (depNode.checkpoint.criteria || []).every(c => drillExec[c.id]?.status === 'Pass');
+                    }
+                    return true;
+                } else if (depIsCheckpoint) {
+                    const depCp = Object.values(drill.checkpoints).find(c => c.id === depId);
+                    return (depCp.criteria || []).every(c => drillExec[c.id]?.status === 'Pass');
                 }
                 
-                return true;
+                return true; 
             });
 
             const stepStates = (node.steps || []).map(stepId => drillExec[stepId]);
@@ -242,7 +315,17 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, users, executi
         Object.keys(nodes).forEach(id => { adj[id] = []; inDegree[id] = 0; });
         Object.values(nodes).forEach(node => {
             (node.dependsOn || []).forEach(depId => {
-                if (adj[depId]) { adj[depId].push(node.id); inDegree[node.id]++; }
+                 const sourceIsScenario = !!nodes[depId];
+                 if(sourceIsScenario) {
+                     adj[depId].push(node.id);
+                     inDegree[node.id]++;
+                 } else { // Dependency is likely a checkpoint
+                    const sourceScenario = Object.values(nodes).find(n => n.checkpoint?.id === depId);
+                    if(sourceScenario) {
+                        adj[sourceScenario.id].push(node.id);
+                        inDegree[node.id]++;
+                    }
+                 }
             });
         });
 
@@ -296,9 +379,6 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, users, executi
     };
     
     const handleEndDrillFailed = async (failedCheckpointNode) => {
-        let updatedDrill;
-
-        // --- GIAI ĐOẠN 1: GIAO TIẾP VỚI SERVER ---
         try {
             if (!failedCheckpointNode || !failedCheckpointNode.title) {
                 throw new Error('Không thể kết thúc diễn tập vì thiếu thông tin checkpoint đầu vào.');
@@ -317,38 +397,13 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, users, executi
                 const errorText = await response.text();
                 throw new Error(`Yêu cầu server thất bại (HTTP ${response.status}): ${errorText}`);
             }
-            updatedDrill = await response.json();
-        } catch (error) {
-            console.error("LỖI GIAI ĐOẠN 1 (API):", error);
-            alert(`Không thể cập nhật trạng thái diễn tập lên server:\n${error.message}`);
-            return; // Dừng thực thi nếu API thất bại
-        }
-
-        // --- GIAI ĐOẠN 2: CẬP NHẬT GIAO DIỆN ---
-        try {
-            // Kiểm tra tường minh các props trước khi sử dụng
-            if (typeof setActiveDrill !== 'function') {
-                throw new TypeError("Lỗi lập trình: prop 'setActiveDrill' không phải là một hàm.");
-            }
-            if (typeof setActiveScreen !== 'function') {
-                throw new TypeError("Lỗi lập trình: prop 'setActiveScreen' không phải là một hàm.");
-            }
-
-            // Thực thi cập nhật UI
+            const updatedDrill = await response.json();
             setActiveDrill(updatedDrill);
             setActiveScreen('report');
 
-            // Làm mới dữ liệu nền một cách an toàn
-            if (typeof onDataRefresh === 'function') {
-                onDataRefresh().catch(refreshError => {
-                    console.warn("Lỗi không nghiêm trọng khi làm mới dữ liệu nền:", refreshError);
-                });
-            }
-
         } catch (error) {
-            // SỬA LỖI: Hiển thị đầy đủ stack trace để gỡ lỗi
-            console.error("LỖI GIAI ĐOẠN 2 (UI):", error.stack);
-            alert(`Đã cập nhật server thành công, nhưng gặp lỗi khi cập nhật giao diện:\n\n${error.message}\n\nXem chi tiết trong console (F12) để biết stack trace:\n${error.stack}`);
+            console.error("Lỗi kết thúc diễn tập:", error);
+            alert(`Không thể cập nhật trạng thái diễn tập:\n${error.message}`);
         }
     };
 
@@ -403,10 +458,11 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, users, executi
                                     {level.map((node) => {
                                         const isSelected = activeNodeId === node.id || activeNodeId === node.checkpoint?.id;
                                         const isInProgress = node.executionStatus === 'InProgress' || node.checkpoint?.executionStatus === 'InProgress';
-                                        
+                                        const isAuthorizedToView = user.role === 'ADMIN' || user.role === node.role;
+
                                         return (
-                                            <div key={node.id} onMouseEnter={(e) => handleMouseEnter(node.name, e)} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave} className={`flex items-stretch transition-all duration-300 rounded-lg ${isSelected ? 'bg-sky-100 ring-2 ring-sky-500' : ''} ${node.isLocked ? 'opacity-50' : ''}`}>
-                                                <button onClick={() => setActiveNodeId(node.id)} disabled={node.isLocked} className={`w-56 text-left p-3 rounded-l-lg border-y border-l transition-all duration-200 bg-gray-50 border-gray-200 hover:border-gray-400 ${isInProgress && !isSelected ? 'animate-pulse' : ''} ${node.isLocked ? 'cursor-not-allowed' : ''}`}>
+                                            <div key={node.id} onMouseEnter={(e) => handleMouseEnter(node.name, e)} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave} className={`flex items-stretch transition-all duration-300 rounded-lg ${isSelected && isAuthorizedToView ? 'bg-sky-100 ring-2 ring-sky-500' : ''} ${node.isLocked ? 'opacity-50' : ''}`}>
+                                                <button onClick={() => setActiveNodeId(node.id)} disabled={node.isLocked || !isAuthorizedToView} className={`w-56 text-left p-3 rounded-l-lg border-y border-l transition-all duration-200 bg-gray-50 border-gray-200 hover:border-gray-400 ${isInProgress && !isSelected ? 'animate-pulse' : ''} ${(node.isLocked || !isAuthorizedToView) ? 'cursor-not-allowed' : ''}`}>
                                                     <h4 className="font-semibold text-sm text-gray-900 flex items-center truncate">
                                                         {node.isLocked && <LockIcon />}
                                                         {node.executionStatus === 'Completed' && <span className="text-green-500 mr-1">✓</span>}
