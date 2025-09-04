@@ -18,7 +18,7 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedScenarios, setSelectedScenarios] = useState([]);
 
-    const initialFormState = { name: '', role: user.role === 'ADMIN' ? 'TECHNICAL' : user.role, basis: '', status: 'Draft' };
+    const initialFormState = { name: '', applicationName: '', role: user.role === 'ADMIN' ? 'TECHNICAL' : user.role, basis: '', status: 'Draft' };
     const initialStepState = [{ id: `temp-${Date.now()}`, title: '', description: '', estimatedTime: '', dependsOn: [] }];
 
     const [formData, setFormData] = useState(initialFormState);
@@ -81,6 +81,7 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
             setEditingScenario(isClone ? null : scenarioToEdit);
             setFormData({ 
                 name: isClone ? `${scenarioToEdit.name} (Copy)` : scenarioToEdit.name, 
+                applicationName: scenarioToEdit.application_name || '', 
                 role: scenarioToEdit.role, 
                 basis: scenarioToEdit.basis, 
                 status: scenarioToEdit.status 
@@ -105,8 +106,10 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
         e.preventDefault();
 
         const trimmedName = formData.name.trim();
-        if (!trimmedName) {
-            alert('Vui lòng nhập tên kịch bản.');
+        const trimmedAppName = formData.applicationName.trim();
+
+        if (!trimmedName || !trimmedAppName) {
+            alert('Vui lòng nhập tên kịch bản và tên ứng dụng.');
             return;
         }
 
@@ -126,25 +129,24 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
             }
         }
         
-        const readFileAsDataURL = (file) => {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = (error) => reject(error);
-                reader.readAsDataURL(file);
-            });
-        };
-
         try {
             let finalAttachmentPayload = null;
             if (scenarioAttachment) {
                 if (scenarioAttachment.file) {
+                    const readFileAsDataURL = (file) => {
+                         return new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result);
+                            reader.onerror = (error) => reject(error);
+                            reader.readAsDataURL(file);
+                        });
+                    };
                     const base64String = await readFileAsDataURL(scenarioAttachment.file);
                     finalAttachmentPayload = {
                         name: scenarioAttachment.name,
                         data: base64String,
                     };
-                } else if (scenarioAttachment.data) {
+                } else {
                     finalAttachmentPayload = scenarioAttachment;
                 }
             }
@@ -152,6 +154,7 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
             const payload = {
                 ...formData,
                 name: trimmedName,
+                applicationName: trimmedAppName, 
                 status: formData.basis ? formData.status : 'Draft',
                 created_by: user.id,
                 steps: stepInputs,
@@ -258,7 +261,7 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
 
     const filteredScenarios = useMemo(() => Object.values(db.scenarios).filter(s => {
         const userFilter = user.role === 'ADMIN' || s.created_by === user.id;
-        const searchFilter = searchTerm === '' || s.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const searchFilter = searchTerm === '' || s.name.toLowerCase().includes(searchTerm.toLowerCase()) || (s.application_name && s.application_name.toLowerCase().includes(searchTerm.toLowerCase()));
         return userFilter && searchFilter;
     }), [db.scenarios, user.role, user.id, searchTerm]);
 
@@ -469,6 +472,7 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
                                     </th>
                                 )}
                                 <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('scenarioName')}</th>
+                                <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('application')}</th>
                                 <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('status')}</th>
                                 <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('creator')}</th>
                                 <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('lastUpdated')}</th>
@@ -492,6 +496,7 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
                                         </td>
                                     )}
                                     <td className="py-3 px-4 text-gray-800">{s.name}</td>
+                                    <td className="py-3 px-4 text-gray-600">{s.application_name}</td>
                                     <td className="py-3 px-4"><span className={`text-xs px-2 py-1 rounded-full font-semibold ${getStatusClass(s.status)}`}>{t(s.status.toLowerCase().replace(' ', '')) || s.status}</span></td>
                                     <td className="py-3 px-4 text-gray-600">{creator ? creator.username : 'N/A'}</td>
                                     <td className="py-3 px-4 text-gray-600">{formatDate(s.last_updated_at)}</td>
@@ -546,6 +551,10 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">{t('scenarioName')}</label>
                                     <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none" required/>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">{t('applicationName')}</label>
+                                    <input type="text" value={formData.applicationName} onChange={(e) => setFormData({...formData, applicationName: e.target.value})} className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none" required/>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">{t('role')}</label>
@@ -676,3 +685,4 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
     );
 };
 export default ScenarioManagementScreen;
+

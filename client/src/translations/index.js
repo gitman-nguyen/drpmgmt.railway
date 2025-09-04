@@ -200,7 +200,9 @@ export const translations = {
     reason: 'Lý do',
     checkpointResults: 'Kết quả Điểm kiểm tra',
     evaluatedAfter: 'Đánh giá sau kịch bản',
-    notEvaluated: 'Chưa đánh giá'
+    notEvaluated: 'Chưa đánh giá',
+    applicationName: 'Tên ứng dụng',
+    application: 'Ứng dụng'
   },
   en: {
     loginTitle: 'System Login',
@@ -400,6 +402,8 @@ export const translations = {
     reason: 'Reason',
     checkpointResults: 'Checkpoint Results',
     evaluatedAfter: 'Evaluated after scenario',
-    notEvaluated: 'Not Evaluated'
+    notEvaluated: 'Not Evaluated',
+    applicationName: 'Application Name',
+    application: 'Application'
   },
 };

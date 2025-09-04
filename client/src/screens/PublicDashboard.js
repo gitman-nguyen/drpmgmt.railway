@@ -33,6 +33,29 @@ const simpleHash = (str) => {
     return Math.abs(hash);
 };
 
+// Helper function to format scenario name for display
+const getShortScenarioName = (scenarioNode) => {
+    if (!scenarioNode || !scenarioNode.name) return '';
+
+    // Dịch `role` từ dữ liệu sang tiếng Việt để hiển thị
+    let displayRole = null;
+    if (scenarioNode.role === 'TECHNICAL') {
+        displayRole = 'Kỹ thuật';
+    } else if (scenarioNode.role === 'BUSINESS') {
+        displayRole = 'Nghiệp vụ';
+    }
+
+    // ##### ĐÃ SỬA ĐỔI #####
+    // Sửa `scenarioNode.application` thành `scenarioNode.application_name` để khớp với dữ liệu từ server.
+    if (displayRole && scenarioNode.application_name) {
+        return `${scenarioNode.application_name} (${displayRole})`;
+    }
+    // ##### KẾT THÚC SỬA ĐỔI #####
+
+    // Nếu không, trả về tên đầy đủ ban đầu
+    return scenarioNode.name;
+};
+
 
 const PublicDashboard = ({ onLoginRequest }) => {
     const { t, language, setLanguage } = useTranslation();
@@ -258,10 +281,26 @@ const PublicDashboard = ({ onLoginRequest }) => {
                                             if (progress === 100) colorClass = 'text-green-400';
                                             else if (progress > 0) colorClass = 'text-sky-400';
                                             
+                                            const displayName = getShortScenarioName(node);
+
                                             return (
-                                                <button key={node.id} onClick={() => setActiveNodeId(node.id)} className={`w-64 p-3 rounded-lg text-left transition-all duration-200 border-2 ${isActive ? 'bg-sky-900/50 border-sky-400' : 'bg-[#3D4F56]/50 border-transparent hover:border-sky-600'}`}>
-                                                    <div className="flex items-center gap-4"><div className="flex-shrink-0"><PieChart percentage={progress} size={50} strokeWidth={5} colorClass={colorClass} textSizeClass="text-sm" /></div><div className="flex-grow min-w-0"><h3 className="font-bold text-white text-md truncate">{node.name}</h3></div></div>
-                                                </button>
+                                                <div key={node.id} className="relative group">
+                                                    <button onClick={() => setActiveNodeId(node.id)} className={`w-64 p-3 rounded-lg text-left transition-all duration-200 border-2 ${isActive ? 'bg-sky-900/50 border-sky-400' : 'bg-[#3D4F56]/50 border-transparent hover:border-sky-600'}`}>
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="flex-shrink-0">
+                                                                <PieChart percentage={progress} size={50} strokeWidth={5} colorClass={colorClass} textSizeClass="text-sm" />
+                                                            </div>
+                                                            <div className="flex-grow min-w-0">
+                                                                <h3 className="font-bold text-white text-md truncate">{displayName}</h3>
+                                                            </div>
+                                                        </div>
+                                                    </button>
+                                                    {/* Tooltip hiển thị tên đầy đủ của kịch bản */}
+                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max max-w-xs bg-gray-800 text-white text-sm rounded-md px-3 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20 shadow-lg whitespace-normal text-center">
+                                                        {node.name}
+                                                        <div className="absolute left-1/2 -translate-x-1/2 bottom-full w-0 h-0 border-x-8 border-x-transparent border-b-8 border-b-gray-800"></div>
+                                                    </div>
+                                                </div>
                                             );
                                         })}
                                     </div>

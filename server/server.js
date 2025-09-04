@@ -149,9 +149,12 @@ app.get('/api/public/data', async (req, res) => {
         }
 
         const usersQuery = "SELECT id, username, role, first_name, last_name, description, first_name || ' ' || last_name AS fullname FROM users";
+        
+        // ##### ĐÃ SỬA ĐỔI #####
+        // Sửa `s.application` thành `s.application_name` để khớp với tên trường đúng.
         const scenariosQuery = `
             SELECT 
-                s.id, s.name, s.role,
+                s.id, s.name, s.role, s.application_name,
                 COALESCE(
                     (SELECT json_agg(steps.* ORDER BY steps.step_order) FROM steps WHERE steps.scenario_id = s.id),
                     '[]'::json
@@ -159,6 +162,8 @@ app.get('/api/public/data', async (req, res) => {
             FROM scenarios s
             WHERE s.id IN (SELECT scenario_id FROM drill_scenarios WHERE drill_id = ANY($1::text[]))
         `;
+        // ##### KẾT THÚC SỬA ĐỔI #####
+
         const stepDepsQuery = 'SELECT * FROM step_dependencies WHERE step_id IN (SELECT id FROM steps WHERE scenario_id IN (SELECT scenario_id FROM drill_scenarios WHERE drill_id = ANY($1::text[])))';
         const drillScenariosQuery = 'SELECT * FROM drill_scenarios WHERE drill_id = ANY($1::text[])';
         const drillScenarioDepsQuery = 'SELECT * FROM drill_scenario_dependencies WHERE drill_id = ANY($1::text[])';
