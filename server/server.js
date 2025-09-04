@@ -17,7 +17,6 @@ app.use(express.json({ limit: '10mb' }));
 
 app.get('/api/data', async (req, res) => {
     try {
-        // Bổ sung các truy vấn còn thiếu
         const usersQuery = 'SELECT id, username, role, first_name, last_name, description, first_name || \' \' || last_name AS fullname FROM users';
         const drillsQuery = 'SELECT * FROM drills ORDER BY start_date DESC';
         const scenariosQuery = `
@@ -30,9 +29,9 @@ app.get('/api/data', async (req, res) => {
         const stepDepsQuery = 'SELECT * FROM step_dependencies';
         const drillScenariosQuery = 'SELECT * FROM drill_scenarios';
         const drillScenarioDepsQuery = 'SELECT * FROM drill_scenario_dependencies';
-        const drillStepAssignmentsQuery = 'SELECT * FROM drill_step_assignments'; // THÊM MỚI
-        const drillCheckpointsQuery = 'SELECT * FROM drill_checkpoints'; // THÊM MỚI
-        const drillCheckpointCriteriaQuery = 'SELECT * FROM drill_checkpoint_criteria'; // THÊM MỚI
+        const drillStepAssignmentsQuery = 'SELECT * FROM drill_step_assignments';
+        const drillCheckpointsQuery = 'SELECT * FROM drill_checkpoints';
+        const drillCheckpointCriteriaQuery = 'SELECT * FROM drill_checkpoint_criteria';
         const executionStepsQuery = 'SELECT * FROM execution_steps';
         const executionScenariosQuery = 'SELECT * FROM execution_scenarios';
 
@@ -43,9 +42,9 @@ app.get('/api/data', async (req, res) => {
             pool.query(stepDepsQuery),
             pool.query(drillScenariosQuery),
             pool.query(drillScenarioDepsQuery),
-            pool.query(drillStepAssignmentsQuery), // THÊM MỚI
-            pool.query(drillCheckpointsQuery), // THÊM MỚI
-            pool.query(drillCheckpointCriteriaQuery), // THÊM MỚI
+            pool.query(drillStepAssignmentsQuery),
+            pool.query(drillCheckpointsQuery),
+            pool.query(drillCheckpointCriteriaQuery),
             pool.query(executionStepsQuery),
             pool.query(executionScenariosQuery)
         ]);
@@ -57,9 +56,9 @@ app.get('/api/data', async (req, res) => {
             stepDepsRes,
             drillScenariosRes,
             drillScenarioDepsRes,
-            drillStepAssignmentsRes, // THÊM MỚI
-            drillCheckpointsRes, // THÊM MỚI
-            drillCheckpointCriteriaRes, // THÊM MỚI
+            drillStepAssignmentsRes,
+            drillCheckpointsRes,
+            drillCheckpointCriteriaRes,
             executionStepsRes,
             executionScenariosRes
         ] = results.map(r => r.rows);
@@ -80,7 +79,6 @@ app.get('/api/data', async (req, res) => {
             scenarios[scen.id] = { ...scen, steps: stepIds };
         });
 
-        // Bổ sung logic xử lý checkpoints
         const checkpointsByDrill = {};
         drillCheckpointsRes.forEach(cp => {
             if (!checkpointsByDrill[cp.drill_id]) {
@@ -90,7 +88,6 @@ app.get('/api/data', async (req, res) => {
             checkpointsByDrill[cp.drill_id][cp.id] = { ...cp, criteria };
         });
 
-        // Cập nhật logic map drill để thêm assignments và checkpoints
         const drills = drillsRes.map(drill => {
             const scenariosInDrill = drillScenariosRes
                 .filter(ds => ds.drill_id === drill.id)
@@ -112,8 +109,8 @@ app.get('/api/data', async (req, res) => {
             return { 
                 ...drill, 
                 scenarios: scenariosInDrill,
-                step_assignments, // Thêm assignments vào drill
-                checkpoints: checkpointsByDrill[drill.id] || {} // Thêm checkpoints vào drill
+                step_assignments,
+                checkpoints: checkpointsByDrill[drill.id] || {}
             };
         });
         
@@ -149,12 +146,9 @@ app.get('/api/public/data', async (req, res) => {
         }
 
         const usersQuery = "SELECT id, username, role, first_name, last_name, description, first_name || ' ' || last_name AS fullname FROM users";
-        
-        // ##### ĐÃ SỬA ĐỔI #####
-        // Sửa `s.application` thành `s.application_name` để khớp với tên trường đúng.
         const scenariosQuery = `
             SELECT 
-                s.id, s.name, s.role, s.application_name,
+                s.id, s.name, s.role, s.application_name, s.attachment,
                 COALESCE(
                     (SELECT json_agg(steps.* ORDER BY steps.step_order) FROM steps WHERE steps.scenario_id = s.id),
                     '[]'::json
@@ -162,8 +156,6 @@ app.get('/api/public/data', async (req, res) => {
             FROM scenarios s
             WHERE s.id IN (SELECT scenario_id FROM drill_scenarios WHERE drill_id = ANY($1::text[]))
         `;
-        // ##### KẾT THÚC SỬA ĐỔI #####
-
         const stepDepsQuery = 'SELECT * FROM step_dependencies WHERE step_id IN (SELECT id FROM steps WHERE scenario_id IN (SELECT scenario_id FROM drill_scenarios WHERE drill_id = ANY($1::text[])))';
         const drillScenariosQuery = 'SELECT * FROM drill_scenarios WHERE drill_id = ANY($1::text[])';
         const drillScenarioDepsQuery = 'SELECT * FROM drill_scenario_dependencies WHERE drill_id = ANY($1::text[])';
@@ -269,9 +261,11 @@ app.get('/api/public/data', async (req, res) => {
 app.get('/api/scenarios/:id/attachment', async (req, res) => {
     const { id } = req.params;
     try {
-        const result = await pool.query('SELECT attachment, attachment_name FROM scenarios WHERE id = $1', [id]);
+        // FIXED: Select only the 'attachment' column which contains the JSON object
+        const result = await pool.query('SELECT attachment FROM scenarios WHERE id = $1', [id]);
         if (result.rows.length > 0 && result.rows[0].attachment) {
-            res.json({ attachment: result.rows[0].attachment, name: result.rows[0].attachment_name });
+            // FIXED: Return the attachment object directly
+            res.json(result.rows[0].attachment);
         } else {
             res.status(404).json({ error: 'Attachment not found' });
         }
@@ -395,13 +389,13 @@ app.post('/api/user/change-password', async (req, res) => {
 // --- API QUẢN LÝ KỊCH BẢN (SCENARIOS) ---
 
 app.post('/api/scenarios', async (req, res) => {
-    const { name, role, basis, status, created_by, steps, attachment, attachment_name } = req.body;
+    const { name, role, basis, status, created_by, steps, attachment, applicationName } = req.body;
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
         const scenarioId = `scen-${Date.now()}`;
-        const scenarioQuery = 'INSERT INTO scenarios (id, name, role, basis, status, created_by, attachment, attachment_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *';
-        await client.query(scenarioQuery, [scenarioId, name, role, basis, status, created_by, attachment, attachment_name]);
+        const scenarioQuery = 'INSERT INTO scenarios (id, name, role, basis, status, created_by, attachment, application_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *';
+        await client.query(scenarioQuery, [scenarioId, name, role, basis, status, created_by, attachment ? JSON.stringify(attachment) : null, applicationName]);
 
         if (steps && steps.length > 0) {
             const tempIdToDbId = {};
@@ -438,12 +432,19 @@ app.post('/api/scenarios', async (req, res) => {
 
 app.put('/api/scenarios/:id', async (req, res) => {
     const { id } = req.params;
-    const { name, role, basis, status, steps, attachment, attachment_name } = req.body;
+    // FIXED: Removed attachment_name, use applicationName, handle attachment object
+    const { name, role, basis, status, steps, attachment, applicationName } = req.body;
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-        const scenarioQuery = 'UPDATE scenarios SET name = $1, role = $2, basis = $3, status = $4, last_updated_at = NOW(), attachment = $5, attachment_name = $6 WHERE id = $7';
-        await client.query(scenarioQuery, [name, role, basis, status, attachment, attachment_name, id]);
+        // FIXED: SQL query to update application_name and a single JSON attachment
+        const scenarioQuery = `
+            UPDATE scenarios 
+            SET name = $1, role = $2, basis = $3, status = $4, last_updated_at = NOW(), attachment = $5, application_name = $6 
+            WHERE id = $7
+        `;
+        // FIXED: Parameters now include applicationName and stringified attachment
+        await client.query(scenarioQuery, [name, role, basis, status, attachment ? JSON.stringify(attachment) : null, applicationName, id]);
 
         await client.query('DELETE FROM step_dependencies WHERE step_id IN (SELECT id FROM steps WHERE scenario_id = $1)', [id]);
         await client.query('DELETE FROM steps WHERE scenario_id = $1', [id]);
@@ -807,10 +808,10 @@ app.post('/api/admin/seed-demo-data', async (req, res) => {
         `);
         
         await client.query(`
-            INSERT INTO scenarios (id, name, role, created_by, created_at, last_updated_at, status, basis) VALUES
-            ('scen-1', 'Chuyển đổi dự phòng Database', 'TECHNICAL', 'user-2', '2025-08-10T10:00:00Z', '2025-08-11T14:30:00Z', 'Active', 'Kế hoạch DR năm 2025'),
-            ('scen-2', 'Truyền thông Khách hàng', 'BUSINESS', 'user-3', '2025-08-10T11:00:00Z', '2025-08-10T11:00:00Z', 'Active', 'Kế hoạch DR năm 2025'),
-            ('scen-3', 'Kiểm tra hiệu năng hệ thống', 'TECHNICAL', 'user-2', '2025-08-11T09:00:00Z', '2025-08-12T11:00:00Z', 'Draft', '')
+            INSERT INTO scenarios (id, name, role, created_by, created_at, last_updated_at, status, basis, application_name) VALUES
+            ('scen-1', 'Chuyển đổi dự phòng Database', 'TECHNICAL', 'user-2', '2025-08-10T10:00:00Z', '2025-08-11T14:30:00Z', 'Active', 'Kế hoạch DR năm 2025', 'Core Banking'),
+            ('scen-2', 'Truyền thông Khách hàng', 'BUSINESS', 'user-3', '2025-08-10T11:00:00Z', '2025-08-10T11:00:00Z', 'Active', 'Kế hoạch DR năm 2025', 'Website'),
+            ('scen-3', 'Kiểm tra hiệu năng hệ thống', 'TECHNICAL', 'user-2', '2025-08-11T09:00:00Z', '2025-08-12T11:00:00Z', 'Draft', '', 'Mobile App')
             ON CONFLICT (id) DO NOTHING;
         `);
 
@@ -895,3 +896,4 @@ app.get('*', (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
+
