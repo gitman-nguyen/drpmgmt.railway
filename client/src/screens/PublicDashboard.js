@@ -34,23 +34,22 @@ const simpleHash = (str) => {
 };
 
 // Helper function to format scenario name for display
-const getShortScenarioName = (scenarioNode) => {
+const getShortScenarioName = (scenarioNode, t) => {
     if (!scenarioNode || !scenarioNode.name) return '';
 
-    // Dịch `role` từ dữ liệu sang tiếng Việt để hiển thị
+    // Dùng function `t` để dịch vai trò, với giá trị dự phòng là tiếng Việt.
     let displayRole = null;
     if (scenarioNode.role === 'TECHNICAL') {
-        displayRole = 'Kỹ thuật';
+        // Giả sử key trong file ngôn ngữ là 'roleTechnical'
+        displayRole = t('roleTechnical', 'Kỹ thuật');
     } else if (scenarioNode.role === 'BUSINESS') {
-        displayRole = 'Nghiệp vụ';
+        // Giả sử key trong file ngôn ngữ là 'roleBusiness'
+        displayRole = t('roleBusiness', 'Nghiệp vụ');
     }
 
-    // ##### ĐÃ SỬA ĐỔI #####
-    // Sửa `scenarioNode.application` thành `scenarioNode.application_name` để khớp với dữ liệu từ server.
     if (displayRole && scenarioNode.application_name) {
         return `${scenarioNode.application_name} (${displayRole})`;
     }
-    // ##### KẾT THÚC SỬA ĐỔI #####
 
     // Nếu không, trả về tên đầy đủ ban đầu
     return scenarioNode.name;
@@ -281,7 +280,7 @@ const PublicDashboard = ({ onLoginRequest }) => {
                                             if (progress === 100) colorClass = 'text-green-400';
                                             else if (progress > 0) colorClass = 'text-sky-400';
                                             
-                                            const displayName = getShortScenarioName(node);
+                                            const displayName = getShortScenarioName(node, t);
 
                                             return (
                                                 <div key={node.id} className="relative group">

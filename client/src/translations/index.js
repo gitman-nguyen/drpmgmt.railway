@@ -202,7 +202,9 @@ export const translations = {
     evaluatedAfter: 'Đánh giá sau kịch bản',
     notEvaluated: 'Chưa đánh giá',
     applicationName: 'Tên ứng dụng',
-    application: 'Ứng dụng'
+    application: 'Ứng dụng',
+    roleTechnical: 'Kỹ thuật',
+    roleBusiness: 'Nghiệp vụ'
   },
   en: {
     loginTitle: 'System Login',
@@ -404,6 +406,8 @@ export const translations = {
     evaluatedAfter: 'Evaluated after scenario',
     notEvaluated: 'Not Evaluated',
     applicationName: 'Application Name',
-    application: 'Application'
+    application: 'Application',
+    roleTechnical: 'Technical',
+    roleBusiness: 'Business'
   },
 };
