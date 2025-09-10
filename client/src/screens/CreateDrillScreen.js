@@ -207,44 +207,52 @@ const CreateDrillScreen = ({ setActiveScreen, onDataRefresh, db, user, drillToEd
     const handleDragOver = (e) => {
         e.preventDefault();
     };
+    
+    const handleRemoveScenario = (scenarioToRemove) => {
+        setAvailableScenarios(prev => [...prev, scenarioToRemove]);
+        const newSelected = selectedScenarios.filter(s => s.id !== scenarioToRemove.id);
+
+        const newAssignments = { ...stepAssignments };
+        if (scenarioToRemove && scenarioToRemove.steps) {
+            scenarioToRemove.steps.forEach(stepId => {
+                delete newAssignments[stepId];
+            });
+        }
+        setStepAssignments(newAssignments);
+
+        const newScenarioAssignments = { ...scenarioAssignments };
+        delete newScenarioAssignments[scenarioToRemove.id];
+        setScenarioAssignments(newScenarioAssignments);
+
+        const newCheckpoints = { ...checkpoints };
+        delete newCheckpoints[scenarioToRemove.id];
+        setCheckpoints(newCheckpoints);
+
+        const updatedSelected = newSelected.map(s => {
+            const newDependsOn = (s.dependsOn || []).filter(depId => depId !== scenarioToRemove.id);
+            return { ...s, dependsOn: newDependsOn };
+        });
+        setSelectedScenarios(updatedSelected);
+    };
+
 
     const handleDrop = (e, targetList) => {
         e.preventDefault();
         if (!draggedItem) return;
 
         if (targetList === 'selected' && draggedItem.source === 'available') {
-            const newSelected = [...selectedScenarios, { ...draggedItem, dependsOn: [] }];
-            setSelectedScenarios(newSelected);
-            setAvailableScenarios(availableScenarios.filter(s => s.id !== draggedItem.id));
+            handleAddScenario(draggedItem);
         }
         else if (targetList === 'available' && draggedItem.source === 'selected') {
-            setAvailableScenarios([...availableScenarios, { ...draggedItem }]);
-            const newSelected = selectedScenarios.filter(s => s.id !== draggedItem.id);
-            
-            const newAssignments = { ...stepAssignments };
-            const removedScenario = db.scenarios[draggedItem.id];
-            if(removedScenario && removedScenario.steps) {
-                removedScenario.steps.forEach(stepId => {
-                    delete newAssignments[stepId];
-                });
-            }
-            setStepAssignments(newAssignments);
-
-            const newScenarioAssignments = { ...scenarioAssignments };
-            delete newScenarioAssignments[draggedItem.id];
-            setScenarioAssignments(newScenarioAssignments);
-
-            const newCheckpoints = { ...checkpoints };
-            delete newCheckpoints[draggedItem.id];
-            setCheckpoints(newCheckpoints);
-
-            const updatedSelected = newSelected.map(s => {
-                const newDependsOn = (s.dependsOn || []).filter(depId => depId !== draggedItem.id);
-                return { ...s, dependsOn: newDependsOn };
-            });
-            setSelectedScenarios(updatedSelected);
+            handleRemoveScenario(draggedItem);
         }
         setDraggedItem(null);
+    };
+
+    const handleAddScenario = (scenarioToAdd) => {
+        const newSelected = [...selectedScenarios, { ...scenarioToAdd, dependsOn: [] }];
+        setSelectedScenarios(newSelected);
+        setAvailableScenarios(availableScenarios.filter(s => s.id !== scenarioToAdd.id));
     };
 
     const handleReorder = (draggedId, dropId) => {
@@ -269,6 +277,7 @@ const CreateDrillScreen = ({ setActiveScreen, onDataRefresh, db, user, drillToEd
 
     const handleDropOnItem = (e, dropId) => {
         e.preventDefault();
+        e.stopPropagation();
         if (!draggedItem || draggedItem.source !== 'selected' || draggedItem.id === dropId) return;
         handleReorder(draggedItem.id, dropId);
         setDraggedItem(null);
@@ -398,9 +407,25 @@ const CreateDrillScreen = ({ setActiveScreen, onDataRefresh, db, user, drillToEd
                             </div>
                             <div onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, 'available')} className="bg-gray-100 p-4 rounded-lg flex-grow border-dashed border-2 border-gray-300 space-y-2 overflow-y-auto min-h-[300px]">
                                 {filteredAvailableScenarios.length > 0 ? filteredAvailableScenarios.map(scen => (
-                                    <div key={scen.id} draggable onDragStart={(e) => handleDragStart(e, scen, 'available')} className="p-3 bg-white border border-gray-200 rounded-md cursor-move shadow-sm hover:bg-gray-50 wiggle-on-drag">
-                                        <p className="font-semibold text-gray-800">{scen.name}</p>
-                                        <p className="text-xs text-gray-500">{scen.role}</p>
+                                    <div 
+                                        key={scen.id} 
+                                        draggable 
+                                        onDragStart={(e) => handleDragStart(e, scen, 'available')} 
+                                        className="p-3 bg-white border border-gray-200 rounded-md shadow-sm hover:bg-gray-50 flex items-center justify-between gap-2 cursor-move wiggle-on-drag"
+                                    >
+                                        <div className="flex-grow">
+                                            <p className="font-semibold text-gray-800">{scen.name}</p>
+                                            <p className="text-xs text-gray-500">{scen.role}</p>
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => handleAddScenario(scen)} 
+                                            onMouseDown={(e) => e.stopPropagation()}
+                                            className="p-2 rounded-full text-sky-600 hover:bg-sky-100 hover:text-sky-800 transition-colors flex-shrink-0 cursor-pointer"
+                                            title={t('addToDrill', 'Thêm vào diễn tập')}
+                                        >
+                                            <PlusIcon className="h-5 w-5" />
+                                        </button>
                                     </div>
                                 )) : (
                                     <p className="text-gray-500 text-center py-10">{t('noScenariosFound', 'Không tìm thấy kịch bản nào.')}</p>
@@ -412,31 +437,45 @@ const CreateDrillScreen = ({ setActiveScreen, onDataRefresh, db, user, drillToEd
                             <div onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, 'selected')} className="bg-sky-50 p-4 rounded-lg min-h-[400px] border-dashed border-2 border-sky-300 space-y-2">
                                 {selectedScenarios.length === 0 && <p className="text-gray-500 text-center pt-16">{t('dragScenarioHere')}</p>}
                                 {selectedScenarios.map((scen, index) => (
-                                    <div key={scen.id} className="relative">
-                                        <div draggable onDragStart={(e) => handleDragStart(e, scen, 'selected')} onDragOver={handleDragOver} onDrop={(e) => handleDropOnItem(e, scen.id)} className="p-3 bg-white border border-gray-200 rounded-md shadow-sm cursor-move wiggle-on-drag">
-                                            <div className="flex justify-between items-center gap-4">
-                                                <p className="font-semibold text-gray-800 flex-grow">{index + 1}. {scen.name}</p>
-                                                {scen.steps && scen.steps.length > 0 && (
-                                                    <div className="flex items-center gap-2 flex-shrink-0">
-                                                        <div className="flex items-center gap-1">
-                                                            <UserIcon className="h-4 w-4 text-gray-400" />
-                                                            <select 
-                                                                value={scenarioAssignments[scen.id] || ''} 
-                                                                onChange={e => handleScenarioAssigneeChange(scen.id, e.target.value)} 
-                                                                className="text-sm bg-white border border-gray-300 rounded-md p-1 focus:ring-sky-500 focus:border-sky-500"
-                                                                aria-label={`Assign all steps for ${scen.name}`}
-                                                            >
-                                                                <option value="">{t('assignScenario', 'Giao toàn bộ')}</option>
-                                                                {db.users.map(u => (<option key={u.id} value={u.id}>{u.fullname || u.username}</option>))}
-                                                            </select>
-                                                        </div>
-                                                        <button type="button" onClick={() => setExpandedScenario(expandedScenario === scen.id ? null : scen.id)} className="text-sm font-semibold text-sky-600 hover:text-sky-800 bg-sky-100 px-3 py-1 rounded-md">
-                                                            {expandedScenario === scen.id ? t('collapse') : t('details', 'Chi tiết')}
-                                                        </button>
-                                                    </div>
-                                                )}
+                                    <div key={scen.id} onDragOver={handleDragOver} onDrop={(e) => handleDropOnItem(e, scen.id)} className="relative" style={{ zIndex: selectedScenarios.length - index }}>
+                                        <div draggable onDragStart={(e) => handleDragStart(e, scen, 'selected')} className="p-3 bg-white border border-gray-200 rounded-md shadow-sm cursor-move wiggle-on-drag">
+                                            <div className="flex justify-between items-start gap-4">
+                                                <div className="flex-grow">
+                                                   <p className="font-semibold text-gray-800">{index + 1}. {scen.name}</p>
+                                                   <DependencySelector item={scen} itemList={selectedScenarios} currentIndex={index} onDependencyChange={(deps) => handleDependencyChange(scen.id, deps)} />
+                                                </div>
+                                                <div className="flex items-center gap-2 flex-shrink-0">
+                                                    {scen.steps && scen.steps.length > 0 && (
+                                                        <>
+                                                            <div className="flex items-center gap-1">
+                                                                <UserIcon className="h-4 w-4 text-gray-400" />
+                                                                <select 
+                                                                    value={scenarioAssignments[scen.id] || ''} 
+                                                                    onChange={e => handleScenarioAssigneeChange(scen.id, e.target.value)} 
+                                                                    className="text-sm bg-white border border-gray-300 rounded-md p-1 focus:ring-sky-500 focus:border-sky-500"
+                                                                    aria-label={`Assign all steps for ${scen.name}`}
+                                                                >
+                                                                    <option value="">{t('assignScenario', 'Giao toàn bộ')}</option>
+                                                                    {db.users.map(u => (<option key={u.id} value={u.id}>{u.fullname || u.username}</option>))}
+                                                                </select>
+                                                            </div>
+                                                            <button type="button" onClick={() => setExpandedScenario(expandedScenario === scen.id ? null : scen.id)} className="text-sm font-semibold text-sky-600 hover:text-sky-800 bg-sky-100 px-3 py-1 rounded-md">
+                                                                {expandedScenario === scen.id ? t('collapse') : t('details', 'Chi tiết')}
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                     <button 
+                                                        type="button" 
+                                                        onClick={() => handleRemoveScenario(scen)}
+                                                        onMouseDown={(e) => e.stopPropagation()}
+                                                        className="p-1.5 rounded-full text-gray-400 hover:bg-red-100 hover:text-red-600 transition-colors flex-shrink-0 cursor-pointer"
+                                                        title={t('removeFromDrill', 'Xóa khỏi diễn tập')}
+                                                    >
+                                                        <TrashIcon className="h-4 w-4" />
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <DependencySelector item={scen} itemList={selectedScenarios} currentIndex={index} onDependencyChange={(deps) => handleDependencyChange(scen.id, deps)} />
+                                            
                                             {expandedScenario === scen.id && (
                                                 <div className="mt-4 pt-3 border-t border-gray-200 space-y-2">
                                                     <h4 className="text-sm font-semibold text-gray-600 mb-2">{t('assignSteps')}</h4>
