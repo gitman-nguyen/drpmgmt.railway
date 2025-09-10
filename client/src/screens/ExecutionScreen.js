@@ -460,15 +460,63 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, users, executi
                                         const isInProgress = node.executionStatus === 'InProgress' || node.checkpoint?.executionStatus === 'InProgress';
                                         const isAuthorizedToView = user.role === 'ADMIN' || user.role === node.role;
 
+                                        // START: Logic to get assigned users for the scenario node
+                                        const drillExec = executionData[drill.id] || {};
+                                        const assignedUserIds = new Set();
+                                        if (node.type === 'scenario' && Array.isArray(node.steps)) {
+                                            node.steps.forEach(stepId => {
+                                                const state = drillExec[stepId];
+                                                const assigneeId = state?.assignee || drill.step_assignments?.[stepId];
+                                                if (assigneeId) {
+                                                    assignedUserIds.add(assigneeId);
+                                                }
+                                            });
+                                        }
+                                        const assignedUsers = Array.from(assignedUserIds)
+                                            .map(userId => users.find(u => u.id === userId))
+                                            .filter(Boolean); // Filter out any null/undefined users
+                                        // END: Logic to get assigned users
+
                                         return (
                                             <div key={node.id} onMouseEnter={(e) => handleMouseEnter(node.name, e)} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave} className={`flex items-stretch transition-all duration-300 rounded-lg ${isSelected && isAuthorizedToView ? 'bg-sky-100 ring-2 ring-sky-500' : ''} ${node.isLocked ? 'opacity-50' : ''}`}>
-                                                <button onClick={() => setActiveNodeId(node.id)} disabled={node.isLocked || !isAuthorizedToView} className={`w-56 text-left p-3 rounded-l-lg border-y border-l transition-all duration-200 bg-gray-50 border-gray-200 hover:border-gray-400 ${isInProgress && !isSelected ? 'animate-pulse' : ''} ${(node.isLocked || !isAuthorizedToView) ? 'cursor-not-allowed' : ''}`}>
-                                                    <h4 className="font-semibold text-sm text-gray-900 flex items-center truncate">
-                                                        {node.isLocked && <LockIcon />}
-                                                        {node.executionStatus === 'Completed' && <span className="text-green-500 mr-1">✓</span>}
-                                                        {node.name}
-                                                    </h4>
-                                                    <span className={`text-xs px-2 py-0-5 rounded-full ${node.role === 'TECHNICAL' ? 'bg-purple-100 text-purple-800' : 'bg-orange-100 text-orange-800'}`}>{node.role}</span>
+                                                <button onClick={() => setActiveNodeId(node.id)} disabled={node.isLocked || !isAuthorizedToView} className={`w-56 text-left p-3 rounded-l-lg border-y border-l transition-all duration-200 bg-gray-50 border-gray-200 hover:border-gray-400 flex flex-col justify-between ${isInProgress && !isSelected ? 'animate-pulse' : ''} ${(node.isLocked || !isAuthorizedToView) ? 'cursor-not-allowed' : ''}`}>
+                                                    <div>
+                                                        <h4 className="font-semibold text-sm text-gray-900 flex items-center truncate">
+                                                            {node.isLocked && <LockIcon />}
+                                                            {node.executionStatus === 'Completed' && <span className="text-green-500 mr-1">✓</span>}
+                                                            {node.name}
+                                                        </h4>
+                                                    </div>
+                                                    <div className="flex justify-between items-center mt-2">
+                                                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${node.role === 'TECHNICAL' ? 'bg-purple-100 text-purple-800' : 'bg-orange-100 text-orange-800'}`}>{node.role}</span>
+                                                        
+                                                        {/* START: Render user avatars */}
+                                                        {assignedUsers.length > 0 && (
+                                                            <div className="flex items-center -space-x-2">
+                                                                {assignedUsers.slice(0, 3).map(u => {
+                                                                    const colorStyle = userColorMap[u.id] || userColorClasses[0];
+                                                                    const fullName = u.last_name && u.first_name ? `${u.last_name} ${u.first_name}` : (u.fullname || u.username);
+                                                                    const nameParts = fullName ? fullName.trim().split(' ') : [];
+                                                                    const avatarText = nameParts.length > 0 ? nameParts[nameParts.length - 1] : (u.username?.[0] || 'U');
+                                                                    return (
+                                                                        <div 
+                                                                            key={u.id} 
+                                                                            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ring-2 ring-white ${colorStyle.bg} ${colorStyle.text}`}
+                                                                            title={fullName}
+                                                                        >
+                                                                            {avatarText}
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                                {assignedUsers.length > 3 && (
+                                                                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ring-2 ring-white bg-gray-200 text-gray-700" title={`${assignedUsers.length - 3} người khác`}>
+                                                                        +{assignedUsers.length - 3}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                        {/* END: Render user avatars */}
+                                                    </div>
                                                 </button>
                                                 
                                                 {node.checkpoint && (
