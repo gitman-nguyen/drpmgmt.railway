@@ -19,11 +19,14 @@ app.get('/api/data', async (req, res) => {
     try {
         const usersQuery = 'SELECT id, username, role, first_name, last_name, description, first_name || \' \' || last_name AS fullname FROM users';
         const drillsQuery = 'SELECT * FROM drills ORDER BY start_date DESC';
+        // FIXED: Explicitly select all columns from scenarios to ensure application_name is included.
         const scenariosQuery = `
-            SELECT s.*, COALESCE(
-                (SELECT json_agg(steps.* ORDER BY steps.step_order) FROM steps WHERE steps.scenario_id = s.id),
-                '[]'::json
-            ) as steps
+            SELECT 
+                s.id, s.name, s.role, s.basis, s.status, s.created_by, s.created_at, s.last_updated_at, s.attachment, s.application_name, 
+                COALESCE(
+                    (SELECT json_agg(steps.* ORDER BY steps.step_order) FROM steps WHERE steps.scenario_id = s.id),
+                    '[]'::json
+                ) as steps
             FROM scenarios s
         `;
         const stepDepsQuery = 'SELECT * FROM step_dependencies';
@@ -76,7 +79,8 @@ app.get('/api/data', async (req, res) => {
                     stepIds.push(step.id);
                 });
             }
-            scenarios[scen.id] = { ...scen, steps: stepIds };
+            // Frontend expects 'application' but DB column is 'application_name'
+            scenarios[scen.id] = { ...scen, application: scen.application_name, steps: stepIds };
         });
 
         const checkpointsByDrill = {};
@@ -202,7 +206,7 @@ app.get('/api/public/data', async (req, res) => {
                 });
                 scen.steps.forEach(s => delete s.description);
             }
-            scenarios[scen.id] = scen;
+            scenarios[scen.id] = {...scen, application: scen.application_name};
         });
 
         const checkpointsByDrill = {};
@@ -896,4 +900,3 @@ app.get('*', (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
-

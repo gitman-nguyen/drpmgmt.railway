@@ -108,12 +108,15 @@ const CreateDrillScreen = ({ setActiveScreen, onDataRefresh, db, user, drillToEd
     const [selectedScenarios, setSelectedScenarios] = useState([]);
     const [draggedItem, setDraggedItem] = useState(null);
     const [stepAssignments, setStepAssignments] = useState({});
+    const [scenarioAssignments, setScenarioAssignments] = useState({}); // State for scenario-level assignments
     const [expandedScenario, setExpandedScenario] = useState(null);
     const [checkpoints, setCheckpoints] = useState({});
     const [editingCheckpointFor, setEditingCheckpointFor] = useState(null);
+    const [scenarioSearchTerm, setScenarioSearchTerm] = useState(''); // State for scenario search input
 
     useEffect(() => {
         const allScenarios = Object.values(db.scenarios).filter(s => s.status === 'Active');
+        
         if (drillToEdit) {
             setName(drillToEdit.name);
             setDescription(drillToEdit.description);
@@ -125,8 +128,25 @@ const CreateDrillScreen = ({ setActiveScreen, onDataRefresh, db, user, drillToEd
             const selected = drillToEdit.scenarios.map(s => ({ ...db.scenarios[s.id], dependsOn: s.dependsOn }));
             setSelectedScenarios(selected);
             setAvailableScenarios(allScenarios.filter(s => !selectedIds.has(s.id)));
-            setStepAssignments(drillToEdit.step_assignments || {});
             
+            const assignments = drillToEdit.step_assignments || {};
+            setStepAssignments(assignments);
+            
+            const initialScenarioAssignments = {};
+            selected.forEach(scen => {
+                const scenario = db.scenarios[scen.id];
+                if (scenario && scenario.steps && scenario.steps.length > 0) {
+                    const firstStepAssignee = assignments[scenario.steps[0]];
+                    if (firstStepAssignee) {
+                        const allSame = scenario.steps.every(stepId => assignments[stepId] === firstStepAssignee);
+                        if (allSame) {
+                            initialScenarioAssignments[scen.id] = firstStepAssignee;
+                        }
+                    }
+                }
+            });
+            setScenarioAssignments(initialScenarioAssignments);
+
             const normalizedCheckpoints = {};
             if (drillToEdit.checkpoints) {
                 // The server sends checkpoints keyed by checkpoint.id. We need to re-key them by scenario.id for the UI.
@@ -152,6 +172,23 @@ const CreateDrillScreen = ({ setActiveScreen, onDataRefresh, db, user, drillToEd
 
     const handleAssigneeChange = (stepId, assigneeId) => {
         setStepAssignments(prev => ({ ...prev, [stepId]: assigneeId }));
+    };
+
+    const handleScenarioAssigneeChange = (scenarioId, assigneeId) => {
+        setScenarioAssignments(prev => ({ ...prev, [scenarioId]: assigneeId }));
+
+        const scenario = db.scenarios[scenarioId];
+        if (scenario && scenario.steps) {
+            const newStepAssignments = { ...stepAssignments };
+            scenario.steps.forEach(stepId => {
+                if (assigneeId) {
+                    newStepAssignments[stepId] = assigneeId;
+                } else {
+                    delete newStepAssignments[stepId];
+                }
+            });
+            setStepAssignments(newStepAssignments);
+        }
     };
     
     const handleSaveCheckpoint = (scenarioId, checkpointData) => {
@@ -192,6 +229,10 @@ const CreateDrillScreen = ({ setActiveScreen, onDataRefresh, db, user, drillToEd
                 });
             }
             setStepAssignments(newAssignments);
+
+            const newScenarioAssignments = { ...scenarioAssignments };
+            delete newScenarioAssignments[draggedItem.id];
+            setScenarioAssignments(newScenarioAssignments);
 
             const newCheckpoints = { ...checkpoints };
             delete newCheckpoints[draggedItem.id];
@@ -280,6 +321,16 @@ const CreateDrillScreen = ({ setActiveScreen, onDataRefresh, db, user, drillToEd
         }
     };
 
+    // Filter available scenarios based on search term
+    const filteredAvailableScenarios = availableScenarios.filter(scen => {
+        const searchTerm = scenarioSearchTerm.toLowerCase();
+        
+        const nameMatch = scen.name && scen.name.toLowerCase().includes(searchTerm);
+        const appMatch = scen.application && String(scen.application).toLowerCase().includes(searchTerm);
+
+        return nameMatch || appMatch;
+    });
+
     return (
         <>
             {editingCheckpointFor && (
@@ -328,31 +379,61 @@ const CreateDrillScreen = ({ setActiveScreen, onDataRefresh, db, user, drillToEd
                         <textarea value={basis} onChange={e => setBasis(e.target.value)} rows="2" className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none transition" />
                     </div>
 
-                    <div className="flex space-x-6">
-                        <div className="w-1/3">
+                    <div className="flex flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-6">
+                        <div className="w-full md:w-1/3 flex flex-col">
                             <h3 className="font-bold text-gray-900 mb-2">{t('availableScenarios')}</h3>
-                            <div onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, 'available')} className="bg-gray-100 p-4 rounded-lg min-h-[300px] border-dashed border-2 border-gray-300 space-y-2">
-                                {availableScenarios.map(scen => (
+                            <div className="relative mb-2">
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                                    </svg>
+                                </span>
+                                <input
+                                    type="text"
+                                    placeholder={t('searchScenarioPlaceholder', 'Tìm theo tên, ứng dụng...')}
+                                    value={scenarioSearchTerm}
+                                    onChange={e => setScenarioSearchTerm(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none transition"
+                                />
+                            </div>
+                            <div onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, 'available')} className="bg-gray-100 p-4 rounded-lg flex-grow border-dashed border-2 border-gray-300 space-y-2 overflow-y-auto min-h-[300px]">
+                                {filteredAvailableScenarios.length > 0 ? filteredAvailableScenarios.map(scen => (
                                     <div key={scen.id} draggable onDragStart={(e) => handleDragStart(e, scen, 'available')} className="p-3 bg-white border border-gray-200 rounded-md cursor-move shadow-sm hover:bg-gray-50 wiggle-on-drag">
                                         <p className="font-semibold text-gray-800">{scen.name}</p>
                                         <p className="text-xs text-gray-500">{scen.role}</p>
                                     </div>
-                                ))}
+                                )) : (
+                                    <p className="text-gray-500 text-center py-10">{t('noScenariosFound', 'Không tìm thấy kịch bản nào.')}</p>
+                                )}
                             </div>
                         </div>
-                        <div className="w-2/3">
+                        <div className="w-full md:w-2/3">
                             <h3 className="font-bold text-gray-900 mb-2">{t('scenariosInDrill')}</h3>
-                            <div onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, 'selected')} className="bg-sky-50 p-4 rounded-lg min-h-[300px] border-dashed border-2 border-sky-300 space-y-2">
+                            <div onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, 'selected')} className="bg-sky-50 p-4 rounded-lg min-h-[400px] border-dashed border-2 border-sky-300 space-y-2">
                                 {selectedScenarios.length === 0 && <p className="text-gray-500 text-center pt-16">{t('dragScenarioHere')}</p>}
                                 {selectedScenarios.map((scen, index) => (
                                     <div key={scen.id} className="relative">
                                         <div draggable onDragStart={(e) => handleDragStart(e, scen, 'selected')} onDragOver={handleDragOver} onDrop={(e) => handleDropOnItem(e, scen.id)} className="p-3 bg-white border border-gray-200 rounded-md shadow-sm cursor-move wiggle-on-drag">
-                                            <div className="flex justify-between items-center">
-                                                <p className="font-semibold text-gray-800">{index + 1}. {scen.name}</p>
+                                            <div className="flex justify-between items-center gap-4">
+                                                <p className="font-semibold text-gray-800 flex-grow">{index + 1}. {scen.name}</p>
                                                 {scen.steps && scen.steps.length > 0 && (
-                                                     <button type="button" onClick={() => setExpandedScenario(expandedScenario === scen.id ? null : scen.id)} className="text-sm font-semibold text-sky-600 hover:text-sky-800 bg-sky-100 px-3 py-1 rounded-md">
-                                                        {expandedScenario === scen.id ? t('collapse') : t('assign')}
-                                                    </button>
+                                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                                        <div className="flex items-center gap-1">
+                                                            <UserIcon className="h-4 w-4 text-gray-400" />
+                                                            <select 
+                                                                value={scenarioAssignments[scen.id] || ''} 
+                                                                onChange={e => handleScenarioAssigneeChange(scen.id, e.target.value)} 
+                                                                className="text-sm bg-white border border-gray-300 rounded-md p-1 focus:ring-sky-500 focus:border-sky-500"
+                                                                aria-label={`Assign all steps for ${scen.name}`}
+                                                            >
+                                                                <option value="">{t('assignScenario', 'Giao toàn bộ')}</option>
+                                                                {db.users.map(u => (<option key={u.id} value={u.id}>{u.fullname || u.username}</option>))}
+                                                            </select>
+                                                        </div>
+                                                        <button type="button" onClick={() => setExpandedScenario(expandedScenario === scen.id ? null : scen.id)} className="text-sm font-semibold text-sky-600 hover:text-sky-800 bg-sky-100 px-3 py-1 rounded-md">
+                                                            {expandedScenario === scen.id ? t('collapse') : t('details', 'Chi tiết')}
+                                                        </button>
+                                                    </div>
                                                 )}
                                             </div>
                                             <DependencySelector item={scen} itemList={selectedScenarios} currentIndex={index} onDependencyChange={(deps) => handleDependencyChange(scen.id, deps)} />
@@ -399,3 +480,4 @@ const CreateDrillScreen = ({ setActiveScreen, onDataRefresh, db, user, drillToEd
     );
 };
 export default CreateDrillScreen;
+
