@@ -1,29 +1,57 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
-import { LogoIcon, UserIcon, CheckpointIcon, CheckCircleIcon, XCircleIcon, ClockIcon } from '../components/icons';
+import { LogoIcon, CheckpointIcon, CheckCircleIcon, XCircleIcon, ClockIcon } from '../components/icons';
 
-const PieChart = ({ percentage, size = 80, strokeWidth = 8, colorClass = 'text-yellow-400', textSizeClass = 'text-lg' }) => {
+// --- NEW INFOGRAPHIC ICONS ---
+// An arrow icon to visually connect workflow levels, now colored.
+const WorkflowConnector = () => (
+    <div className="my-4 text-amber-400">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <polyline points="19 12 12 19 5 12"></polyline>
+        </svg>
+    </div>
+);
+
+// --- PIE CHART COMPONENT (Updated to support both light and dark themes) ---
+const PieChart = ({ percentage, size = 80, strokeWidth = 8, colorClass = 'text-amber-500', textSizeClass = 'text-lg', textColorClass = 'text-slate-700', bgCircleClassProp }) => {
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (percentage / 100) * circumference;
+    const bgCircleClass = bgCircleClassProp || (textColorClass === 'text-white' ? 'text-gray-600/50' : 'text-slate-100');
+
 
     return (
         <div className="relative" style={{ width: size, height: size }}>
-            <svg className="w-full h-full filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" viewBox={`0 0 ${size} ${size}`}>
-                <circle className="text-gray-600" strokeWidth={strokeWidth} stroke="currentColor" fill="transparent" r={radius} cx={size/2} cy={size/2} />
-                <circle className={colorClass} strokeWidth={strokeWidth} strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" stroke="currentColor" fill="transparent" r={radius} cx={size/2} cy={size/2} style={{ transform: 'rotate(-90deg)', transformOrigin: 'center', transition: 'stroke-dashoffset 0.5s ease-in-out' }} />
+            <svg className="w-full h-full -rotate-90" viewBox={`0 0 ${size} ${size}`}>
+                {/* Background circle */}
+                <circle className={bgCircleClass} strokeWidth={strokeWidth} stroke="currentColor" fill="transparent" r={radius} cx={size/2} cy={size/2} />
+                {/* Progress circle */}
+                <circle className={colorClass} strokeWidth={strokeWidth} strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" stroke="currentColor" fill="transparent" r={radius} cx={size/2} cy={size/2} style={{ transition: 'stroke-dashoffset 0.5s ease-in-out' }} />
             </svg>
-            <span className={`absolute inset-0 flex items-center justify-center text-white font-bold ${textSizeClass}`}>{`${Math.round(percentage)}%`}</span>
+            <span className={`absolute inset-0 flex items-center justify-center font-bold ${textColorClass} ${textSizeClass}`}>{`${Math.round(percentage)}%`}</span>
         </div>
     );
 };
 
+
+// Color palette for user tags (frosted glass theme)
 const userColorClasses = [
-    { bg: 'bg-blue-200/50', text: 'text-blue-100' }, { bg: 'bg-green-200/50', text: 'text-green-100' },
-    { bg: 'bg-yellow-200/50', text: 'text-yellow-100' }, { bg: 'bg-pink-200/50', text: 'text-pink-100' },
-    { bg: 'bg-indigo-200/50', text: 'text-indigo-100' }, { bg: 'bg-teal-200/50', text: 'text-teal-100' },
-    { bg: 'bg-red-200/50', text: 'text-red-100' }, { bg: 'bg-cyan-200/50', text: 'text-cyan-100' },
-    { bg: 'bg-purple-200/50', text: 'text-purple-100' }, { bg: 'bg-orange-200/50', text: 'text-orange-100' },
+    { bg: 'bg-amber-400/20', text: 'text-amber-200' }, 
+    { bg: 'bg-emerald-400/20', text: 'text-emerald-200' },
+    { bg: 'bg-rose-400/20', text: 'text-rose-200' }, 
+    { bg: 'bg-sky-400/20', text: 'text-sky-200' },
+    { bg: 'bg-teal-400/20', text: 'text-teal-200' },  
+    { bg: 'bg-indigo-400/20', text: 'text-indigo-200' },
+];
+
+// --- NEW NEON COLOR PALETTE FOR WORKFLOW NODES ---
+const neonScenarioColorPalette = [
+    { text: 'text-sky-200', border: 'border-sky-400/60', shadow: 'shadow-sky-400/40', ring: 'ring-sky-400' },
+    { text: 'text-emerald-200', border: 'border-emerald-400/60', shadow: 'shadow-emerald-400/40', ring: 'ring-emerald-400' },
+    { text: 'text-rose-200', border: 'border-rose-400/60', shadow: 'shadow-rose-400/40', ring: 'ring-rose-400' },
+    { text: 'text-indigo-200', border: 'border-indigo-400/60', shadow: 'shadow-indigo-400/40', ring: 'ring-indigo-400' },
+    { text: 'text-teal-200', border: 'border-teal-400/60', shadow: 'shadow-teal-400/40', ring: 'ring-teal-400' },
 ];
 
 const simpleHash = (str) => {
@@ -36,22 +64,15 @@ const simpleHash = (str) => {
 // Helper function to format scenario name for display
 const getShortScenarioName = (scenarioNode, t) => {
     if (!scenarioNode || !scenarioNode.name) return '';
-
-    // Dùng function `t` để dịch vai trò, với giá trị dự phòng là tiếng Việt.
     let displayRole = null;
     if (scenarioNode.role === 'TECHNICAL') {
-        // Giả sử key trong file ngôn ngữ là 'roleTechnical'
         displayRole = t('roleTechnical', 'Kỹ thuật');
     } else if (scenarioNode.role === 'BUSINESS') {
-        // Giả sử key trong file ngôn ngữ là 'roleBusiness'
         displayRole = t('roleBusiness', 'Nghiệp vụ');
     }
-
     if (displayRole && scenarioNode.application_name) {
         return `${scenarioNode.application_name} (${displayRole})`;
     }
-
-    // Nếu không, trả về tên đầy đủ ban đầu
     return scenarioNode.name;
 };
 
@@ -71,9 +92,7 @@ const PublicDashboard = ({ onLoginRequest }) => {
             setIsLoading(true);
             try {
                 const response = await fetch('/api/public/data');
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
+                if (!response.ok) throw new Error('Network response was not ok');
                 const data = await response.json();
                 setPublicData(data);
             } catch (err) {
@@ -105,7 +124,10 @@ const PublicDashboard = ({ onLoginRequest }) => {
         if (ms < 0) ms = 0;
         const s = Math.floor((ms / 1000) % 60), m = Math.floor((ms / (1000 * 60)) % 60), h = Math.floor((ms / (1000 * 60 * 60)) % 24), d = Math.floor(ms / (1000 * 60 * 60 * 24));
         const parts = [];
-        if (d > 0) parts.push(`${d}d`); if (h > 0) parts.push(`${h}h`); if (m > 0) parts.push(`${m}m`); if (s >= 0) parts.push(`${s}s`);
+        if (d > 0) parts.push(`${d}${t('d', 'd')}`); 
+        if (h > 0) parts.push(`${h}${t('h', 'h')}`); 
+        if (m > 0) parts.push(`${m}${t('m', 'm')}`); 
+        if (s >= 0) parts.push(`${s}${t('s', 's')}`);
         return parts.length > 0 ? parts.join(' ') : '0s';
     };
     
@@ -118,7 +140,7 @@ const PublicDashboard = ({ onLoginRequest }) => {
         Object.values(steps).forEach(step => {
             if (!step) return;
             const state = drillExecData[step.id];
-            let elapsedTime = '—', executor = null, assigned = null, statusText = t('pending'), statusIcon = '🕒', statusColor = 'text-gray-400';
+            let elapsedTime = '—', executor = null, assigned = null, statusText = t('pending'), statusIcon = '🕒', statusColor = 'text-slate-400';
             
             if (state?.started_at) {
                 elapsedTime = formatDuration((state.completed_at ? new Date(state.completed_at) : now) - new Date(state.started_at));
@@ -133,9 +155,9 @@ const PublicDashboard = ({ onLoginRequest }) => {
                 }
             }
             
-            if (state?.status === 'InProgress') { statusText = t('inProgress'); statusIcon = '▶️'; statusColor = 'text-blue-400'; }
-            else if (state?.status === 'Completed-Success') { statusText = t('success'); statusIcon = '✅'; statusColor = 'text-green-400'; }
-            else if (state?.status?.startsWith('Completed-')) { statusText = t('failure'); statusIcon = '❌'; statusColor = 'text-red-400'; }
+            if (state?.status === 'InProgress') { statusText = t('inProgress'); statusIcon = '▶️'; statusColor = 'text-sky-400'; }
+            else if (state?.status === 'Completed-Success') { statusText = t('success'); statusIcon = '✅'; statusColor = 'text-emerald-400'; }
+            else if (state?.status?.startsWith('Completed-')) { statusText = t('failure'); statusIcon = '❌'; statusColor = 'text-rose-400'; }
             stats[step.id] = { elapsedTime, executor, assigned, statusText, statusIcon, statusColor };
         });
 
@@ -207,19 +229,19 @@ const PublicDashboard = ({ onLoginRequest }) => {
                         {inProgressDrills.map(drill => {
                             const progress = calculateOverallProgress(drill);
                              let colorClass = 'text-gray-400';
-                             if (progress === 100) colorClass = 'text-green-400';
-                             else if (progress > 0) colorClass = 'text-blue-400';
+                             if (progress === 100) colorClass = 'text-emerald-400';
+                             else if (progress > 0) colorClass = 'text-sky-400';
 
                             return (
-                                <div key={drill.id} className="bg-gradient-to-br from-[#2A3A3F]/80 to-[#1E292D]/80 p-6 rounded-2xl border border-[#3D4F56] hover:border-yellow-400/50 transition-all duration-300 backdrop-blur-sm shadow-2xl shadow-black/30">
+                                <div key={drill.id} className="bg-gradient-to-br from-[#2A3A3F]/80 to-[#1E292D]/80 p-6 rounded-2xl border border-[#3D4F56] hover:border-amber-400/50 transition-all duration-300 backdrop-blur-sm shadow-2xl shadow-black/30">
                                     <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
                                         <div className="flex-grow">
                                             <h2 className="text-xl font-bold text-white">{drill.name}</h2>
                                             <p className="text-gray-400 mt-1">{drill.description}</p>
                                         </div>
                                         <div className="flex items-center gap-6">
-                                             <PieChart percentage={progress} size={150} strokeWidth={15} colorClass={colorClass} textSizeClass="text-4xl" />
-                                            <button onClick={() => { setSelectedDrill(drill); setActiveNodeId(null); }} className="flex-shrink-0 bg-yellow-400 text-black font-bold py-2 px-5 rounded-lg hover:bg-yellow-300 transition-all">
+                                            <PieChart percentage={progress} size={150} strokeWidth={15} colorClass={colorClass} textSizeClass="text-4xl" textColorClass="text-white" />
+                                            <button onClick={() => { setSelectedDrill(drill); setActiveNodeId(null); }} className="flex-shrink-0 bg-amber-400 text-black font-bold py-2 px-5 rounded-lg hover:bg-amber-500 transition-all shadow-lg shadow-amber-400/20">
                                                 {t('viewProgress')}
                                             </button>
                                         </div>
@@ -237,26 +259,30 @@ const PublicDashboard = ({ onLoginRequest }) => {
         </div>
     );
 
+    // --- REFACTORED DRILL DETAILS VIEW ---
     const renderDrillDetails = () => {
         const drillExecData = executionData[selectedDrill.id] || {};
         const overallProgress = calculateOverallProgress(selectedDrill);
         const activeNode = activeNodeId ? allNodes[activeNodeId] : null;
         const totalElapsedTime = selectedDrill.opened_at ? formatDuration(now - new Date(selectedDrill.opened_at).getTime()) : '—';
         
-        let overallColorClass = 'text-gray-400';
-        if (overallProgress === 100) overallColorClass = 'text-green-400';
-        else if (overallProgress > 0) overallColorClass = 'text-blue-400';
+        let overallColorClass = 'text-slate-400';
+        if (overallProgress === 100) overallColorClass = 'text-emerald-400';
+        else if (overallProgress > 0) overallColorClass = 'text-sky-400';
 
         return (
              <div className="w-full max-w-7xl mx-auto z-10 relative">
-                <button onClick={() => setSelectedDrill(null)} className="text-yellow-300 hover:underline mb-6 text-lg">&larr; {t('backToList')}</button>
+                <button onClick={() => setSelectedDrill(null)} className="text-amber-300 hover:underline mb-6 text-lg font-medium">&larr; {t('backToList')}</button>
                 
-                <div className="bg-[#2A3A3F]/80 p-6 rounded-2xl border border-[#3D4F56] backdrop-blur-sm mb-8 flex flex-col md:flex-row items-center gap-6">
-                    <div className="flex-shrink-0"><PieChart percentage={overallProgress} size={120} strokeWidth={10} colorClass={overallColorClass} textSizeClass="text-2xl" /></div>
+                {/* Header Card (Frosted Glass) */}
+                <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-lg mb-8 flex flex-col md:flex-row items-center gap-6">
+                    <div className="flex-shrink-0">
+                        <PieChart percentage={overallProgress} size={120} strokeWidth={10} colorClass={overallColorClass} textSizeClass="text-2xl" textColorClass="text-white"/>
+                    </div>
                     <div className="flex-grow text-center md:text-left">
-                         <h1 className="text-3xl font-bold text-white">{selectedDrill.name}</h1>
-                         <p className="text-gray-400 mt-1">{selectedDrill.description}</p>
-                         <div className="mt-2 flex items-center justify-center md:justify-start gap-2 text-gray-300">
+                         <h1 className="text-3xl font-bold text-slate-200">{selectedDrill.name}</h1>
+                         <p className="text-slate-300 mt-1">{selectedDrill.description}</p>
+                         <div className="mt-2 flex items-center justify-center md:justify-start gap-2 text-slate-200">
                             <ClockIcon className="w-5 h-5" />
                             <span className="font-semibold">{t('totalTime')}:</span>
                             <span className="font-mono">{totalElapsedTime}</span>
@@ -264,40 +290,48 @@ const PublicDashboard = ({ onLoginRequest }) => {
                     </div>
                 </div>
 
+                {/* Frosted Glass Panels */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2 bg-[#2A3A3F]/80 p-6 rounded-2xl border border-[#3D4F56] backdrop-blur-sm">
-                        <h2 className="text-xl font-bold text-white mb-4 text-center">{t('scenarioProgress')}</h2>
+                    {/* Workflow Column (Frosted Glass) */}
+                    <div className="lg:col-span-2 bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-xl">
+                        <h2 className="text-xl font-bold text-slate-200 mb-6 text-center">Tiến độ diễn tập</h2>
                         <div className="flex flex-col items-center gap-0 p-2">
                              {workflowLevels.map((level, levelIndex) => (
                                 <React.Fragment key={levelIndex}>
-                                    <div className="flex flex-row flex-wrap justify-center items-stretch gap-6">
+                                    <div className="flex flex-row flex-wrap justify-center items-stretch gap-8">
                                         {level.map(node => {
                                             const isActive = activeNodeId === node.id;
                                             const stepObjects = node.steps || [];
                                             const progress = stepObjects.length > 0 ? (stepObjects.filter(step => drillExecData[step.id]?.status?.startsWith('Completed')).length / stepObjects.length) * 100 : 100;
                                             
-                                            let colorClass = 'text-gray-500'; // 0%
-                                            if (progress === 100) colorClass = 'text-green-400';
-                                            else if (progress > 0) colorClass = 'text-sky-400';
+                                            let pieColorClass = 'text-slate-400';
+                                            if (progress === 100) pieColorClass = 'text-emerald-400';
+                                            else if (progress > 0) pieColorClass = 'text-sky-400';
                                             
                                             const displayName = getShortScenarioName(node, t);
+                                            const nodeColor = neonScenarioColorPalette[simpleHash(node.id) % neonScenarioColorPalette.length];
 
                                             return (
-                                                <div key={node.id} className="relative group">
-                                                    <button onClick={() => setActiveNodeId(node.id)} className={`w-64 p-3 rounded-lg text-left transition-all duration-200 border-2 ${isActive ? 'bg-sky-900/50 border-sky-400' : 'bg-[#3D4F56]/50 border-transparent hover:border-sky-600'}`}>
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="flex-shrink-0">
-                                                                <PieChart percentage={progress} size={50} strokeWidth={5} colorClass={colorClass} textSizeClass="text-sm" />
-                                                            </div>
-                                                            <div className="flex-grow min-w-0">
-                                                                <h3 className="font-bold text-white text-md truncate">{displayName}</h3>
-                                                            </div>
+                                                <div key={node.id} className="relative group flex flex-col items-center">
+                                                    <button 
+                                                        onClick={() => setActiveNodeId(node.id)} 
+                                                        className={`w-72 p-3 rounded-xl text-left transition-all duration-300 border flex items-center gap-4 bg-slate-900/20 backdrop-blur-md ${
+                                                            isActive 
+                                                            ? `shadow-lg ${nodeColor.shadow} ${nodeColor.border}`
+                                                            : `${nodeColor.border} hover:shadow-lg hover:${nodeColor.shadow} hover:-translate-y-0.5`
+                                                        }`}
+                                                    >
+                                                        <div className="flex-shrink-0 w-12 h-12">
+                                                            <PieChart percentage={progress} size={48} strokeWidth={5} colorClass={pieColorClass} textSizeClass="text-xs" textColorClass="text-slate-200" bgCircleClassProp="text-white/10" />
+                                                        </div>
+                                                        <div className="flex-grow min-w-0">
+                                                            <h3 className={`font-bold text-md truncate ${nodeColor.text}`}>{displayName}</h3>
                                                         </div>
                                                     </button>
-                                                    {/* Tooltip hiển thị tên đầy đủ của kịch bản */}
-                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-max max-w-xs bg-gray-800 text-white text-sm rounded-md px-3 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20 shadow-lg whitespace-normal text-center">
+                                                    {/* Tooltip to show full scenario name */}
+                                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-xs bg-slate-800 text-white text-sm rounded-md px-3 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20 shadow-lg text-center">
                                                         {node.name}
-                                                        <div className="absolute left-1/2 -translate-x-1/2 bottom-full w-0 h-0 border-x-8 border-x-transparent border-b-8 border-b-gray-800"></div>
+                                                        <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-8 border-x-transparent border-t-8 border-t-slate-800"></div>
                                                     </div>
                                                 </div>
                                             );
@@ -308,92 +342,98 @@ const PublicDashboard = ({ onLoginRequest }) => {
                                         const checkpointsForLevel = level.map(n => n.checkpoint).filter(Boolean);
                                         if (checkpointsForLevel.length === 0) return null;
                                         return (
-                                            <div className="w-full flex justify-center items-center my-4 gap-4">
-                                                 <div className="h-px flex-grow bg-gray-600"></div>
+                                             <div className="w-full flex justify-center items-center my-6 gap-4">
+                                                 <div className="flex-grow border-t border-dotted border-white/30"></div>
                                                  {checkpointsForLevel.map(cp => {
                                                     const isActive = activeNodeId === cp.id;
                                                     const isPassed = (cp.criteria || []).every(c => drillExecData[c.id]?.status === 'Pass');
                                                     const isChecked = (cp.criteria || []).every(c => drillExecData[c.id]?.status);
-                                                    const isFailed = isChecked && !isPassed;
+                                                    const isFailed = isChecked && !isChecked;
                                                     return(
-                                                        <button key={cp.id} onClick={() => setActiveNodeId(cp.id)} className={`flex items-center gap-2 p-2 rounded-full transition-all border-2 ${isActive ? 'bg-yellow-900/50 border-yellow-400' : 'bg-[#3D4F56]/50 border-transparent hover:border-yellow-600'} ${isFailed ? 'animate-pulse ring-2 ring-red-500 shadow-[0_0_15px_rgba(255,50,50,0.7)]' : ''}`}>
-                                                            <CheckpointIcon className={`w-6 h-6 ${isChecked ? (isPassed ? 'text-green-400' : 'text-red-400') : 'text-yellow-400'}`} />
-                                                            <span className="font-semibold text-yellow-300 pr-2">{cp.title}</span>
+                                                        <button key={cp.id} onClick={() => setActiveNodeId(cp.id)} 
+                                                            className={`flex items-center gap-2 py-2 px-4 rounded-full transition-all border bg-slate-900/20 backdrop-blur-md ${isActive ? 'border-amber-300 shadow-lg shadow-amber-300/40' : 'border-amber-300/50 hover:shadow-md hover:shadow-amber-300/40'} ${isFailed ? 'animate-pulse' : ''}`}>
+                                                            <CheckpointIcon className={`w-6 h-6 ${isChecked ? (isPassed ? 'text-emerald-400' : 'text-rose-400') : 'text-amber-400'}`} />
+                                                            <span className="font-semibold text-amber-200">{cp.title}</span>
                                                         </button>
                                                     )
                                                  })}
-                                                 <div className="h-px flex-grow bg-gray-600"></div>
+                                                 <div className="flex-grow border-t border-dotted border-white/30"></div>
                                              </div>
                                         )
                                     })()}
                                     
-                                    {levelIndex < workflowLevels.length - 1 && (
-                                        <div className="w-full flex justify-center my-4">
-                                            <svg className="w-8 h-8 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                                            </svg>
-                                        </div>
-                                    )}
+                                    {levelIndex < workflowLevels.length - 1 && <WorkflowConnector />}
                                 </React.Fragment>
                             ))}
                         </div>
                     </div>
 
-                    <div className="bg-[#2A3A3F]/80 p-6 rounded-2xl border border-[#3D4F56] backdrop-blur-sm">
-                        {!activeNode ? ( <div className="flex items-center justify-center h-full text-center"><p className="text-gray-400">{t('selectScenarioToViewSteps')}</p></div>) : 
-                        (<div>
-                            <h2 className="text-xl font-bold text-yellow-300 mb-4">{activeNode.name || activeNode.title}</h2>
-                            <div className="space-y-3">
-                                {(activeNode.type === 'scenario' ? (activeNode.steps || []) : (activeNode.criteria || [])).map((item) => {
-                                    const isStep = activeNode.type === 'scenario';
-                                    const itemId = item.id;
-                                    const itemTitle = isStep ? item.title : item.criterion_text;
-                                    const stats = isStep ? allStats[itemId] : null;
-                                    
-                                    if (isStep && !stats) return null;
-
-                                    let statusContent;
-                                    const userToDisplay = stats?.executor || stats?.assigned;
-                                    const colorStyle = userToDisplay ? userColorMap[userToDisplay.id] : null;
-
-                                    if (isStep) {
-                                        statusContent = (
-                                            <>
-                                                {userToDisplay && colorStyle ? (
-                                                     <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${colorStyle.bg} ${colorStyle.text}`}>
-                                                        {userToDisplay.name}
-                                                    </span>
-                                                ) : <span />}
-                                                <span className="font-mono">{stats.elapsedTime}</span>
-                                            </>
-                                        );
-                                    } else {
-                                        const state = drillExecData[itemId];
-                                        const icon = state?.status === 'Pass' ? <CheckCircleIcon className="w-4 h-4 text-green-400"/> : (state?.status === 'Fail' ? <XCircleIcon className="w-4 h-4 text-red-400"/> : <CheckCircleIcon className="w-4 h-4 text-gray-500"/>);
-                                        const statusText = state?.status === 'Pass' ? t('passed') : (state?.status === 'Fail' ? t('failed') : t('pending'));
-                                        statusContent = <span className="flex items-center gap-1.5 font-sans">{icon} {statusText}</span>;
-                                    }
-
-                                    return(
-                                        <div key={itemId} className="p-3 rounded-lg bg-[#22333B]/50">
-                                            <p className={`font-semibold font-sans ${isStep ? stats.statusColor : 'text-white'}`}>{isStep ? stats.statusIcon : ''} {itemTitle}</p>
-                                            <div className="pl-6 mt-1 flex items-center justify-between text-xs text-gray-400">
-                                                {statusContent}
-                                            </div>
-                                        </div>
-                                    )
-                                })}
+                    {/* Details Column (Frosted Glass) */}
+                    <div className={`bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-xl h-fit sticky top-8 transition-all duration-300`}>
+                        {!activeNode ? ( 
+                            <div className="flex flex-col items-center justify-center h-full text-center py-20">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-16 h-16 text-slate-500 mb-4"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="m12 14-4-4 4-4"/><path d="M16 10h-8"/></svg>
+                                <p className="text-slate-400 font-medium">{t('selectScenarioToViewSteps')}</p>
                             </div>
-                        </div>)
-                        }
+                        ) : (
+                            <div>
+                                <h2 className={`text-xl font-bold mb-1 text-slate-200`}>{activeNode.name || activeNode.title}</h2>
+                                <p className="text-sm text-slate-300 mb-4">
+                                    {activeNode.type === 'scenario' ? t('stepsDetail', 'Chi tiết các bước') : t('criteriaDetail', 'Chi tiết các tiêu chí')}
+                                </p>
+                                <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+                                    {(activeNode.type === 'scenario' ? (activeNode.steps || []) : (activeNode.criteria || [])).map((item) => {
+                                        const isStep = activeNode.type === 'scenario';
+                                        const itemId = item.id;
+                                        const itemTitle = isStep ? item.title : item.criterion_text;
+                                        const stats = isStep ? allStats[itemId] : null;
+                                        
+                                        if (isStep && !stats) return null;
+
+                                        let statusContent;
+                                        const userToDisplay = stats?.executor || stats?.assigned;
+                                        const colorStyle = userToDisplay ? userColorMap[userToDisplay.id] : null;
+
+                                        if (isStep) {
+                                            statusContent = (
+                                                <>
+                                                    {userToDisplay && colorStyle ? (
+                                                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${colorStyle.bg} ${colorStyle.text}`}>
+                                                            {userToDisplay.name}
+                                                        </span>
+                                                    ) : <span />}
+                                                    <span className="font-mono text-slate-300">{stats.elapsedTime}</span>
+                                                </>
+                                            );
+                                        } else {
+                                            const state = drillExecData[itemId];
+                                            const icon = state?.status === 'Pass' ? <CheckCircleIcon className="w-4 h-4 text-emerald-400"/> : (state?.status === 'Fail' ? <XCircleIcon className="w-4 h-4 text-rose-400"/> : <CheckCircleIcon className="w-4 h-4 text-slate-500"/>);
+                                            const statusText = state?.status === 'Pass' ? t('passed') : (state?.status === 'Fail' ? t('failed') : t('pending'));
+                                            statusContent = <span className={`flex items-center gap-1.5 font-sans font-medium ${state?.status === 'Pass' ? 'text-emerald-400' : state?.status === 'Fail' ? 'text-rose-400' : 'text-slate-400'}`}>{icon} {statusText}</span>;
+                                        }
+
+                                        return(
+                                            <div key={itemId} className="p-3 rounded-lg bg-white/5 border border-white/10">
+                                                <p className={`font-semibold font-sans text-slate-200`}>{isStep ? stats.statusIcon : ''} {itemTitle}</p>
+                                                <div className="pl-6 mt-1.5 flex items-center justify-between text-xs text-slate-300">
+                                                    {statusContent}
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
              </div>
         )
     };
-
+    
+    // --- MAIN COMPONENT RENDER (Switches between Dark and Light themes) ---
     return (
-        <div className="min-h-screen bg-[#1D2A2E] text-gray-200 font-sans p-4 sm:p-8 relative overflow-hidden">
+        <div className={`min-h-screen font-sans p-4 sm:p-8 relative overflow-hidden bg-[#1D2A2E] text-gray-200`}>
+            {/* Dark theme background overlays */}
             <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: `url('https://s-vnba-cdn.aicms.vn/vnba-media/24/7/10/bidv_668e534202e24.jpg')` }} ></div>
             <div className="absolute inset-0 bg-gradient-to-b from-[#1D2A2E]/50 to-[#1D2A2E]"></div>
             
@@ -401,10 +441,10 @@ const PublicDashboard = ({ onLoginRequest }) => {
                 <LogoIcon />
                 <div className="flex items-center space-x-4">
                     <div className="flex items-center space-x-2">
-                        <button onClick={() => setLanguage('vi')} className={`w-8 h-8 rounded-full overflow-hidden border-2 ${language === 'vi' ? 'border-yellow-400' : 'border-transparent'}`}><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Flag_of_Vietnam.svg/1200px-Flag_of_Vietnam.svg.png" alt="Vietnamese" className="w-full h-full object-cover" /></button>
-                        <button onClick={() => setLanguage('en')} className={`w-8 h-8 rounded-full overflow-hidden border-2 ${language === 'en' ? 'border-yellow-400' : 'border-transparent'}`}><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Flag_of_the_United_Kingdom_%281-2%29.svg/1200px-Flag_of_the_United_Kingdom_%281-2%29.svg.png" alt="English" className="w-full h-full object-cover" /></button>
+                        <button onClick={() => setLanguage('vi')} className={`w-8 h-8 rounded-full overflow-hidden border-2 ${language === 'vi' ? 'border-amber-400' : 'border-transparent'}`}><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Flag_of_Vietnam.svg/1200px-Flag_of_Vietnam.svg.png" alt="Vietnamese" className="w-full h-full object-cover" /></button>
+                        <button onClick={() => setLanguage('en')} className={`w-8 h-8 rounded-full overflow-hidden border-2 ${language === 'en' ? 'border-amber-400' : 'border-transparent'}`}><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Flag_of_the_United_Kingdom_%281-2%29.svg/1200px-Flag_of_the_United_Kingdom_%281-2%29.svg.png" alt="English" className="w-full h-full object-cover" /></button>
                     </div>
-                    <button onClick={onLoginRequest} className="bg-gray-700 text-white font-bold py-2 px-5 rounded-lg hover:bg-gray-600 transition-all">
+                    <button onClick={onLoginRequest} className={`text-white font-bold py-2 px-5 rounded-lg transition-all backdrop-blur-sm bg-gray-700/80 hover:bg-gray-600/80`}>
                         {t('loginButton')}
                     </button>
                 </div>
