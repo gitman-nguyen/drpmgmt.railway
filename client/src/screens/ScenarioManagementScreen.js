@@ -18,6 +18,10 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedScenarios, setSelectedScenarios] = useState([]);
 
+    // States for new filters
+    const [filterCreator, setFilterCreator] = useState('');
+    const [filterStatus, setFilterStatus] = useState('');
+
     const initialFormState = { name: '', applicationName: '', role: user.role === 'ADMIN' ? 'TECHNICAL' : user.role, basis: '', status: 'Draft' };
     const initialStepState = [{ id: `temp-${Date.now()}`, title: '', description: '', estimatedTime: '', dependsOn: [] }];
 
@@ -259,11 +263,28 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
         handleStatusChange(scenarioId, 'Draft');
     };
 
+    // Updated filtering logic to include creator and status filters
     const filteredScenarios = useMemo(() => Object.values(db.scenarios).filter(s => {
         const userFilter = user.role === 'ADMIN' || s.created_by === user.id;
-        const searchFilter = searchTerm === '' || s.name.toLowerCase().includes(searchTerm.toLowerCase()) || (s.application_name && s.application_name.toLowerCase().includes(searchTerm.toLowerCase()));
-        return userFilter && searchFilter;
-    }), [db.scenarios, user.role, user.id, searchTerm]);
+        
+        // Search filter: checks if the search term is present in the scenario name OR application name.
+        const searchFilter = searchTerm === '' 
+            || s.name.toLowerCase().includes(searchTerm.toLowerCase()) 
+            || (s.application_name && s.application_name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+        const creatorFilter = !filterCreator || s.created_by === filterCreator;
+        const statusFilter = !filterStatus || s.status === filterStatus;
+        
+        return userFilter && searchFilter && creatorFilter && statusFilter;
+    }), [db.scenarios, user.role, user.id, searchTerm, filterCreator, filterStatus]);
+
+    const creators = useMemo(() => {
+        const creatorIds = new Set(Object.values(db.scenarios).map(s => s.created_by));
+        return db.users.filter(u => creatorIds.has(u.id));
+    }, [db.scenarios, db.users]);
+
+    const statuses = ['Draft', 'Pending Approval', 'Active', 'Rejected', 'Pending Deletion'];
+
 
     const handleSelectScenario = (scenarioId) => {
         setSelectedScenarios(prev => 
@@ -432,13 +453,6 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
                 <div className="flex flex-wrap justify-between items-center mb-4 gap-4">
                     <h2 className="text-xl font-bold text-gray-900">{t('scenarioList')}</h2>
                     <div className="flex items-center space-x-2">
-                        <input 
-                            type="text"
-                            placeholder="Tìm kiếm theo tên..."
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                            className="bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"
-                        />
                         {selectedScenarios.length > 0 && user.role === 'ADMIN' ? (
                              <button onClick={handleDeleteSelected} className="flex items-center bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors">
                                 <DeleteIcon /> <span className="ml-2">Xóa ({selectedScenarios.length})</span>
@@ -457,6 +471,50 @@ const ScenarioManagementScreen = ({ db, setDb, user, onDataRefresh, isXlsxReady 
                         )}
                     </div>
                 </div>
+
+                {/* New Filter Bar */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 pb-4 border-b border-gray-200">
+                    <div>
+                        <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
+                        <input 
+                            id="search"
+                            type="text"
+                            placeholder="Theo tên kịch bản, ứng dụng..."
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            className="w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="creatorFilter" className="block text-sm font-medium text-gray-700 mb-1">Người tạo</label>
+                        <select
+                            id="creatorFilter"
+                            value={filterCreator}
+                            onChange={e => setFilterCreator(e.target.value)}
+                            className="w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                        >
+                            <option value="">Tất cả người tạo</option>
+                            {creators.map(creator => (
+                                <option key={creator.id} value={creator.id}>{creator.username}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="statusFilter" className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+                        <select
+                            id="statusFilter"
+                            value={filterStatus}
+                            onChange={e => setFilterStatus(e.target.value)}
+                            className="w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                        >
+                            <option value="">Tất cả trạng thái</option>
+                            {statuses.map(status => (
+                                <option key={status} value={status}>{t(status.toLowerCase().replace(/ /g, '')) || status}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
                 <div className="overflow-x-auto">
                     <table className="min-w-full">
                          <thead className="border-b border-gray-200">
