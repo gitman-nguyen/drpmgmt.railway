@@ -224,7 +224,7 @@ app.get('/api/public/drills', async (req, res) => {
 });
 
 
-// OPTIMIZED: Endpoint to get full details for a single public drill
+// REWRITTEN & FIXED: Endpoint to get full details for a single public drill
 app.get('/api/public/drills/:id', async (req, res) => {
     const { id } = req.params;
     try {
@@ -240,12 +240,9 @@ app.get('/api/public/drills/:id', async (req, res) => {
                    COALESCE((SELECT json_agg(steps.* ORDER BY steps.step_order) FROM steps WHERE steps.scenario_id = s.id), '[]'::json) as steps
             FROM scenarios s WHERE s.id IN (SELECT scenario_id FROM drill_scenarios WHERE drill_id = $1)
         `;
-        const drillStructureQuery = `
-            SELECT 'scenario' as type, scenario_id as id, group_name as group, scenario_order as "order" FROM drill_scenarios WHERE drill_id = $1
-            UNION ALL
-            SELECT 'dependency' as type, scenario_id as id, depends_on_scenario_id as "dependsOn", NULL as "order" FROM drill_scenario_dependencies WHERE drill_id = $1
-        `;
-         const drillGroupDepsQuery = 'SELECT group_name, depends_on_group_name FROM drill_group_dependencies WHERE drill_id = $1';
+        const drillScenariosQuery = 'SELECT scenario_id, group_name, scenario_order FROM drill_scenarios WHERE drill_id = $1';
+        const drillDepsQuery = 'SELECT scenario_id, depends_on_scenario_id FROM drill_scenario_dependencies WHERE drill_id = $1';
+        const drillGroupDepsQuery = 'SELECT group_name, depends_on_group_name FROM drill_group_dependencies WHERE drill_id = $1';
         const checkpointsQuery = `
             SELECT dc.id, dc.title, dc.after_scenario_id,
                    COALESCE((SELECT json_agg(dcc.* ORDER BY dcc.criterion_order) FROM drill_checkpoint_criteria dcc WHERE dcc.checkpoint_id = dc.id), '[]'::json) as criteria
@@ -259,25 +256,31 @@ app.get('/api/public/drills/:id', async (req, res) => {
         const assignmentsQuery = 'SELECT step_id, assignee_id FROM drill_step_assignments WHERE drill_id = $1';
 
         const [
-            usersRes, scenariosRes, drillStructureRes, groupDepsRes, checkpointsRes, executionDataRes, assignmentsRes
+            usersRes, scenariosRes, drillScenariosRes, drillDepsRes, groupDepsRes, checkpointsRes, executionDataRes, assignmentsRes
         ] = await Promise.all([
             pool.query(usersQuery),
             pool.query(scenariosQuery, [id]),
-            pool.query(drillStructureQuery, [id]),
+            pool.query(drillScenariosQuery, [id]),
+            pool.query(drillDepsQuery, [id]),
             pool.query(drillGroupDepsQuery, [id]),
             pool.query(checkpointsQuery, [id]),
             pool.query(executionDataQuery, [id]),
             pool.query(assignmentsQuery, [id])
         ]);
-
-        const scenariosInDrill = drillStructureRes.rows.filter(r => r.type === 'scenario');
-        const dependencies = drillStructureRes.rows.filter(r => r.type === 'dependency');
         
-        drill.scenarios = scenariosInDrill.sort((a, b) => a.order - b.order).map(s => ({
-            id: s.id,
-            group: s.group,
-            dependsOn: dependencies.filter(d => d.id === s.id).map(d => d.dependsOn)
-        }));
+        // Correctly build the drill.scenarios array with dependencies
+        drill.scenarios = drillScenariosRes.rows
+            .sort((a, b) => a.scenario_order - b.scenario_order)
+            .map(s => {
+                const dependsOn = drillDepsRes.rows
+                    .filter(dep => dep.scenario_id === s.scenario_id)
+                    .map(dep => dep.depends_on_scenario_id);
+                return { 
+                    id: s.scenario_id,
+                    group: s.group_name,
+                    dependsOn
+                };
+        });
 
         drill.group_dependencies = groupDepsRes.rows.reduce((acc, curr) => {
             let group = acc.find(g => g.group === curr.group_name);
@@ -300,7 +303,7 @@ app.get('/api/public/drills/:id', async (req, res) => {
         }, {});
         
         const scenariosMap = scenariosRes.rows.reduce((acc, s) => {
-            s.steps.forEach(st => delete st.description); // Don't need full description on public view
+            s.steps.forEach(st => delete st.description);
             acc[s.id] = { ...s, application: s.application_name };
             return acc;
         }, {});
