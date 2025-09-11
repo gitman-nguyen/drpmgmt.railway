@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
 import { LogoIcon, CheckpointIcon, CheckCircleIcon, XCircleIcon, ClockIcon, LinkIcon } from '../components/icons';
 
-// --- NEW INFOGRAPHIC ICONS ---
+// --- INFOGRAPHIC & UI ICONS ---
 const WorkflowConnector = () => (
     <div className="my-4 text-amber-400">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
@@ -21,7 +21,7 @@ const ScenarioSubLevelConnector = () => (
 );
 
 
-// --- PIE CHART COMPONENT ---
+// --- UI COMPONENTS ---
 const PieChart = ({ percentage, size = 80, strokeWidth = 8, colorClass = 'text-amber-500', textSizeClass = 'text-lg', textColorClass = 'text-slate-700', bgCircleClassProp }) => {
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
@@ -38,7 +38,6 @@ const PieChart = ({ percentage, size = 80, strokeWidth = 8, colorClass = 'text-a
         </div>
     );
 };
-
 
 // --- HELPERS & STYLES ---
 const userColorClasses = [
@@ -88,7 +87,6 @@ const PublicDashboard = ({ onLoginRequest }) => {
     const [isDetailsLoading, setIsDetailsLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // Effect for fetching the initial lightweight drill list
     useEffect(() => {
         const fetchDrillList = async () => {
             setIsListLoading(true);
@@ -109,7 +107,6 @@ const PublicDashboard = ({ onLoginRequest }) => {
         return () => clearInterval(intervalId);
     }, []);
 
-    // Effect for fetching the details of a selected drill
     useEffect(() => {
         if (!selectedDrill) {
             setDrillDetails(null);
@@ -170,7 +167,7 @@ const PublicDashboard = ({ onLoginRequest }) => {
         Object.values(steps).forEach(step => {
             if (!step) return;
             const state = drillExecData[step.id];
-            let elapsedTime = '—', executor = null, assigned = null, statusText = t('pending'), statusIcon = '🕒', statusColor = 'text-slate-400';
+            let elapsedTime = '—', executor = null, assigned = null;
             
             if (state?.started_at) {
                 elapsedTime = formatDuration((state.completed_at ? new Date(state.completed_at) : now) - new Date(state.started_at));
@@ -183,10 +180,11 @@ const PublicDashboard = ({ onLoginRequest }) => {
                     if (state?.assignee) executor = {name: userName, id: user.id}; else assigned = {name: userName, id: user.id};
                 }
             }
-            if (state?.status === 'InProgress') { statusText = t('inProgress'); statusIcon = '▶️'; statusColor = 'text-sky-400'; }
-            else if (state?.status === 'Completed-Success') { statusText = t('success'); statusIcon = '✅'; statusColor = 'text-emerald-400'; }
-            else if (state?.status?.startsWith('Completed-')) { statusText = t('failure'); statusIcon = '❌'; statusColor = 'text-rose-400'; }
-            stats[step.id] = { elapsedTime, executor, assigned, statusText, statusIcon, statusColor };
+            let statusIcon = '🕒';
+            if (state?.status === 'InProgress') { statusIcon = '▶️'; }
+            else if (state?.status === 'Completed-Success') { statusIcon = '✅'; }
+            else if (state?.status?.startsWith('Completed-')) { statusIcon = '❌';}
+            stats[step.id] = { elapsedTime, executor, assigned, statusIcon };
         });
 
         const groups = {};
@@ -286,6 +284,32 @@ const PublicDashboard = ({ onLoginRequest }) => {
             )}
         </div>
     );
+    
+    // Checkpoint Separator Component
+    const CheckpointSeparator = ({ checkpoint }) => {
+        if (!checkpoint || !drillDetails) return null;
+    
+        const drillExecData = drillDetails?.executionData || {};
+        const criteriaStates = (checkpoint.criteria || []).map(c => drillExecData[c.id]);
+        const isCompleted = criteriaStates.every(s => s?.status);
+        const isPassed = isCompleted && criteriaStates.every(s => s.status === 'Pass');
+    
+        let color = "border-slate-500/60";
+        if (isCompleted) {
+            color = isPassed ? "border-emerald-500/60" : "border-rose-500/60";
+        }
+    
+        return (
+            <div className="w-full max-w-4xl my-6 flex items-center gap-4" onClick={() => setActiveNodeId(checkpoint.id)}>
+                <div className={`flex-grow border-t-2 border-dashed ${color}`}></div>
+                <div className="flex-shrink-0 flex items-center gap-3 bg-slate-900/40 p-2 px-4 rounded-full border border-slate-600/50 cursor-pointer hover:border-amber-400/50 transition-colors">
+                    <CheckpointIcon className={`w-6 h-6 ${isCompleted && !isPassed ? 'text-rose-400' : 'text-amber-400'}`} />
+                    <h4 className="font-bold text-md text-amber-200">{checkpoint.title}</h4>
+                </div>
+                <div className={`flex-grow border-t-2 border-dashed ${color}`}></div>
+            </div>
+        );
+    };
 
     const renderDrillDetails = () => {
         if (isDetailsLoading) {
@@ -328,85 +352,102 @@ const PublicDashboard = ({ onLoginRequest }) => {
                         <div className="flex flex-col items-center gap-0 p-2">
                             {groupLevels.map((level, levelIndex) => (
                                 <React.Fragment key={levelIndex}>
-                                    <div className="flex flex-col items-center w-full gap-6">
+                                    <div className="flex flex-col items-center w-full gap-4">
                                         {level.map(group => {
-                                            const scenarioLevels = (() => {
+                                            const sortedScenarios = (() => {
                                                 const scenariosInGroup = group.scenarios;
                                                 if (!scenariosInGroup || scenariosInGroup.length === 0) return [];
-                                                const scenariosInGroupIdSet = new Set(scenariosInGroup.map(s => s.id)), adj = {}, inDegree = {};
-                                                scenariosInGroup.forEach(s => { adj[s.id] = []; inDegree[s.id] = 0; });
+                                                
+                                                const scenariosInGroupIdSet = new Set(scenariosInGroup.map(s => s.id));
+                                                const adj = {}; 
+                                                const inDegree = {};
+                                                scenariosInGroup.forEach(s => { 
+                                                    adj[s.id] = []; 
+                                                    inDegree[s.id] = 0; 
+                                                });
+
                                                 scenariosInGroup.forEach(s => {
                                                     (s.dependsOn || []).forEach(depId => {
-                                                        if (scenariosInGroupIdSet.has(depId) && adj[depId]) {
-                                                            adj[depId].push(s.id); inDegree[s.id]++;
+                                                        if (scenariosInGroupIdSet.has(depId) && adj[depId] != undefined) {
+                                                            adj[depId].push(s.id); 
+                                                            inDegree[s.id]++;
                                                         }
                                                     });
                                                 });
-                                                const queue = scenariosInGroup.filter(s => inDegree[s.id] === 0), levels = [];
+                                                
+                                                const queue = scenariosInGroup
+                                                    .filter(s => inDegree[s.id] === 0)
+                                                    .sort((a,b) => drill.scenarios.findIndex(s => s.id === a.id) - drill.scenarios.findIndex(s => s.id === b.id));
+
+                                                const sorted = [];
                                                 while(queue.length > 0) {
-                                                    const currentLevelNodes = [];
-                                                    for (let i = queue.length; i > 0; i--) {
-                                                        const uNode = queue.shift();
-                                                        currentLevelNodes.push(uNode);
-                                                        (adj[uNode.id] || []).forEach(vId => {
-                                                            inDegree[vId]--;
-                                                            if (inDegree[vId] === 0) {
-                                                                const vNode = scenariosInGroup.find(s => s.id === vId);
-                                                                if (vNode) queue.push(vNode);
-                                                            }
-                                                        });
-                                                    }
-                                                    levels.push(currentLevelNodes);
+                                                    const uNode = queue.shift();
+                                                    sorted.push(uNode);
+                                                    
+                                                    const neighbors = (adj[uNode.id] || [])
+                                                        .map(vId => scenariosInGroup.find(s => s.id === vId))
+                                                        .filter(Boolean);
+
+                                                    neighbors.forEach(vNode => {
+                                                        inDegree[vNode.id]--;
+                                                        if (inDegree[vNode.id] === 0) {
+                                                            queue.push(vNode);
+                                                        }
+                                                    });
+                                                    queue.sort((a,b) => drill.scenarios.findIndex(s => s.id === a.id) - drill.scenarios.findIndex(s => s.id === b.id));
                                                 }
-                                                const renderedNodeIds = new Set(levels.flat().map(n => n.id));
-                                                const remainingNodes = scenariosInGroup.filter(s => !renderedNodeIds.has(s.id));
-                                                if (remainingNodes.length > 0) levels.push(remainingNodes);
-                                                return levels;
+                                                
+                                                const remainingNodes = scenariosInGroup.filter(s => !sorted.find(sortedNode => sortedNode.id === s.id));
+                                                return sorted.concat(remainingNodes);
                                             })();
+
+                                            const checkpointsForGroup = group.scenarios.map(s => s.checkpoint).filter(Boolean);
                                             
                                             return (
-                                                <div key={group.id} className="bg-slate-900/20 backdrop-blur-md p-4 rounded-xl border border-white/20 w-full max-w-3xl">
-                                                    <h3 className="text-lg font-bold text-amber-300 mb-2">{group.name}</h3>
-                                                    {group.dependsOn && group.dependsOn.length > 0 && (
-                                                        <div className="flex items-center gap-2 mb-3 text-xs text-slate-400">
-                                                            <LinkIcon className="w-4 h-4" />
-                                                            <span>{t('dependsOn', 'Phụ thuộc')}: {group.dependsOn.join(', ')}</span>
-                                                        </div>
-                                                    )}
-                                                    <div className="flex flex-col items-center gap-2 mt-4">
-                                                        {scenarioLevels.map((scenarioLevel, sLevelIndex) => (
-                                                            <React.Fragment key={sLevelIndex}>
-                                                                <div className="flex flex-row flex-wrap justify-center gap-4">
-                                                                    {scenarioLevel.map(node => {
-                                                                        const isActive = activeNodeId === node.id;
-                                                                        const progress = (node.steps || []).length > 0 ? ((node.steps || []).filter(step => drillExecData[step.id]?.status?.startsWith('Completed')).length / (node.steps || []).length) * 100 : 100;
-                                                                        let pieColorClass = 'text-slate-400';
-                                                                        if (progress === 100) pieColorClass = 'text-emerald-400'; else if (progress > 0) pieColorClass = 'text-sky-400';
-                                                                        const displayName = getShortScenarioName(node, t);
-                                                                        const nodeColor = neonScenarioColorPalette[simpleHash(node.id) % neonScenarioColorPalette.length];
-                                                                        return (
-                                                                            <div key={node.id} className="relative group flex flex-col items-center">
-                                                                                <button onClick={() => setActiveNodeId(node.id)} className={`w-72 p-3 rounded-xl text-left transition-all duration-300 border flex items-center gap-4 bg-slate-800/30 ${isActive ? `shadow-lg ${nodeColor.shadow} ${nodeColor.border}` : `${nodeColor.border} hover:shadow-lg hover:${nodeColor.shadow} hover:-translate-y-0.5`}`}>
-                                                                                    <div className="flex-shrink-0 w-12 h-12">
-                                                                                        <PieChart percentage={progress} size={48} strokeWidth={5} colorClass={pieColorClass} textSizeClass="text-xs" textColorClass="text-slate-200" bgCircleClassProp="text-white/10" />
-                                                                                    </div>
-                                                                                    <div className="flex-grow min-w-0">
-                                                                                        <h4 className={`font-bold text-md truncate ${nodeColor.text}`}>{displayName}</h4>
-                                                                                    </div>
-                                                                                </button>
-                                                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-xs bg-slate-800 text-white text-sm rounded-md px-3 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20 shadow-lg text-center">
-                                                                                    {node.name}
-                                                                                    <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-8 border-x-transparent border-t-8 border-t-slate-800"></div>
-                                                                                </div>
+                                                <React.Fragment key={group.id}>
+                                                    <div className="bg-slate-900/20 backdrop-blur-md p-4 rounded-xl border border-white/20 w-full max-w-4xl">
+                                                        <h3 className="text-lg font-bold text-amber-300 mb-2">{group.name}</h3>
+                                                        {group.dependsOn && group.dependsOn.length > 0 && (
+                                                            <div className="flex items-center gap-2 mb-3 text-xs text-slate-400">
+                                                                <LinkIcon className="w-4 h-4" />
+                                                                <span>{t('dependsOn', 'Phụ thuộc')}: {group.dependsOn.join(', ')}</span>
+                                                            </div>
+                                                        )}
+                                                        <div className="flex flex-col items-center gap-2 mt-4">
+                                                            {sortedScenarios.map((node, index) => (
+                                                                <React.Fragment key={node.id}>
+                                                                    <div className="relative group flex flex-col items-center">
+                                                                        <button onClick={() => setActiveNodeId(node.id)} className={`w-72 p-3 rounded-xl text-left transition-all duration-300 border flex items-center gap-4 bg-slate-800/30 ${activeNodeId === node.id ? `shadow-lg ${neonScenarioColorPalette[simpleHash(node.id) % neonScenarioColorPalette.length].shadow} ${neonScenarioColorPalette[simpleHash(node.id) % neonScenarioColorPalette.length].border}` : `${neonScenarioColorPalette[simpleHash(node.id) % neonScenarioColorPalette.length].border} hover:shadow-lg hover:${neonScenarioColorPalette[simpleHash(node.id) % neonScenarioColorPalette.length].shadow} hover:-translate-y-0.5`}`}>
+                                                                            <div className="flex-shrink-0 w-12 h-12">
+                                                                                <PieChart 
+                                                                                    percentage={(node.steps || []).length > 0 ? ((node.steps || []).filter(step => drillExecData[step.id]?.status?.startsWith('Completed')).length / (node.steps || []).length) * 100 : 100} 
+                                                                                    size={48} 
+                                                                                    strokeWidth={5} 
+                                                                                    colorClass={((node.steps || []).filter(step => drillExecData[step.id]?.status?.startsWith('Completed')).length / (node.steps || []).length) === 1 ? 'text-emerald-400' : (((node.steps || []).filter(step => drillExecData[step.id]?.status?.startsWith('Completed')).length > 0) ? 'text-sky-400' : 'text-slate-400')}
+                                                                                    textSizeClass="text-xs" 
+                                                                                    textColorClass="text-slate-200" 
+                                                                                    bgCircleClassProp="text-white/10" />
                                                                             </div>
-                                                                        );
-                                                                    })}
-                                                                </div>
-                                                                {sLevelIndex < scenarioLevels.length - 1 && <ScenarioSubLevelConnector />}
-                                                            </React.Fragment>
-                                                        ))}
+                                                                            <div className="flex-grow min-w-0">
+                                                                                <h4 className={`font-bold text-md truncate ${neonScenarioColorPalette[simpleHash(node.id) % neonScenarioColorPalette.length].text}`}>{getShortScenarioName(node, t)}</h4>
+                                                                            </div>
+                                                                        </button>
+                                                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-xs bg-slate-800 text-white text-sm rounded-md px-3 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20 shadow-lg text-center">
+                                                                            {node.name}<div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-8 border-x-transparent border-t-8 border-t-slate-800"></div>
+                                                                        </div>
+                                                                    </div>
+                                                                    {index < sortedScenarios.length - 1 && <ScenarioSubLevelConnector />}
+                                                                </React.Fragment>
+                                                            ))}
+                                                        </div>
                                                     </div>
-                                                </div>
+                                                    {checkpointsForGroup.length > 0 && (
+                                                        <>
+                                                            <ScenarioSubLevelConnector />
+                                                            {checkpointsForGroup.map(cp => <CheckpointSeparator key={cp.id} checkpoint={cp} />)}
+                                                        </>
+                                                    )}
+                                                </React.Fragment>
                                             )
                                         })}
                                     </div>
@@ -439,9 +480,7 @@ const PublicDashboard = ({ onLoginRequest }) => {
                                         const userToDisplay = stats?.executor || stats?.assigned, colorStyle = userToDisplay ? userColorMap[userToDisplay.id] : null;
 
                                         if (isStep) {
-                                            statusContent = (
-                                                <>{userToDisplay && colorStyle ? <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${colorStyle.bg} ${colorStyle.text}`}>{userToDisplay.name}</span> : <span />}<span className="font-mono text-slate-300">{stats.elapsedTime}</span></>
-                                            );
+                                            statusContent = <>{userToDisplay && colorStyle ? <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${colorStyle.bg} ${colorStyle.text}`}>{userToDisplay.name}</span> : <span />}<span className="font-mono text-slate-300">{stats.elapsedTime}</span></>;
                                         } else {
                                             const state = drillExecData[itemId];
                                             const icon = state?.status === 'Pass' ? <CheckCircleIcon className="w-4 h-4 text-emerald-400"/> : (state?.status === 'Fail' ? <XCircleIcon className="w-4 h-4 text-rose-400"/> : <CheckCircleIcon className="w-4 h-4 text-slate-500"/>);
@@ -451,7 +490,7 @@ const PublicDashboard = ({ onLoginRequest }) => {
 
                                         return(
                                             <div key={itemId} className="p-3 rounded-lg bg-white/5 border border-white/10">
-                                                <p className={`font-semibold font-sans text-slate-200`}>{isStep ? stats.statusIcon : ''} {itemTitle}</p>
+                                                <p className={`font-semibold font-sans text-slate-200`}>{isStep && stats ? (stats.statusIcon || '') : ''} {itemTitle}</p>
                                                 <div className="pl-6 mt-1.5 flex items-center justify-between text-xs text-slate-300">{statusContent}</div>
                                             </div>
                                         )
