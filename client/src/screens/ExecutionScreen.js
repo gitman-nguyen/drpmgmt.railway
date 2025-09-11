@@ -5,17 +5,17 @@ import CompletionModal from '../components/common/CompletionModal';
 
 // --- ICONS & HELPERS ---
 const WorkflowConnector = () => (
-    <div className="my-2 text-gray-400">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <polyline points="19 12 12 19 5 12"></polyline>
+    <div className="mx-4 self-center text-gray-400">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
         </svg>
     </div>
 );
 
 const ScenarioSubLevelConnector = () => (
     <div className="my-2 text-sky-500/70">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth="1.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 13l-7 7-7-7m14-8l-7 7-7-7" />
         </svg>
     </div>
@@ -50,6 +50,44 @@ const simpleHash = (str) => {
     let hash = 0;
     for (let i = 0; i < str.length; i++) { hash = (hash << 5) - hash + str.charCodeAt(i); hash |= 0; }
     return Math.abs(hash);
+};
+
+// Đã thêm: Component mới cho cột mốc checkpoint
+const CheckpointMilestone = ({ checkpoint, onClick, activeNodeId }) => {
+    const isThisCheckpointSelected = activeNodeId === checkpoint.id;
+    const isCompleted = checkpoint.executionStatus === 'Completed';
+    const isPassed = isCompleted && checkpoint.isPassed;
+    const isFailed = isCompleted && !isPassed;
+
+    let lineColor = 'bg-gray-300';
+    if (isPassed) lineColor = 'bg-green-400';
+    if (isFailed) lineColor = 'bg-red-400';
+
+    let iconColor = 'text-yellow-600';
+    if (isPassed) iconColor = 'text-green-600';
+    if (isFailed) iconColor = 'text-red-600';
+    if (checkpoint.isLocked) iconColor = 'text-gray-400';
+
+    return (
+        <div className="h-full flex flex-col items-center justify-center relative w-16">
+            {/* The vertical line */}
+            <div className={`w-1 h-full absolute top-0 left-1/2 -translate-x-1/2 ${lineColor}`}></div>
+            
+            {/* The clickable icon */}
+            <button
+                onClick={onClick}
+                disabled={checkpoint.isLocked}
+                className={`relative z-10 p-2 rounded-full transition-all duration-200 shadow-md
+                    ${isThisCheckpointSelected ? 'ring-4 ring-sky-500 bg-white' : 'bg-white hover:bg-yellow-100'}
+                    ${checkpoint.isLocked ? 'cursor-not-allowed' : 'cursor-pointer'}
+                    ${isFailed ? 'animate-pulse ring-2 ring-red-500' : ''}
+                `}
+                title={checkpoint.title}
+            >
+                <CheckpointIcon className={`w-8 h-8 ${iconColor}`} />
+            </button>
+        </div>
+    );
 };
 
 // --- DETAIL VIEW COMPONENT ---
@@ -455,66 +493,87 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, users, executi
                 
                 <div className="bg-white p-4 rounded-xl shadow-lg">
                     <h2 className="text-lg font-bold text-gray-900 mb-4 text-center">{t('scenarios')}</h2>
-                    <div className="flex flex-col items-center gap-2 overflow-x-auto p-4 min-w-full">
-                        {groupLevels.map((level, levelIndex) => (
-                            <React.Fragment key={levelIndex}>
-                                <div className="flex flex-col items-center w-full gap-4">
-                                     {level.map(group => {
-                                        const scenariosInGroup = group.scenarios;
-                                        if (!scenariosInGroup || scenariosInGroup.length === 0) return null;
+                    <div className="flex flex-row items-stretch gap-0 overflow-x-auto p-4 bg-gray-100 rounded-lg min-w-full">
+                        {groupLevels.map((level, levelIndex) => {
+                            const checkpointsMap = new Map();
+                            level.forEach(group => {
+                                (group.scenarios || []).forEach(s => {
+                                    if (s.checkpoint) {
+                                        checkpointsMap.set(s.checkpoint.id, s.checkpoint);
+                                    }
+                                });
+                            });
+                            const checkpointsInLevel = Array.from(checkpointsMap.values());
 
-                                        const scenarioLevels = (() => {
-                                            const scenariosInGroupIdSet = new Set(scenariosInGroup.map(s => s.id)), adj = {}, inDegree = {};
-                                            scenariosInGroup.forEach(s => { adj[s.id] = []; inDegree[s.id] = 0; });
-                                            scenariosInGroup.forEach(s => {
-                                                (s.dependsOn || []).forEach(depId => {
-                                                    if (scenariosInGroupIdSet.has(depId) && adj[depId]) {
-                                                        adj[depId].push(s.id); inDegree[s.id]++;
-                                                    }
-                                                });
-                                            });
-                                            const queue = scenariosInGroup.filter(s => inDegree[s.id] === 0), levels = [];
-                                            while (queue.length > 0) {
-                                                const currentLevelNodes = queue.splice(0, queue.length);
-                                                levels.push(currentLevelNodes);
-                                                currentLevelNodes.forEach(uNode => {
-                                                    (adj[uNode.id] || []).forEach(vId => {
-                                                        inDegree[vId]--;
-                                                        if (inDegree[vId] === 0) queue.push(scenariosInGroup.find(s => s.id === vId));
+                            return (
+                                <React.Fragment key={levelIndex}>
+                                    {/* The column of groups */}
+                                    <div className="flex flex-col items-stretch gap-4 py-2 h-full">
+                                         {level.map(group => {
+                                            const scenariosInGroup = group.scenarios;
+                                            if (!scenariosInGroup || scenariosInGroup.length === 0) return null;
+    
+                                            const scenarioLevels = (() => {
+                                                const scenariosInGroupIdSet = new Set(scenariosInGroup.map(s => s.id)), adj = {}, inDegree = {};
+                                                scenariosInGroup.forEach(s => { adj[s.id] = []; inDegree[s.id] = 0; });
+                                                scenariosInGroup.forEach(s => {
+                                                    (s.dependsOn || []).forEach(depId => {
+                                                        if (scenariosInGroupIdSet.has(depId) && adj[depId]) {
+                                                            adj[depId].push(s.id); inDegree[s.id]++;
+                                                        }
                                                     });
                                                 });
-                                            }
-                                            return levels;
-                                        })();
-
-                                        return (
-                                            <div key={group.id} className="bg-gray-50/50 p-3 rounded-lg border border-gray-200 w-full max-w-4xl">
-                                                <h3 className="text-md font-bold text-sky-700 mb-1">{group.name}</h3>
-                                                {group.dependsOn && group.dependsOn.length > 0 && (
-                                                    <div className="flex items-center gap-1 mb-3 text-xs text-gray-500">
-                                                        <LinkIcon className="w-3 h-3" />
-                                                        <span>{t('dependsOn', 'Phụ thuộc')}: {group.dependsOn.join(', ')}</span>
-                                                    </div>
-                                                )}
-                                                <div className="flex flex-col items-center gap-2 mt-2">
-                                                    {scenarioLevels.map((scenarioLevel, sLevelIndex) => (
-                                                        <React.Fragment key={sLevelIndex}>
-                                                            <div className="flex flex-row flex-wrap justify-center gap-3">
-                                                                {scenarioLevel.map(node => {
-                                                                    const isSelected = activeNodeId === node.id || activeNodeId === node.checkpoint?.id;
-                                                                    const isInProgress = node.executionStatus === 'InProgress' || node.checkpoint?.executionStatus === 'InProgress';
-                                                                    const isAuthorizedToView = user.role === 'ADMIN' || user.role === node.role;
-                                                                    const drillExec = executionData[drill.id] || {};
-                                                                    const assignedUserIds = new Set(node.steps.map(stepId => (drillExec[stepId]?.assignee || drill.step_assignments?.[stepId])).filter(Boolean));
-                                                                    const assignedUsers = Array.from(assignedUserIds).map(userId => users.find(u => u.id === userId)).filter(Boolean);
-
-                                                                    return (
-                                                                        <div key={node.id} className={`flex items-stretch transition-all duration-300 rounded-lg ${isSelected && isAuthorizedToView ? 'ring-2 ring-sky-500' : ''} ${node.isLocked ? 'opacity-60' : ''}`}>
-                                                                            <button onClick={() => setActiveNodeId(node.id)} disabled={node.isLocked || !isAuthorizedToView} className={`w-52 text-left p-2 rounded-l-lg border-y border-l transition-all duration-200 bg-white border-gray-200 hover:border-gray-400 flex flex-col justify-between ${isInProgress && !isSelected ? 'animate-pulse' : ''} ${(node.isLocked || !isAuthorizedToView) ? 'cursor-not-allowed' : ''}`}>
+                                                const queue = scenariosInGroup.filter(s => inDegree[s.id] === 0), levels = [];
+                                                while (queue.length > 0) {
+                                                    const currentLevelNodes = queue.splice(0, queue.length);
+                                                    levels.push(currentLevelNodes);
+                                                    currentLevelNodes.forEach(uNode => {
+                                                        (adj[uNode.id] || []).forEach(vId => {
+                                                            inDegree[vId]--;
+                                                            if (inDegree[vId] === 0) queue.push(scenariosInGroup.find(s => s.id === vId));
+                                                        });
+                                                    });
+                                                }
+                                                return levels;
+                                            })();
+    
+                                            return (
+                                                <div key={group.id} className="bg-gray-50/50 p-3 rounded-lg border border-gray-200 flex-1 flex flex-col">
+                                                    <h3 className="text-md font-bold text-sky-700 mb-1">{group.name}</h3>
+                                                    {group.dependsOn && group.dependsOn.length > 0 && (
+                                                        <div className="flex items-center gap-1 mb-3 text-xs text-gray-500">
+                                                            <LinkIcon className="w-3 h-3" />
+                                                            <span>{t('dependsOn', 'Phụ thuộc')}: {group.dependsOn.join(', ')}</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex flex-col items-center gap-2 mt-2">
+                                                        {scenarioLevels.map((scenarioLevel, sLevelIndex) => (
+                                                            <React.Fragment key={sLevelIndex}>
+                                                                <div className="flex flex-row justify-center gap-3">
+                                                                    {scenarioLevel.map(node => {
+                                                                        const isSelected = activeNodeId === node.id || activeNodeId === node.checkpoint?.id;
+                                                                        const isInProgress = node.executionStatus === 'InProgress' || node.checkpoint?.executionStatus === 'InProgress';
+                                                                        const isAuthorizedToView = user.role === 'ADMIN' || user.role === node.role;
+                                                                        const drillExec = executionData[drill.id] || {};
+                                                                        const assignedUserIds = new Set(node.steps.map(stepId => (drillExec[stepId]?.assignee || drill.step_assignments?.[stepId])).filter(Boolean));
+                                                                        const assignedUsers = Array.from(assignedUserIds).map(userId => users.find(u => u.id === userId)).filter(Boolean);
+    
+                                                                        return (
+                                                                            <button 
+                                                                                key={node.id} 
+                                                                                onClick={() => setActiveNodeId(node.id)} 
+                                                                                disabled={node.isLocked || !isAuthorizedToView} 
+                                                                                className={`w-60 text-left p-2 rounded-lg border transition-all duration-300 bg-white border-gray-200 hover:border-gray-400 flex flex-col justify-between
+                                                                                    ${(isSelected && isAuthorizedToView) ? 'ring-2 ring-sky-500' : ''} 
+                                                                                    ${node.isLocked ? 'opacity-60' : ''}
+                                                                                    ${isInProgress && !isSelected ? 'animate-pulse' : ''} 
+                                                                                    ${(node.isLocked || !isAuthorizedToView) ? 'cursor-not-allowed' : ''}`
+                                                                                }
+                                                                            >
                                                                                 <div>
                                                                                     <h4 className="font-semibold text-xs text-gray-900 flex items-center truncate">
                                                                                         {node.isLocked && <LockIcon />}
-                                                                                        {node.executionStatus === 'Completed' && <span className="text-green-500 mr-1">✓</span>}
+                                                                                        {node.executionStatus === 'Completed' && <CheckCircleIcon className="w-4 h-4 text-green-500 mr-1" />}
                                                                                         {node.name}
                                                                                     </h4>
                                                                                 </div>
@@ -533,26 +592,37 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, users, executi
                                                                                     )}
                                                                                 </div>
                                                                             </button>
-                                                                            {node.checkpoint && (
-                                                                                <button onClick={() => setActiveNodeId(node.checkpoint.id)} disabled={node.checkpoint.isLocked} className={`flex items-center justify-center p-2 border-y border-r rounded-r-lg transition-all ${node.checkpoint.isLocked ? 'bg-gray-100 border-gray-200 cursor-not-allowed' : 'bg-yellow-50 border-yellow-300 hover:bg-yellow-100'} ${node.checkpoint.executionStatus === 'Completed' && !node.checkpoint.isPassed ? 'bg-red-100 border-red-300 animate-pulse ring-2 ring-red-400' : ''}`}>
-                                                                                    <CheckpointIcon className={`w-5 h-5 ${node.checkpoint.isLocked ? 'text-gray-400' : (node.checkpoint.executionStatus === 'Completed' && !node.checkpoint.isPassed ? 'text-red-600' : 'text-yellow-600')}`} />
-                                                                                </button>
-                                                                            )}
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                            {sLevelIndex < scenarioLevels.length - 1 && <ScenarioSubLevelConnector />}
-                                                        </React.Fragment>
-                                                    ))}
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                                {sLevelIndex < scenarioLevels.length - 1 && <ScenarioSubLevelConnector />}
+                                                            </React.Fragment>
+                                                        ))}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        );
-                                     })}
-                                </div>
-                                {levelIndex < groupLevels.length - 1 && <WorkflowConnector />}
-                            </React.Fragment>
-                        ))}
+                                            );
+                                         })}
+                                    </div>
+
+                                    {/* The checkpoint milestone "wall" */}
+                                    {checkpointsInLevel.length > 0 && (
+                                        <div className="flex flex-col items-center justify-center self-stretch">
+                                            {checkpointsInLevel.map(checkpoint => (
+                                                <CheckpointMilestone
+                                                    key={checkpoint.id}
+                                                    checkpoint={checkpoint}
+                                                    onClick={() => setActiveNodeId(checkpoint.id)}
+                                                    activeNodeId={activeNodeId}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* The connector */}
+                                    {levelIndex < groupLevels.length - 1 && <WorkflowConnector />}
+                                </React.Fragment>
+                            );
+                        })}
                     </div>
                 </div>
 
@@ -594,3 +664,4 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, users, executi
     );
 };
 export default ExecutionScreen;
+

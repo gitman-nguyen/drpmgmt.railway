@@ -5,7 +5,7 @@ import { LogoIcon, CheckpointIcon, CheckCircleIcon, XCircleIcon, ClockIcon, Link
 // --- INFOGRAPHIC & UI ICONS ---
 const WorkflowConnector = () => (
     <div className="my-4 text-amber-400">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <polyline points="19 12 12 19 5 12"></polyline>
         </svg>
@@ -14,7 +14,7 @@ const WorkflowConnector = () => (
 
 const ScenarioSubLevelConnector = () => (
     <div className="my-2 text-sky-400/80">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
             <polyline points="6 4 12 10 18 4"></polyline>
             <polyline points="6 10 12 16 18 10"></polyline>
             <polyline points="6 16 12 22 18 16"></polyline>
@@ -84,10 +84,19 @@ const PublicDashboard = ({ onLoginRequest }) => {
     const [drillDetails, setDrillDetails] = useState(null);
     const [activeNodeId, setActiveNodeId] = useState(null);
     const [now, setNow] = useState(Date.now());
+    const [expandedGroups, setExpandedGroups] = useState([]);
     
     const [isListLoading, setIsListLoading] = useState(true);
     const [isDetailsLoading, setIsDetailsLoading] = useState(false);
     const [error, setError] = useState(null);
+
+    const toggleGroupExpansion = (groupId) => {
+        setExpandedGroups(prev => 
+            prev.includes(groupId)
+                ? prev.filter(id => id !== groupId)
+                : [...prev, groupId]
+        );
+    };
 
     useEffect(() => {
         const fetchDrillList = async () => {
@@ -159,11 +168,12 @@ const PublicDashboard = ({ onLoginRequest }) => {
         return parts.length > 0 ? parts.join(' ') : '0s';
     }, [t]);
     
-    // Memoization for the static drill structure. Runs only when drillDetails changes.
+    // *** FIX START: Centralized logic for structuring and calculating status for groups ***
     const { groupLevels, allNodes } = useMemo(() => {
         if (!drillDetails) return { groupLevels: [], allNodes: {} };
     
-        const { drill, scenarios } = drillDetails;
+        const { drill, scenarios, executionData } = drillDetails;
+        const drillExecData = executionData || {};
         
         const groups = {};
         const scenarioNodes = {};
@@ -176,6 +186,52 @@ const PublicDashboard = ({ onLoginRequest }) => {
                 groups[groupName].scenarios.push(scenarioNode);
                 scenarioNodes[item.id] = scenarioNode;
             }
+        });
+
+        // Calculate status for each group and attach it to the group object
+        Object.values(groups).forEach(group => {
+            let hasStarted = false;
+            let isFullyCompleted = true;
+            let hasExplicitInProgress = false;
+            let totalSteps = 0;
+
+            group.scenarios.forEach(scenario => {
+                if (!scenario.steps || scenario.steps.length === 0) {
+                    return; // skip scenarios with no steps
+                }
+                totalSteps += scenario.steps.length;
+
+                scenario.steps.forEach(step => {
+                    const stepStatus = drillExecData[step.id]?.status;
+
+                    if (stepStatus === 'InProgress') {
+                        hasExplicitInProgress = true;
+                    }
+
+                    if (stepStatus) { // Any defined status means it has started
+                        hasStarted = true;
+                    }
+
+                    if (!stepStatus || !stepStatus.startsWith('Completed')) {
+                        isFullyCompleted = false;
+                    }
+                });
+            });
+
+            if (totalSteps === 0) {
+                 group.status = 'Pending';
+            } else if (hasExplicitInProgress) {
+                group.status = 'InProgress';
+            } else if (hasStarted && !isFullyCompleted) {
+                // THIS IS THE KEY FIX: If any step has started, but not all are complete,
+                // the group is considered "In Progress".
+                group.status = 'InProgress';
+            } else if (isFullyCompleted) {
+                group.status = 'Completed';
+            } else {
+                group.status = 'Pending';
+            }
+             console.log(`[DEBUG] Group "${group.name}" | hasStarted: ${hasStarted}, isFullyCompleted: ${isFullyCompleted} ==> Status set to: ${group.status}`);
         });
 
         const groupDependencies = drill.group_dependencies || [];
@@ -276,6 +332,7 @@ const PublicDashboard = ({ onLoginRequest }) => {
 
         return { groupLevels: finalGroupLevels, allNodes: allNodesMap };
     }, [drillDetails, t]);
+    // *** FIX END ***
 
     // Memoization for dynamic stats. Runs every second.
     const allStats = useMemo(() => {
@@ -285,7 +342,8 @@ const PublicDashboard = ({ onLoginRequest }) => {
         const drillExecData = executionData || {};
         const stats = {};
 
-        Object.values(steps).forEach(step => {
+        // Use drillDetails.steps which is the complete map of all steps in the drill
+        Object.values(drillDetails.steps || {}).forEach(step => {
             if (!step) return;
             const state = drillExecData[step.id];
             let elapsedTime = '—', executor = null, assigned = null;
@@ -310,6 +368,20 @@ const PublicDashboard = ({ onLoginRequest }) => {
 
         return stats;
     }, [drillDetails, now, formatDuration]);
+    
+    // Set initially expanded groups when data is available
+    useEffect(() => {
+        if (drillDetails && groupLevels.length > 0) {
+            const allGroups = groupLevels.flat();
+            const inProgressGroupIds = allGroups
+                .filter(group => group.status === 'InProgress')
+                .map(group => group.id);
+            
+            console.log('[DEBUG] Setting expanded group IDs:', inProgressGroupIds);
+
+            setExpandedGroups(inProgressGroupIds);
+        }
+    }, [drillDetails, groupLevels]);
 
     const renderDrillList = () => (
         <div className="w-full max-w-4xl mx-auto z-10 relative">
@@ -423,47 +495,75 @@ const PublicDashboard = ({ onLoginRequest }) => {
                                         {level.map(group => {
                                             const scenarioLevels = group.scenarioLevels || [];
                                             const checkpointsForGroup = group.scenarios.map(s => s.checkpoint).filter(Boolean);
+                                            const isExpanded = expandedGroups.includes(group.id);
+                                            
+                                            // *** FIX: Read status directly from group object ***
+                                            const isGroupInProgress = group.status === 'InProgress';
+                                            const isGroupCompleted = group.status === 'Completed';
+
+                                            let statusTag = null;
+                                            if (isGroupInProgress) {
+                                                statusTag = <span className="ml-3 text-xs font-semibold px-2 py-1 bg-sky-500/20 text-sky-300 rounded-full">{t('inProgress', 'In Progress')}</span>;
+                                            } else if (isGroupCompleted) {
+                                                statusTag = <span className="ml-3 text-xs font-semibold px-2 py-1 bg-emerald-500/20 text-emerald-300 rounded-full">{t('completed', 'Completed')}</span>;
+                                            }
                                             
                                             return (
                                                 <React.Fragment key={group.id}>
-                                                    <div className="bg-slate-900/20 backdrop-blur-md p-4 rounded-xl border border-white/20 w-full max-w-4xl">
-                                                        <h3 className="text-lg font-bold text-amber-300 mb-2">{group.name}</h3>
-                                                        {group.dependsOn && group.dependsOn.length > 0 && (
-                                                            <div className="flex items-center gap-2 mb-3 text-xs text-slate-400">
-                                                                <LinkIcon className="w-4 h-4" />
-                                                                <span>{t('dependsOn', 'Phụ thuộc')}: {group.dependsOn.join(', ')}</span>
+                                                    <div className={`bg-slate-900/20 backdrop-blur-md p-4 rounded-xl border w-full max-w-4xl transition-all duration-500 border-white/20`}>
+                                                        <button 
+                                                            onClick={() => toggleGroupExpansion(group.id)} 
+                                                            className="w-full flex justify-between items-center text-left"
+                                                        >
+                                                            <div className="flex items-center">
+                                                                <h3 className={`text-lg font-bold ${isGroupInProgress ? 'group-name-in-progress' : 'text-amber-300'}`}>{group.name}</h3>
+                                                                {statusTag}
                                                             </div>
-                                                        )}
-                                                        <div className="flex flex-col items-center gap-2 mt-4">
-                                                            {scenarioLevels.map((scenarioLevel, sLevelIndex) => (
-                                                                <React.Fragment key={sLevelIndex}>
-                                                                    <div className="flex flex-row flex-wrap justify-center gap-4">
-                                                                        {scenarioLevel.map((node) => (
-                                                                            <div key={node.id} className="relative group flex flex-col items-center">
-                                                                                <button onClick={() => setActiveNodeId(node.id)} className={`w-72 p-3 rounded-xl text-left transition-all duration-300 border flex items-center gap-4 bg-slate-800/30 ${activeNodeId === node.id ? `shadow-lg ${neonScenarioColorPalette[simpleHash(node.id) % neonScenarioColorPalette.length].shadow} ${neonScenarioColorPalette[simpleHash(node.id) % neonScenarioColorPalette.length].border}` : `${neonScenarioColorPalette[simpleHash(node.id) % neonScenarioColorPalette.length].border} hover:shadow-lg hover:${neonScenarioColorPalette[simpleHash(node.id) % neonScenarioColorPalette.length].shadow} hover:-translate-y-0.5`}`}>
-                                                                                    <div className="flex-shrink-0 w-12 h-12">
-                                                                                        <PieChart 
-                                                                                            percentage={(node.steps || []).length > 0 ? ((node.steps || []).filter(step => drillExecData[step.id]?.status?.startsWith('Completed')).length / (node.steps || []).length) * 100 : 100} 
-                                                                                            size={48} 
-                                                                                            strokeWidth={5} 
-                                                                                            colorClass={((node.steps || []).filter(step => drillExecData[step.id]?.status?.startsWith('Completed')).length / (node.steps || []).length) === 1 ? 'text-emerald-400' : (((node.steps || []).filter(step => drillExecData[step.id]?.status?.startsWith('Completed')).length > 0) ? 'text-sky-400' : 'text-slate-400')}
-                                                                                            textSizeClass="text-xs" 
-                                                                                            textColorClass="text-slate-200" 
-                                                                                            bgCircleClassProp="text-white/10" />
-                                                                                    </div>
-                                                                                    <div className="flex-grow min-w-0">
-                                                                                        <h4 className={`font-bold text-md truncate ${neonScenarioColorPalette[simpleHash(node.id) % neonScenarioColorPalette.length].text}`}>{getShortScenarioName(node, t)}</h4>
-                                                                                    </div>
-                                                                                </button>
-                                                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-xs bg-slate-800 text-white text-sm rounded-md px-3 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20 shadow-lg text-center">
-                                                                                    {node.name}<div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-8 border-x-transparent border-t-8 border-t-slate-800"></div>
-                                                                                </div>
-                                                                            </div>
-                                                                        ))}
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-6 h-6 text-amber-300 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
+                                                                <polyline points="6 9 12 15 18 9"></polyline>
+                                                            </svg>
+                                                        </button>
+
+                                                        <div className={`transition-[max-height] duration-700 ease-in-out overflow-hidden ${isExpanded ? 'max-h-[2000px]' : 'max-h-0'}`}>
+                                                            <div className="mt-4">
+                                                                {group.dependsOn && group.dependsOn.length > 0 && (
+                                                                    <div className="flex items-center gap-2 mb-3 text-xs text-slate-400">
+                                                                        <LinkIcon className="w-4 h-4" />
+                                                                        <span>{t('dependsOn', 'Phụ thuộc')}: {group.dependsOn.join(', ')}</span>
                                                                     </div>
-                                                                    {sLevelIndex < scenarioLevels.length - 1 && <ScenarioSubLevelConnector />}
-                                                                </React.Fragment>
-                                                            ))}
+                                                                )}
+                                                                <div className="flex flex-col items-center gap-2 pt-8">
+                                                                    {scenarioLevels.map((scenarioLevel, sLevelIndex) => (
+                                                                        <React.Fragment key={sLevelIndex}>
+                                                                            <div className="flex flex-row flex-wrap justify-center gap-4">
+                                                                                {scenarioLevel.map((node) => (
+                                                                                    <div key={node.id} className="relative group flex flex-col items-center">
+                                                                                        <button onClick={() => setActiveNodeId(node.id)} className={`w-72 p-3 rounded-xl text-left transition-all duration-300 border flex items-center gap-4 bg-slate-800/30 ${activeNodeId === node.id ? `shadow-lg ${neonScenarioColorPalette[simpleHash(node.id) % neonScenarioColorPalette.length].shadow} ${neonScenarioColorPalette[simpleHash(node.id) % neonScenarioColorPalette.length].border}` : `${neonScenarioColorPalette[simpleHash(node.id) % neonScenarioColorPalette.length].border} hover:shadow-lg hover:${neonScenarioColorPalette[simpleHash(node.id) % neonScenarioColorPalette.length].shadow} hover:-translate-y-0.5`}`}>
+                                                                                            <div className="flex-shrink-0 w-12 h-12">
+                                                                                                <PieChart 
+                                                                                                    percentage={(node.steps || []).length > 0 ? ((node.steps || []).filter(step => drillExecData[step.id]?.status?.startsWith('Completed')).length / (node.steps || []).length) * 100 : 100} 
+                                                                                                    size={48} 
+                                                                                                    strokeWidth={5} 
+                                                                                                    colorClass={((node.steps || []).filter(step => drillExecData[step.id]?.status?.startsWith('Completed')).length / (node.steps || []).length) === 1 ? 'text-emerald-400' : (((node.steps || []).filter(step => drillExecData[step.id]?.status?.startsWith('Completed')).length > 0) ? 'text-sky-400' : 'text-slate-400')}
+                                                                                                    textSizeClass="text-xs" 
+                                                                                                    textColorClass="text-slate-200" 
+                                                                                                    bgCircleClassProp="text-white/10" />
+                                                                                            </div>
+                                                                                            <div className="flex-grow min-w-0">
+                                                                                                <h4 className={`font-bold text-md truncate ${neonScenarioColorPalette[simpleHash(node.id) % neonScenarioColorPalette.length].text}`}>{getShortScenarioName(node, t)}</h4>
+                                                                                            </div>
+                                                                                        </button>
+                                                                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-xs bg-slate-800 text-white text-sm rounded-md px-3 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20 shadow-lg text-center">
+                                                                                            {node.name}<div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-8 border-x-transparent border-t-8 border-t-slate-800"></div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                            {sLevelIndex < scenarioLevels.length - 1 && <ScenarioSubLevelConnector />}
+                                                                        </React.Fragment>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     {checkpointsForGroup.length > 0 && (
@@ -485,7 +585,7 @@ const PublicDashboard = ({ onLoginRequest }) => {
                     <div className={`bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-xl h-fit sticky top-8 transition-all duration-300`}>
                         {!activeNode ? ( 
                             <div className="flex flex-col items-center justify-center h-full text-center py-20">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-16 h-16 text-slate-500 mb-4"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="m12 14-4-4 4-4"/><path d="M16 10h-8"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-16 h-16 text-slate-500 mb-4"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="m12 14-4-4 4-4"/><path d="M16 10h-8"/></svg>
                                 <p className="text-slate-400 font-medium">{t('selectScenarioToViewSteps')}</p>
                             </div>
                         ) : (
@@ -532,6 +632,21 @@ const PublicDashboard = ({ onLoginRequest }) => {
     // --- MAIN COMPONENT RENDER ---
     return (
         <div className={`min-h-screen font-sans p-4 sm:p-8 relative overflow-hidden bg-[#1D2A2E] text-gray-200`}>
+             <style>{`
+                @keyframes pulse-text-glow {
+                    0%, 100% {
+                        color: #fcd34d; /* amber-300 */
+                        text-shadow: 0 0 5px rgba(252, 211, 77, 0.4);
+                    }
+                    50% {
+                        color: #fef08a; /* amber-200 */
+                        text-shadow: 0 0 15px rgba(254, 240, 138, 0.7);
+                    }
+                }
+                .group-name-in-progress {
+                    animation: pulse-text-glow 2.5s infinite ease-in-out;
+                }
+            `}</style>
             <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: `url('https://s-vnba-cdn.aicms.vn/vnba-media/24/7/10/bidv_668e534202e24.jpg')` }} ></div>
             <div className="absolute inset-0 bg-gradient-to-b from-[#1D2A2E]/50 to-[#1D2A2E]"></div>
             
