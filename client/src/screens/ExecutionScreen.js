@@ -15,7 +15,7 @@ const WorkflowConnector = () => (
 
 const ScenarioSubLevelConnector = () => (
     <div className="mx-2 self-center text-sky-500/70">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5">
+        <svg width="24" height="24" viewBox="0 0 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5">
             <path d="M11 17L16 12L11 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M7 17L12 12L7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M3 17L8 12L3 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -566,6 +566,7 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, users, executi
                                                                                 key={node.id} 
                                                                                 onClick={() => setActiveNodeId(node.id)} 
                                                                                 disabled={node.isLocked || !isAuthorizedToView} 
+                                                                                title={node.name}
                                                                                 className={`w-56 h-20 relative overflow-hidden text-left p-2 rounded-lg border transition-all duration-300 bg-white border-gray-200 hover:border-gray-400 flex flex-col justify-between
                                                                                     ${(isSelected && isAuthorizedToView) ? 'ring-2 ring-sky-500' : ''} 
                                                                                     ${node.isLocked ? 'opacity-60' : ''}
@@ -592,8 +593,8 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, users, executi
                                                                                             const fullName = u.last_name && u.first_name ? `${u.last_name} ${u.first_name}` : (u.fullname || u.username);
                                                                                             const nameParts = fullName ? fullName.split(' ').filter(p => p) : [];
                                                                                             const lastName = nameParts.length > 0 ? nameParts[nameParts.length - 1] : '';
-                                                                                            const avatarText = (lastName?.[0] || u.username?.[0] || 'U').toUpperCase();
-                                                                                            return <div key={u.id} className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ring-1 ring-white ${colorStyle.bg} ${colorStyle.text}`} title={fullName}>{avatarText}</div>;
+                                                                                            const avatarText = (lastName || u.username?.[0] || 'U').toUpperCase();
+                                                                                            return <div key={u.id} className={`h-5 px-2 rounded-full flex items-center justify-center text-xs font-bold ring-1 ring-white ${colorStyle.bg} ${colorStyle.text}`} title={fullName}>{avatarText}</div>;
                                                                                         })}
                                                                                         {assignedUsers.length > 2 && <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ring-1 ring-white bg-gray-200 text-gray-700" title={`${assignedUsers.length - 2} người khác`}>+{assignedUsers.length - 2}</div>}
                                                                                     </div>
