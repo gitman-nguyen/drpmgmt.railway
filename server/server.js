@@ -19,7 +19,6 @@ app.get('/api/data', async (req, res) => {
     try {
         const usersQuery = 'SELECT id, username, role, first_name, last_name, description, first_name || \' \' || last_name AS fullname FROM users';
         const drillsQuery = 'SELECT * FROM drills ORDER BY start_date DESC';
-        // FIXED: Explicitly select all columns from scenarios to ensure application_name is included.
         const scenariosQuery = `
             SELECT 
                 s.id, s.name, s.role, s.basis, s.status, s.created_by, s.created_at, s.last_updated_at, s.attachment, s.application_name, 
@@ -37,6 +36,7 @@ app.get('/api/data', async (req, res) => {
         const drillCheckpointCriteriaQuery = 'SELECT * FROM drill_checkpoint_criteria';
         const executionStepsQuery = 'SELECT * FROM execution_steps';
         const executionScenariosQuery = 'SELECT * FROM execution_scenarios';
+        const drillGroupDepsQuery = 'SELECT * FROM drill_group_dependencies';
 
         const results = await Promise.all([
             pool.query(usersQuery),
@@ -49,7 +49,8 @@ app.get('/api/data', async (req, res) => {
             pool.query(drillCheckpointsQuery),
             pool.query(drillCheckpointCriteriaQuery),
             pool.query(executionStepsQuery),
-            pool.query(executionScenariosQuery)
+            pool.query(executionScenariosQuery),
+            pool.query(drillGroupDepsQuery)
         ]);
         
         const [
@@ -63,7 +64,8 @@ app.get('/api/data', async (req, res) => {
             drillCheckpointsRes,
             drillCheckpointCriteriaRes,
             executionStepsRes,
-            executionScenariosRes
+            executionScenariosRes,
+            drillGroupDepsRes
         ] = results.map(r => r.rows);
 
         const scenarios = {};
@@ -79,7 +81,6 @@ app.get('/api/data', async (req, res) => {
                     stepIds.push(step.id);
                 });
             }
-            // Frontend expects 'application' but DB column is 'application_name'
             scenarios[scen.id] = { ...scen, application: scen.application_name, steps: stepIds };
         });
 
@@ -100,7 +101,7 @@ app.get('/api/data', async (req, res) => {
                     const dependsOn = drillScenarioDepsRes
                         .filter(dep => dep.drill_id === drill.id && dep.scenario_id === ds.scenario_id)
                         .map(dep => dep.depends_on_scenario_id);
-                    return { id: ds.scenario_id, dependsOn };
+                    return { id: ds.scenario_id, dependsOn, group: ds.group_name };
                 });
 
             const step_assignments = drillStepAssignmentsRes
@@ -109,12 +110,25 @@ app.get('/api/data', async (req, res) => {
                     acc[a.step_id] = a.assignee_id;
                     return acc;
                 }, {});
+            
+            const group_dependencies = drillGroupDepsRes
+                .filter(dgd => dgd.drill_id === drill.id)
+                .reduce((acc, curr) => {
+                    let group = acc.find(g => g.group === curr.group_name);
+                    if (!group) {
+                        group = { group: curr.group_name, dependsOn: [] };
+                        acc.push(group);
+                    }
+                    group.dependsOn.push(curr.depends_on_group_name);
+                    return acc;
+                }, []);
 
             return { 
                 ...drill, 
                 scenarios: scenariosInDrill,
                 step_assignments,
-                checkpoints: checkpointsByDrill[drill.id] || {}
+                checkpoints: checkpointsByDrill[drill.id] || {},
+                group_dependencies
             };
         });
         
@@ -135,127 +149,182 @@ app.get('/api/data', async (req, res) => {
     }
 });
 
-app.get('/api/public/data', async (req, res) => {
+// OPTIMIZED: Endpoint to get just the list of in-progress drills
+app.get('/api/public/drills', async (req, res) => {
     try {
         const drillsQuery = `
-            SELECT * FROM drills 
-            WHERE execution_status = 'InProgress' 
-            ORDER BY start_date DESC
+            SELECT d.id, d.name, d.description, d.execution_status
+            FROM drills d
+            WHERE d.execution_status = 'InProgress'
+            ORDER BY d.start_date DESC
         `;
         const drillsRes = await pool.query(drillsQuery);
-        const inProgressDrillIds = drillsRes.rows.map(d => d.id);
-
-        if (inProgressDrillIds.length === 0) {
-            return res.json({ drills: [], scenarios: {}, steps: {}, executionData: {}, users: [] });
+        const drills = drillsRes.rows;
+        
+        if (drills.length === 0) {
+            return res.json([]);
         }
 
-        const usersQuery = "SELECT id, username, role, first_name, last_name, description, first_name || ' ' || last_name AS fullname FROM users";
-        const scenariosQuery = `
-            SELECT 
-                s.id, s.name, s.role, s.application_name, s.attachment,
-                COALESCE(
-                    (SELECT json_agg(steps.* ORDER BY steps.step_order) FROM steps WHERE steps.scenario_id = s.id),
-                    '[]'::json
-                ) as steps
-            FROM scenarios s
-            WHERE s.id IN (SELECT scenario_id FROM drill_scenarios WHERE drill_id = ANY($1::text[]))
+        const drillIds = drills.map(d => d.id);
+        
+        // Fetch all necessary data for progress calculation in fewer queries
+        const progressDataQuery = `
+            SELECT
+                ds.drill_id,
+                s.id as scenario_id,
+                (SELECT json_agg(st.id) FROM steps st WHERE st.scenario_id = s.id) as steps,
+                (SELECT json_agg(dcc.id) FROM drill_checkpoints dc JOIN drill_checkpoint_criteria dcc ON dc.id = dcc.checkpoint_id WHERE dc.drill_id = ds.drill_id AND dc.after_scenario_id = s.id) as criteria
+            FROM drill_scenarios ds
+            JOIN scenarios s ON ds.scenario_id = s.id
+            WHERE ds.drill_id = ANY($1::text[]);
         `;
-        const stepDepsQuery = 'SELECT * FROM step_dependencies WHERE step_id IN (SELECT id FROM steps WHERE scenario_id IN (SELECT scenario_id FROM drill_scenarios WHERE drill_id = ANY($1::text[])))';
-        const drillScenariosQuery = 'SELECT * FROM drill_scenarios WHERE drill_id = ANY($1::text[])';
-        const drillScenarioDepsQuery = 'SELECT * FROM drill_scenario_dependencies WHERE drill_id = ANY($1::text[])';
-        const drillCheckpointsQuery = 'SELECT * FROM drill_checkpoints WHERE drill_id = ANY($1::text[])';
-        const drillCheckpointCriteriaQuery = 'SELECT * FROM drill_checkpoint_criteria WHERE checkpoint_id IN (SELECT id FROM drill_checkpoints WHERE drill_id = ANY($1::text[]))';
-        const executionDataQuery = `
-            (SELECT drill_id, step_id, NULL::text as criterion_id, status, started_at, completed_at, assignee FROM execution_steps WHERE drill_id = ANY($1::text[]))
-            UNION ALL
-            (SELECT drill_id, NULL::text as step_id, criterion_id, status, NULL as started_at, checked_at as completed_at, checked_by as assignee FROM execution_checkpoint_criteria WHERE drill_id = ANY($1::text[]))
-        `;
-        const drillStepAssignmentsQuery = 'SELECT * FROM drill_step_assignments WHERE drill_id = ANY($1::text[])';
 
-        const [
-            usersRes,
-            scenariosRes,
-            stepDepsRes,
-            drillScenariosRes,
-            drillScenarioDepsRes,
-            drillCheckpointsRes,
-            drillCheckpointCriteriaRes,
-            executionDataRes,
-            drillStepAssignmentsRes
-        ] = await Promise.all([
-            pool.query(usersQuery),
-            pool.query(scenariosQuery, [inProgressDrillIds]),
-            pool.query(stepDepsQuery, [inProgressDrillIds]),
-            pool.query(drillScenariosQuery, [inProgressDrillIds]),
-            pool.query(drillScenarioDepsQuery, [inProgressDrillIds]),
-            pool.query(drillCheckpointsQuery, [inProgressDrillIds]),
-            pool.query(drillCheckpointCriteriaQuery, [inProgressDrillIds]),
-            pool.query(executionDataQuery, [inProgressDrillIds]),
-            pool.query(drillStepAssignmentsQuery, [inProgressDrillIds])
+        const executionDataQuery = `
+            SELECT drill_id, step_id, NULL as criterion_id, status FROM execution_steps WHERE drill_id = ANY($1::text[]) AND status LIKE 'Completed%'
+            UNION ALL
+            SELECT drill_id, NULL as step_id, criterion_id, status FROM execution_checkpoint_criteria WHERE drill_id = ANY($1::text[]) AND status IN ('Pass', 'Fail')
+        `;
+
+        const [progressDataRes, executionDataRes] = await Promise.all([
+            pool.query(progressDataQuery, [drillIds]),
+            pool.query(executionDataQuery, [drillIds])
         ]);
 
-        const scenarios = {};
-        const steps = {};
-        scenariosRes.rows.forEach(scen => {
-            if (scen.steps && scen.steps.length > 0) {
-                scen.steps.forEach(step => {
-                    const dependsOn = stepDepsRes.rows
-                        .filter(dep => dep.step_id === step.id)
-                        .map(dep => dep.depends_on_step_id);
-                    steps[step.id] = { ...step, dependsOn };
-                });
-                scen.steps.forEach(s => delete s.description);
+        const progressMap = {};
+        progressDataRes.rows.forEach(row => {
+            if (!progressMap[row.drill_id]) {
+                progressMap[row.drill_id] = { total: 0, completed: 0 };
             }
-            scenarios[scen.id] = {...scen, application: scen.application_name};
+            const stepIds = row.steps || [];
+            const critIds = row.criteria || [];
+            progressMap[row.drill_id].total += stepIds.length + critIds.length;
         });
 
-        const checkpointsByDrill = {};
-        drillCheckpointsRes.rows.forEach(cp => {
-            if (!checkpointsByDrill[cp.drill_id]) {
-                checkpointsByDrill[cp.drill_id] = {};
+        executionDataRes.rows.forEach(row => {
+            if (progressMap[row.drill_id]) {
+                progressMap[row.drill_id].completed++;
             }
-            const criteria = drillCheckpointCriteriaRes.rows.filter(crit => crit.checkpoint_id === cp.id);
-            checkpointsByDrill[cp.drill_id][cp.id] = { ...cp, criteria };
         });
-        
-        const drills = drillsRes.rows.map(drill => {
-             const scenariosInDrill = drillScenariosRes.rows
-                .filter(ds => ds.drill_id === drill.id)
-                .sort((a, b) => a.scenario_order - b.scenario_order)
-                .map(ds => {
-                    const dependsOn = drillScenarioDepsRes.rows
-                        .filter(dep => dep.drill_id === drill.id && dep.scenario_id === ds.scenario_id)
-                        .map(dep => dep.depends_on_scenario_id);
-                    return { id: ds.scenario_id, dependsOn };
-                });
-            const step_assignments = drillStepAssignmentsRes.rows
-                .filter(a => a.drill_id === drill.id)
-                .reduce((acc, a) => {
-                    acc[a.step_id] = a.assignee_id;
-                    return acc;
-                }, {});
 
-            return { 
-                ...drill, 
-                scenarios: scenariosInDrill,
-                step_assignments,
-                checkpoints: checkpointsByDrill[drill.id] || {}
+        const drillsWithProgress = drills.map(drill => {
+            const progress = progressMap[drill.id];
+            const percentage = (progress && progress.total > 0) ? (progress.completed / progress.total) * 100 : 100;
+            return {
+                ...drill,
+                progress: percentage
             };
         });
 
-        const executionData = executionDataRes.rows.reduce((acc, exec) => {
-            if (!acc[exec.drill_id]) {
-                acc[exec.drill_id] = {};
+        res.json(drillsWithProgress);
+
+    } catch (err) {
+        console.error('Error fetching public drills list:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+
+// OPTIMIZED: Endpoint to get full details for a single public drill
+app.get('/api/public/drills/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const drillRes = await pool.query("SELECT * FROM drills WHERE id = $1 AND execution_status = 'InProgress'", [id]);
+        if (drillRes.rows.length === 0) {
+            return res.status(404).json({ error: 'Drill not found or not in progress.' });
+        }
+        const drill = drillRes.rows[0];
+
+        const usersQuery = "SELECT id, username, role, first_name, last_name, description, first_name || ' ' || last_name AS fullname FROM users";
+        const scenariosQuery = `
+            SELECT s.id, s.name, s.role, s.application_name, s.attachment,
+                   COALESCE((SELECT json_agg(steps.* ORDER BY steps.step_order) FROM steps WHERE steps.scenario_id = s.id), '[]'::json) as steps
+            FROM scenarios s WHERE s.id IN (SELECT scenario_id FROM drill_scenarios WHERE drill_id = $1)
+        `;
+        const drillStructureQuery = `
+            SELECT 'scenario' as type, scenario_id as id, group_name as group, scenario_order as "order" FROM drill_scenarios WHERE drill_id = $1
+            UNION ALL
+            SELECT 'dependency' as type, scenario_id as id, depends_on_scenario_id as "dependsOn", NULL as "order" FROM drill_scenario_dependencies WHERE drill_id = $1
+        `;
+         const drillGroupDepsQuery = 'SELECT group_name, depends_on_group_name FROM drill_group_dependencies WHERE drill_id = $1';
+        const checkpointsQuery = `
+            SELECT dc.id, dc.title, dc.after_scenario_id,
+                   COALESCE((SELECT json_agg(dcc.* ORDER BY dcc.criterion_order) FROM drill_checkpoint_criteria dcc WHERE dcc.checkpoint_id = dc.id), '[]'::json) as criteria
+            FROM drill_checkpoints dc WHERE dc.drill_id = $1
+        `;
+        const executionDataQuery = `
+            (SELECT step_id as id, status, started_at, completed_at, assignee FROM execution_steps WHERE drill_id = $1)
+            UNION ALL
+            (SELECT criterion_id as id, status, NULL as started_at, checked_at as completed_at, checked_by as assignee FROM execution_checkpoint_criteria WHERE drill_id = $1)
+        `;
+        const assignmentsQuery = 'SELECT step_id, assignee_id FROM drill_step_assignments WHERE drill_id = $1';
+
+        const [
+            usersRes, scenariosRes, drillStructureRes, groupDepsRes, checkpointsRes, executionDataRes, assignmentsRes
+        ] = await Promise.all([
+            pool.query(usersQuery),
+            pool.query(scenariosQuery, [id]),
+            pool.query(drillStructureQuery, [id]),
+            pool.query(drillGroupDepsQuery, [id]),
+            pool.query(checkpointsQuery, [id]),
+            pool.query(executionDataQuery, [id]),
+            pool.query(assignmentsQuery, [id])
+        ]);
+
+        const scenariosInDrill = drillStructureRes.rows.filter(r => r.type === 'scenario');
+        const dependencies = drillStructureRes.rows.filter(r => r.type === 'dependency');
+        
+        drill.scenarios = scenariosInDrill.sort((a, b) => a.order - b.order).map(s => ({
+            id: s.id,
+            group: s.group,
+            dependsOn: dependencies.filter(d => d.id === s.id).map(d => d.dependsOn)
+        }));
+
+        drill.group_dependencies = groupDepsRes.rows.reduce((acc, curr) => {
+            let group = acc.find(g => g.group === curr.group_name);
+            if (!group) {
+                group = { group: curr.group_name, dependsOn: [] };
+                acc.push(group);
             }
-            const key = exec.step_id || exec.criterion_id;
-            if(key) acc[exec.drill_id][key] = exec;
+            group.dependsOn.push(curr.depends_on_group_name);
+            return acc;
+        }, []);
+
+        drill.checkpoints = checkpointsRes.rows.reduce((acc, cp) => {
+            acc[cp.id] = cp;
             return acc;
         }, {});
 
-        res.json({ drills, scenarios, steps, executionData, users: usersRes.rows });
+        drill.step_assignments = assignmentsRes.rows.reduce((acc, a) => {
+            acc[a.step_id] = a.assignee_id;
+            return acc;
+        }, {});
+        
+        const scenariosMap = scenariosRes.rows.reduce((acc, s) => {
+            s.steps.forEach(st => delete st.description); // Don't need full description on public view
+            acc[s.id] = { ...s, application: s.application_name };
+            return acc;
+        }, {});
+
+        const stepsMap = Object.values(scenariosMap).flatMap(s => s.steps).reduce((acc, st) => {
+            acc[st.id] = st;
+            return acc;
+        }, {});
+        
+        const executionData = executionDataRes.rows.reduce((acc, exec) => {
+            if (exec.id) acc[exec.id] = exec;
+            return acc;
+        }, {});
+
+        res.json({
+            drill,
+            scenarios: scenariosMap,
+            steps: stepsMap,
+            users: usersRes.rows,
+            executionData
+        });
 
     } catch (err) {
-        console.error('Error fetching public data:', err);
+        console.error(`Error fetching public drill details for ${id}:`, err);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -265,10 +334,8 @@ app.get('/api/public/data', async (req, res) => {
 app.get('/api/scenarios/:id/attachment', async (req, res) => {
     const { id } = req.params;
     try {
-        // FIXED: Select only the 'attachment' column which contains the JSON object
         const result = await pool.query('SELECT attachment FROM scenarios WHERE id = $1', [id]);
         if (result.rows.length > 0 && result.rows[0].attachment) {
-            // FIXED: Return the attachment object directly
             res.json(result.rows[0].attachment);
         } else {
             res.status(404).json({ error: 'Attachment not found' });
@@ -436,18 +503,15 @@ app.post('/api/scenarios', async (req, res) => {
 
 app.put('/api/scenarios/:id', async (req, res) => {
     const { id } = req.params;
-    // FIXED: Removed attachment_name, use applicationName, handle attachment object
     const { name, role, basis, status, steps, attachment, applicationName } = req.body;
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-        // FIXED: SQL query to update application_name and a single JSON attachment
         const scenarioQuery = `
             UPDATE scenarios 
             SET name = $1, role = $2, basis = $3, status = $4, last_updated_at = NOW(), attachment = $5, application_name = $6 
             WHERE id = $7
         `;
-        // FIXED: Parameters now include applicationName and stringified attachment
         await client.query(scenarioQuery, [name, role, basis, status, attachment ? JSON.stringify(attachment) : null, applicationName, id]);
 
         await client.query('DELETE FROM step_dependencies WHERE step_id IN (SELECT id FROM steps WHERE scenario_id = $1)', [id]);
@@ -541,7 +605,7 @@ app.delete('/api/scenarios/:id', async (req, res) => {
 // --- API QUẢN LÝ DIỄN TẬP (DRILLS) ---
 
 app.post('/api/drills', async (req, res) => {
-    const { name, description, basis, status, start_date, end_date, scenarios, step_assignments, checkpoints } = req.body;
+    const { name, description, basis, status, start_date, end_date, scenarios, step_assignments, checkpoints, group_dependencies } = req.body;
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
@@ -551,7 +615,7 @@ app.post('/api/drills', async (req, res) => {
 
         if (scenarios && scenarios.length > 0) {
             for (const [index, scen] of scenarios.entries()) {
-                await client.query('INSERT INTO drill_scenarios (drill_id, scenario_id, scenario_order) VALUES ($1, $2, $3)', [drillId, scen.id, index + 1]);
+                await client.query('INSERT INTO drill_scenarios (drill_id, scenario_id, scenario_order, group_name) VALUES ($1, $2, $3, $4)', [drillId, scen.id, index + 1, scen.group]);
                 if (scen.dependsOn && scen.dependsOn.length > 0) {
                     for (const depId of scen.dependsOn) {
                         await client.query('INSERT INTO drill_scenario_dependencies (drill_id, scenario_id, depends_on_scenario_id) VALUES ($1, $2, $3)', [drillId, scen.id, depId]);
@@ -560,6 +624,16 @@ app.post('/api/drills', async (req, res) => {
             }
         }
         
+        if (group_dependencies && group_dependencies.length > 0) {
+            for (const dep of group_dependencies) {
+                if(dep.dependsOn && dep.dependsOn.length > 0) {
+                    for (const depName of dep.dependsOn) {
+                        await client.query('INSERT INTO drill_group_dependencies (drill_id, group_name, depends_on_group_name) VALUES ($1, $2, $3)', [drillId, dep.group, depName]);
+                    }
+                }
+            }
+        }
+
         if (step_assignments) {
             for (const [stepId, assigneeId] of Object.entries(step_assignments)) {
                 if (assigneeId) {
@@ -596,13 +670,14 @@ app.post('/api/drills', async (req, res) => {
 
 app.put('/api/drills/:id', async (req, res) => {
     const { id } = req.params;
-    const { name, description, basis, status, start_date, end_date, scenarios, step_assignments, checkpoints } = req.body;
+    const { name, description, basis, status, start_date, end_date, scenarios, step_assignments, checkpoints, group_dependencies } = req.body;
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
         const drillQuery = 'UPDATE drills SET name = $1, description = $2, basis = $3, status = $4, start_date = $5, end_date = $6 WHERE id = $7';
         await client.query(drillQuery, [name, description, basis, status, start_date, end_date, id]);
 
+        await client.query('DELETE FROM drill_group_dependencies WHERE drill_id = $1', [id]);
         await client.query('DELETE FROM drill_scenario_dependencies WHERE drill_id = $1', [id]);
         await client.query('DELETE FROM drill_scenarios WHERE drill_id = $1', [id]);
         await client.query('DELETE FROM drill_step_assignments WHERE drill_id = $1', [id]);
@@ -617,10 +692,20 @@ app.put('/api/drills/:id', async (req, res) => {
 
         if (scenarios && scenarios.length > 0) {
             for (const [index, scen] of scenarios.entries()) {
-                await client.query('INSERT INTO drill_scenarios (drill_id, scenario_id, scenario_order) VALUES ($1, $2, $3)', [id, scen.id, index + 1]);
+                await client.query('INSERT INTO drill_scenarios (drill_id, scenario_id, scenario_order, group_name) VALUES ($1, $2, $3, $4)', [id, scen.id, index + 1, scen.group]);
                 if (scen.dependsOn && scen.dependsOn.length > 0) {
                     for (const depId of scen.dependsOn) {
                         await client.query('INSERT INTO drill_scenario_dependencies (drill_id, scenario_id, depends_on_scenario_id) VALUES ($1, $2, $3)', [id, scen.id, depId]);
+                    }
+                }
+            }
+        }
+
+        if (group_dependencies && group_dependencies.length > 0) {
+            for (const dep of group_dependencies) {
+                 if(dep.dependsOn && dep.dependsOn.length > 0) {
+                    for (const depName of dep.dependsOn) {
+                        await client.query('INSERT INTO drill_group_dependencies (drill_id, group_name, depends_on_group_name) VALUES ($1, $2, $3)', [id, dep.group, depName]);
                     }
                 }
             }
@@ -900,3 +985,4 @@ app.get('*', (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
+

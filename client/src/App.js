@@ -31,14 +31,15 @@ export default function App() {
   const [error, setError] = useState(null);
   const [isXlsxReady, setIsXlsxReady] = useState(false);
 
-  // TÁCH BIỆT LOGIC: Hàm chỉ để lấy dữ liệu cho trang quản trị
   const fetchAdminData = useCallback(async () => {
       try {
+        setLoading(true);
         const dataResponse = await fetch('/api/data');
         if (!dataResponse.ok) {
             throw new Error(`HTTP error! status: ${dataResponse.status}`);
         }
         const data = await dataResponse.json();
+        
         setDb(data);
 
         const settingsResponse = await fetch('/api/settings');
@@ -55,25 +56,6 @@ export default function App() {
       }
     }, []);
 
-  // TÁCH BIỆT LOGIC: Hàm chỉ để lấy dữ liệu cho trang public
-  const fetchPublicData = useCallback(async () => {
-      try {
-        const dataResponse = await fetch('/api/public/data');
-        if (!dataResponse.ok) {
-            throw new Error(`HTTP error! status: ${dataResponse.status}`);
-        }
-        const data = await dataResponse.json();
-        setDb(data);
-      } catch (e) {
-        console.error("Failed to fetch public data:", e);
-        setError("Không thể tải dữ liệu công khai từ server.");
-      } finally {
-        setLoading(false);
-      }
-  }, []);
-
-
-  // Effect để tải dữ liệu ban đầu và khôi phục session
   useEffect(() => {
     let savedUser = null;
     try {
@@ -81,29 +63,21 @@ export default function App() {
         if (savedUserJSON) {
             savedUser = JSON.parse(savedUserJSON);
             setUser(savedUser);
+            fetchAdminData();
+        } else {
+            setLoading(false); // If no user, no data to load initially here
         }
 
         const savedScreen = localStorage.getItem('drillAppScreen');
-        if(savedScreen) {
-            setActiveScreen(savedScreen);
-        }
+        if(savedScreen) setActiveScreen(savedScreen);
 
         const savedDrill = localStorage.getItem('drillAppDrill');
-        if(savedDrill) {
-            setActiveDrill(JSON.parse(savedDrill));
-        }
+        if(savedDrill) setActiveDrill(JSON.parse(savedDrill));
     } catch(e) {
         console.error("Failed to restore session from localStorage", e);
-        localStorage.clear(); // Clear corrupted data
+        localStorage.clear();
     }
     
-    // SỬA LOGIC: Quyết định API để gọi dựa trên trạng thái đăng nhập
-    if (savedUser) {
-        fetchAdminData();
-    } else {
-        fetchPublicData();
-    }
-
     const link = document.createElement('link');
     link.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap";
     link.rel = "stylesheet";
@@ -112,28 +86,21 @@ export default function App() {
     const xlsxScript = document.createElement('script');
     xlsxScript.src = "https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js";
     xlsxScript.async = true;
-    xlsxScript.onload = () => {
-        console.log("SheetJS library loaded.");
-        setIsXlsxReady(true);
-    };
-    xlsxScript.onerror = () => {
-        console.error("Failed to load SheetJS library.");
-    };
+    xlsxScript.onload = () => setIsXlsxReady(true);
+    xlsxScript.onerror = () => console.error("Failed to load SheetJS library.");
     document.head.appendChild(xlsxScript);
 
     return () => {
         if(document.head.contains(link)) document.head.removeChild(link);
         if(document.head.contains(xlsxScript)) document.head.removeChild(xlsxScript);
     };
-  }, [fetchAdminData, fetchPublicData]);
+  }, [fetchAdminData]);
 
-  // Effect to save session state to localStorage whenever it changes
   useEffect(() => {
     try {
         if (user) {
             localStorage.setItem('drillAppScreen', activeScreen);
             if (activeDrill) {
-                // Only save the ID to avoid stale complex data
                 localStorage.setItem('drillAppDrillId', activeDrill.id);
             } else {
                 localStorage.removeItem('drillAppDrillId');
@@ -146,7 +113,6 @@ export default function App() {
 
 
   useEffect(() => {
-    // When data is refreshed, ensure activeDrill is the full, up-to-date object
     if (activeDrill) {
         const freshDrill = db.drills.find(d => d.id === activeDrill.id);
         if (freshDrill) {
@@ -168,14 +134,13 @@ export default function App() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })
         });
-        if (!response.ok) {
-            return false;
-        }
+        if (!response.ok) return false;
+        
         const foundUser = await response.json();
         localStorage.setItem('drillAppUser', JSON.stringify(foundUser));
         setUser(foundUser);
         setShowLogin(false);
-        await fetchAdminData(); // SỬA LOGIC: Tải dữ liệu admin sau khi đăng nhập thành công
+        await fetchAdminData();
         return true;
     } catch (e) {
         console.error("Login error:", e);
@@ -190,17 +155,12 @@ export default function App() {
     setUser(null);
     setActiveScreen('dashboard');
     setActiveDrill(null);
-    fetchPublicData(); // SỬA LOGIC: Tải lại dữ liệu public sau khi đăng xuất
-  }, [fetchPublicData]);
+    setDb({ users: [], drills: [], scenarios: {}, steps: {}, executionData: {} });
+  }, []);
 
-  // Effect để xử lý tự động đăng xuất
   useEffect(() => {
-      if (!user || !settings.sessionTimeout) {
-          return;
-      }
-
+      if (!user || !settings.sessionTimeout) return;
       let inactivityTimer;
-
       const resetTimer = () => {
           clearTimeout(inactivityTimer);
           inactivityTimer = setTimeout(() => {
@@ -208,24 +168,12 @@ export default function App() {
               handleLogout();
           }, settings.sessionTimeout * 60 * 1000);
       };
-
-      const activityListener = () => {
-          resetTimer();
-      };
-      
       const activityEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
-      
-      activityEvents.forEach(event => {
-          window.addEventListener(event, activityListener);
-      });
-
+      activityEvents.forEach(event => window.addEventListener(event, resetTimer));
       resetTimer();
-
       return () => {
           clearTimeout(inactivityTimer);
-          activityEvents.forEach(event => {
-              window.removeEventListener(event, activityListener);
-          });
+          activityEvents.forEach(event => window.removeEventListener(event, resetTimer));
       };
   }, [user, settings.sessionTimeout, handleLogout]);
   
@@ -270,11 +218,7 @@ export default function App() {
             newExecutionData[drillId] = {};
         }
         newExecutionData[drillId][entityId] = newData;
-
-        return {
-            ...prevDb,
-            executionData: newExecutionData
-        };
+        return { ...prevDb, executionData: newExecutionData };
     });
   };
 
@@ -297,7 +241,7 @@ export default function App() {
   };
 
 
-  if (loading) {
+  if (loading && user) {
     return <div className="flex items-center justify-center h-screen bg-[#1D2A2E] text-white">Đang tải dữ liệu...</div>;
   }
   
@@ -308,21 +252,14 @@ export default function App() {
   if (!user) {
     return (
         <LanguageProvider>
-            <PublicDashboard 
-                drills={db.drills}
-                scenarios={db.scenarios}
-                steps={db.steps}
-                executionData={db.executionData}
-                users={db.users}
-                onLoginRequest={() => setShowLogin(true)}
-            />
+            <PublicDashboard onLoginRequest={() => setShowLogin(true)} />
             {showLogin && <LoginPage onLogin={handleLogin} onCancel={() => setShowLogin(false)} />}
         </LanguageProvider>
     );
   }
 
   const renderScreen = () => {
-    const onDataRefresh = fetchAdminData; // Chỉ admin mới có thể refresh
+    const onDataRefresh = fetchAdminData;
     switch(activeScreen) {
         case 'dashboard':
             return <DashboardScreen user={user} drills={db.drills} setDrills={(newDrills) => setDb({...db, drills: newDrills})} onExecuteDrill={handleExecuteDrill} onViewReport={handleViewReport} onEditDrill={handleEditDrill} onCloneDrill={handleCloneDrill} executionData={db.executionData} scenarios={db.scenarios} onCreateDrill={() => setActiveScreen('create-drill')} onDataRefresh={onDataRefresh} />;
@@ -380,3 +317,4 @@ export default function App() {
     </LanguageProvider>
   );
 }
+
