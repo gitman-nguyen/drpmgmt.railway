@@ -548,7 +548,7 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, users, executi
                                                             <span>{t('dependsOn', 'Phụ thuộc')}: {group.dependsOn.join(', ')}</span>
                                                         </div>
                                                     )}
-                                                    <div className="flex flex-row items-start gap-2 mt-2">
+                                                    <div className="flex flex-row items-center justify-center flex-grow gap-2 mt-2">
                                                         {scenarioLevels.map((scenarioLevel, sLevelIndex) => (
                                                             <React.Fragment key={sLevelIndex}>
                                                                 {sLevelIndex > 0 && <ScenarioSubLevelConnector />}
@@ -671,4 +671,3 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, users, executi
     );
 };
 export default ExecutionScreen;
-
