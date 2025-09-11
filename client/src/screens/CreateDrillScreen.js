@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
 import DependencySelector from '../components/common/DependencySelector';
-import { UserIcon, CheckpointIcon, PlusIcon, TrashIcon, LinkIcon } from '../components/icons';
+import { UserIcon, CheckpointIcon, PlusIcon, TrashIcon, LinkIcon, MoveIcon, DotsVerticalIcon } from '../components/icons';
 
 // Component Modal để chỉnh sửa Checkpoint
 const CheckpointModal = ({ t, scenario, checkpoint, onSave, onClose }) => {
@@ -146,6 +146,19 @@ const CreateDrillScreen = ({ setActiveScreen, onDataRefresh, db, user, drillToEd
     const [checkpoints, setCheckpoints] = useState({});
     const [editingCheckpointFor, setEditingCheckpointFor] = useState(null);
     const [scenarioSearchTerm, setScenarioSearchTerm] = useState('');
+    const [openActionMenu, setOpenActionMenu] = useState(null); // For scenario action dropdown
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (openActionMenu && !event.target.closest(`.action-menu-container-${openActionMenu}`)) {
+                setOpenActionMenu(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [openActionMenu]);
 
     useEffect(() => {
         const allScenarios = Object.values(db.scenarios).filter(s => s.status === 'Active');
@@ -306,6 +319,26 @@ const CreateDrillScreen = ({ setActiveScreen, onDataRefresh, db, user, drillToEd
 
         setScenarioGroups(getUpdatedGroupsWithValidDependencies(newGroups));
     };
+    
+    const handleMoveScenarioToGroup = (scenarioToMove, sourceGroupId, targetGroupId) => {
+        if (!scenarioToMove || !sourceGroupId || !targetGroupId || sourceGroupId === targetGroupId) {
+            return;
+        }
+
+        const movedScenario = { ...scenarioToMove, dependsOn: [] };
+
+        let newGroups = scenarioGroups.map(g => {
+            if (g.id === sourceGroupId) {
+                return { ...g, scenarios: g.scenarios.filter(s => s.id !== movedScenario.id) };
+            }
+            if (g.id === targetGroupId) {
+                return { ...g, scenarios: [...g.scenarios, movedScenario] };
+            }
+            return g;
+        });
+
+        setScenarioGroups(getUpdatedGroupsWithValidDependencies(newGroups));
+    };
 
     const handleDrop = (e, targetList, targetGroupId = null) => {
         e.preventDefault();
@@ -319,13 +352,7 @@ const CreateDrillScreen = ({ setActiveScreen, onDataRefresh, db, user, drillToEd
             handleRemoveScenario(draggedItem, sourceGroupId);
         } 
         else if (targetList === 'selected' && source === 'selected' && targetGroupId && sourceGroupId && sourceGroupId !== targetGroupId) {
-            const scenarioToMove = { ...draggedItem, dependsOn: [] };
-            let newGroups = scenarioGroups.map(g => {
-                if (g.id === sourceGroupId) return { ...g, scenarios: g.scenarios.filter(s => s.id !== scenarioToMove.id) };
-                if (g.id === targetGroupId) return { ...g, scenarios: [...g.scenarios, scenarioToMove] };
-                return g;
-            });
-            setScenarioGroups(getUpdatedGroupsWithValidDependencies(newGroups));
+            handleMoveScenarioToGroup(draggedItem, sourceGroupId, targetGroupId);
         }
 
         setDraggedItem(null);
@@ -368,7 +395,7 @@ const CreateDrillScreen = ({ setActiveScreen, onDataRefresh, db, user, drillToEd
         if(draggedItem.sourceGroupId === dropGroupId) {
             handleReorder(draggedItem.id, dropId, dropGroupId);
         } else {
-             // To-do: Implement reordering drop between groups
+             handleMoveScenarioToGroup(draggedItem, draggedItem.sourceGroupId, dropGroupId);
         }
         setDraggedItem(null);
     };
@@ -574,21 +601,75 @@ const CreateDrillScreen = ({ setActiveScreen, onDataRefresh, db, user, drillToEd
                                                                     <DependencySelector item={scen} itemList={flatScenariosForDependencies} currentIndex={globalIndex} onDependencyChange={(deps) => handleDependencyChange(scen.id, deps)} />
                                                                 </div>
                                                                 <div className="flex items-center gap-2 flex-shrink-0">
-                                                                    {scen.steps?.length > 0 && (
-                                                                        <>
-                                                                            <div className="flex items-center gap-1">
-                                                                                <UserIcon className="h-4 w-4 text-gray-400" />
-                                                                                <select value={scenarioAssignments[scen.id] || ''} onChange={e => handleScenarioAssigneeChange(scen.id, e.target.value)} className="text-sm bg-white border border-gray-300 rounded-md p-1 focus:ring-sky-500 focus:border-sky-500" aria-label={`Assign all steps for ${scen.name}`}>
-                                                                                    <option value="">{t('assignScenario', 'Giao toàn bộ')}</option>
-                                                                                    {db.users.map(u => (<option key={u.id} value={u.id}>{u.fullname || u.username}</option>))}
-                                                                                </select>
+                                                                    <div className={`relative action-menu-container-${scen.id}`}>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => setOpenActionMenu(openActionMenu === scen.id ? null : scen.id)}
+                                                                            className="p-1.5 rounded-full text-gray-500 hover:bg-gray-200"
+                                                                        >
+                                                                            <DotsVerticalIcon className="h-5 w-5" />
+                                                                        </button>
+                                                                        {openActionMenu === scen.id && (
+                                                                            <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-xl z-20 border">
+                                                                                <div className="py-1">
+                                                                                    <div className="px-3 py-2 text-sm text-gray-700 border-b">
+                                                                                        <label className="flex items-center gap-2 w-full">
+                                                                                            <MoveIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                                                                                            <select
+                                                                                                value={group.id}
+                                                                                                onChange={(e) => {
+                                                                                                    handleMoveScenarioToGroup(scen, group.id, e.target.value);
+                                                                                                    setOpenActionMenu(null);
+                                                                                                }}
+                                                                                                className="text-sm bg-white border border-gray-300 rounded-md p-1 w-full focus:ring-sky-500 focus:border-sky-500"
+                                                                                                title={t('moveToGroup', 'Chuyển tới khối...')}
+                                                                                                disabled={scenarioGroups.length <= 1}
+                                                                                            >
+                                                                                                {scenarioGroups.map(targetGroup => (
+                                                                                                    <option key={targetGroup.id} value={targetGroup.id}>
+                                                                                                        {targetGroup.name}
+                                                                                                    </option>
+                                                                                                ))}
+                                                                                            </select>
+                                                                                        </label>
+                                                                                    </div>
+                                                                                    {scen.steps?.length > 0 && (
+                                                                                        <>
+                                                                                            <div className="px-3 py-2 text-sm text-gray-700 border-b">
+                                                                                                <label className="flex items-center gap-2 w-full">
+                                                                                                    <UserIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                                                                                                    <select
+                                                                                                        value={scenarioAssignments[scen.id] || ''}
+                                                                                                        onChange={e => handleScenarioAssigneeChange(scen.id, e.target.value)}
+                                                                                                        className="text-sm bg-white border border-gray-300 rounded-md p-1 w-full focus:ring-sky-500 focus:border-sky-500"
+                                                                                                        aria-label={`Assign all steps for ${scen.name}`}
+                                                                                                    >
+                                                                                                        <option value="">{t('assignScenario', 'Giao toàn bộ')}</option>
+                                                                                                        {db.users.map(u => (<option key={u.id} value={u.id}>{u.fullname || u.username}</option>))}
+                                                                                                    </select>
+                                                                                                </label>
+                                                                                            </div>
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                onClick={() => {
+                                                                                                    setExpandedScenario(expandedScenario === scen.id ? null : scen.id);
+                                                                                                    setOpenActionMenu(null);
+                                                                                                }}
+                                                                                                className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                                                                            >
+                                                                                                {expandedScenario === scen.id ? t('collapse') : t('details', 'Chi tiết')}
+                                                                                            </button>
+                                                                                        </>
+                                                                                    )}
+                                                                                    <div className="border-t">
+                                                                                         <button type="button" onClick={() => {handleRemoveScenario(scen, group.id); setOpenActionMenu(null);}} className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                                                                                            <TrashIcon className="h-4 w-4" /> {t('removeFromDrill', 'Xóa khỏi diễn tập')}
+                                                                                        </button>
+                                                                                    </div>
+                                                                                </div>
                                                                             </div>
-                                                                            <button type="button" onClick={() => setExpandedScenario(expandedScenario === scen.id ? null : scen.id)} className="text-sm font-semibold text-sky-600 hover:text-sky-800 bg-sky-100 px-3 py-1 rounded-md">{expandedScenario === scen.id ? t('collapse') : t('details', 'Chi tiết')}</button>
-                                                                        </>
-                                                                    )}
-                                                                    <button type="button" onClick={() => handleRemoveScenario(scen, group.id)} onMouseDown={(e) => e.stopPropagation()} className="p-1.5 rounded-full text-gray-400 hover:bg-red-100 hover:text-red-600 transition-colors" title={t('removeFromDrill', 'Xóa khỏi diễn tập')}>
-                                                                        <TrashIcon className="h-4 w-4" />
-                                                                    </button>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                             {expandedScenario === scen.id && (
