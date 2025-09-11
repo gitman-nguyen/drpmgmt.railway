@@ -22,6 +22,12 @@ const ScenarioSubLevelConnector = () => (
     </div>
 );
 
+const RefreshIcon = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+    </svg>
+);
 
 // --- UI COMPONENTS ---
 const PieChart = ({ percentage, size = 80, strokeWidth = 8, colorClass = 'text-amber-500', textSizeClass = 'text-lg', textColorClass = 'text-slate-700', bgCircleClassProp }) => {
@@ -40,6 +46,44 @@ const PieChart = ({ percentage, size = 80, strokeWidth = 8, colorClass = 'text-a
         </div>
     );
 };
+
+// --- REFRESH CONTROLS COMPONENT ---
+const RefreshControls = ({ refreshInterval, setRefreshInterval, onRefresh, isLoading, t }) => {
+    const refreshIntervals = [
+        { value: 0, label: t('refreshOff', 'Tắt') },
+        { value: 5000, label: '5s' },
+        { value: 60000, label: t('oneMinute', '1 phút') },
+        { value: 120000, label: t('twoMinutes', '2 phút') },
+        { value: 300000, label: t('fiveMinutes', '5 phút') },
+    ];
+
+    return (
+        <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+                <label htmlFor="refresh-interval" className="text-sm text-slate-300 whitespace-nowrap">{t('autoRefresh', 'Tự động làm mới')}:</label>
+                <select
+                    id="refresh-interval"
+                    value={refreshInterval}
+                    onChange={(e) => setRefreshInterval(Number(e.target.value))}
+                    className="bg-slate-700/80 border border-slate-500 rounded-md py-1 px-2 text-white text-sm focus:ring-amber-400 focus:border-amber-400"
+                >
+                    {refreshIntervals.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                </select>
+            </div>
+            <button
+                onClick={onRefresh}
+                className="p-2 rounded-lg transition-all backdrop-blur-sm bg-slate-700/80 hover:bg-slate-600/80 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isLoading}
+                aria-label={t('refresh', 'Làm mới')}
+            >
+                <RefreshIcon className={`w-5 h-5 text-white ${isLoading ? 'animate-spin' : ''}`} />
+            </button>
+        </div>
+    );
+};
+
 
 // --- HELPERS & STYLES ---
 const userColorClasses = [
@@ -90,6 +134,8 @@ const PublicDashboard = ({ onLoginRequest }) => {
     const [isDetailsLoading, setIsDetailsLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    const [refreshInterval, setRefreshInterval] = useState(0); // 0 = off
+
     const toggleGroupExpansion = (groupId) => {
         setExpandedGroups(prev => 
             prev.includes(groupId)
@@ -98,51 +144,67 @@ const PublicDashboard = ({ onLoginRequest }) => {
         );
     };
 
-    useEffect(() => {
-        const fetchDrillList = async () => {
-            setIsListLoading(true);
-            try {
-                const response = await fetch('/api/public/drills');
-                if (!response.ok) throw new Error('Network response was not ok');
-                const data = await response.json();
-                setDrills(data);
-            } catch (err) {
-                console.error("Failed to fetch public drill list:", err);
-                setError(err.message);
-            } finally {
-                setIsListLoading(false);
-            }
-        };
-        fetchDrillList();
-        const intervalId = setInterval(fetchDrillList, 30000);
-        return () => clearInterval(intervalId);
+    // --- DATA FETCHING LOGIC ---
+    const fetchDrillList = useCallback(async () => {
+        setIsListLoading(true);
+        try {
+            const response = await fetch('/api/public/drills');
+            if (!response.ok) throw new Error('Network response was not ok');
+            const data = await response.json();
+            setDrills(data);
+        } catch (err) {
+            console.error("Failed to fetch public drill list:", err);
+            setError(err.message);
+        } finally {
+            setIsListLoading(false);
+        }
     }, []);
 
-    useEffect(() => {
-        if (!selectedDrill) {
-            setDrillDetails(null);
-            return;
+    const fetchDrillDetails = useCallback(async () => {
+        if (!selectedDrill) return;
+        setIsDetailsLoading(true);
+        try {
+            const response = await fetch(`/api/public/drills/${selectedDrill.id}`);
+            if (!response.ok) throw new Error('Could not load drill details');
+            const data = await response.json();
+            setDrillDetails(data);
+        } catch (err) {
+            console.error("Failed to fetch drill details:", err);
+            setError(err.message);
+        } finally {
+            setIsDetailsLoading(false);
         }
-
-        const fetchDrillDetails = async () => {
-            setIsDetailsLoading(true);
-            try {
-                const response = await fetch(`/api/public/drills/${selectedDrill.id}`);
-                if (!response.ok) throw new Error('Could not load drill details');
-                const data = await response.json();
-                setDrillDetails(data);
-            } catch (err) {
-                console.error("Failed to fetch drill details:", err);
-                setError(err.message);
-            } finally {
-                setIsDetailsLoading(false);
-            }
-        };
-
-        fetchDrillDetails();
-        const intervalId = setInterval(fetchDrillDetails, 30000);
-        return () => clearInterval(intervalId);
     }, [selectedDrill]);
+
+    const handleRefresh = useCallback(() => {
+        fetchDrillList();
+        if (selectedDrill) {
+            fetchDrillDetails();
+        }
+    }, [fetchDrillList, fetchDrillDetails, selectedDrill]);
+
+    // Effect for initial list load
+    useEffect(() => {
+        fetchDrillList();
+    }, [fetchDrillList]);
+
+    // Effect for fetching details when a drill is selected
+    useEffect(() => {
+        if (selectedDrill) {
+            fetchDrillDetails();
+        } else {
+            setDrillDetails(null); // Clear details when going back to list
+        }
+    }, [selectedDrill, fetchDrillDetails]);
+
+    // Effect for handling the auto-refresh interval
+    useEffect(() => {
+        if (refreshInterval > 0) {
+            const intervalId = setInterval(handleRefresh, refreshInterval);
+            return () => clearInterval(intervalId);
+        }
+    }, [refreshInterval, handleRefresh]);
+
 
     useEffect(() => {
         const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -231,7 +293,6 @@ const PublicDashboard = ({ onLoginRequest }) => {
             } else {
                 group.status = 'Pending';
             }
-             console.log(`[DEBUG] Group "${group.name}" | hasStarted: ${hasStarted}, isFullyCompleted: ${isFullyCompleted} ==> Status set to: ${group.status}`);
         });
 
         const groupDependencies = drill.group_dependencies || [];
@@ -377,15 +438,12 @@ const PublicDashboard = ({ onLoginRequest }) => {
                 .filter(group => group.status === 'InProgress')
                 .map(group => group.id);
             
-            console.log('[DEBUG] Setting expanded group IDs:', inProgressGroupIds);
-
             setExpandedGroups(inProgressGroupIds);
         }
     }, [drillDetails, groupLevels]);
 
     const renderDrillList = () => (
         <div className="w-full max-w-4xl mx-auto z-10 relative">
-            <h1 className="text-3xl md:text-4xl font-bold text-white text-center mb-8">{t('publicDashboardTitle')}</h1>
             {isListLoading && <div className="text-center text-white">{t('loading', 'Loading...')}</div>}
             {error && <div className="text-center text-red-400">{t('error', 'Error:')} {error}</div>}
             {!isListLoading && !error && (
@@ -451,7 +509,7 @@ const PublicDashboard = ({ onLoginRequest }) => {
     };
 
     const renderDrillDetails = () => {
-        if (isDetailsLoading) {
+        if (isDetailsLoading && !drillDetails) {
             return <div className="text-center text-white py-20">{t('loading', 'Loading...')}</div>;
         }
         if (!drillDetails) return null;
@@ -468,8 +526,6 @@ const PublicDashboard = ({ onLoginRequest }) => {
 
         return (
              <div className="w-full max-w-7xl mx-auto z-10 relative">
-                <button onClick={() => setSelectedDrill(null)} className="text-amber-300 hover:underline mb-6 text-lg font-medium">&larr; {t('backToList')}</button>
-                
                 <div className="bg-white/10 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-lg mb-8 flex flex-col md:flex-row items-center gap-6">
                     <div className="flex-shrink-0">
                         <PieChart percentage={overallProgress} size={120} strokeWidth={10} colorClass={overallColorClass} textSizeClass="text-2xl" textColorClass="text-white"/>
@@ -662,6 +718,26 @@ const PublicDashboard = ({ onLoginRequest }) => {
                     </button>
                 </div>
             </header>
+
+            {/* --- UNIFIED CONTROL BAR --- */}
+            <div className="relative z-10 w-full max-w-7xl mx-auto mb-6 flex justify-between items-center">
+                <div className="flex-1">
+                    {selectedDrill ? (
+                         <button onClick={() => setSelectedDrill(null)} className="text-amber-300 hover:underline text-lg font-medium">&larr; {t('backToList')}</button>
+                    ) : (
+                         <h1 className="text-3xl md:text-4xl font-bold text-white">{t('publicDashboardTitle')}</h1>
+                    )}
+                </div>
+                 <RefreshControls 
+                    refreshInterval={refreshInterval}
+                    setRefreshInterval={setRefreshInterval}
+                    onRefresh={handleRefresh}
+                    isLoading={isListLoading || isDetailsLoading}
+                    t={t}
+                 />
+            </div>
+
+
             <main className="relative z-10">
                 {selectedDrill ? renderDrillDetails() : renderDrillList()}
             </main>
@@ -669,4 +745,3 @@ const PublicDashboard = ({ onLoginRequest }) => {
     );
 };
 export default PublicDashboard;
-

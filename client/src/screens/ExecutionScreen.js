@@ -14,9 +14,11 @@ const WorkflowConnector = () => (
 );
 
 const ScenarioSubLevelConnector = () => (
-    <div className="my-2 text-sky-500/70">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24" stroke="currentColor" strokeWidth="1.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 13l-7 7-7-7m14-8l-7 7-7-7" />
+    <div className="mx-2 self-center text-sky-500/70">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5">
+            <path d="M11 17L16 12L11 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M7 17L12 12L7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M3 17L8 12L3 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
     </div>
 );
@@ -383,7 +385,7 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, users, executi
             currentLevel.forEach(u => {
                 (groupAdj[u.id] || []).forEach(vId => {
                     groupInDegree[vId]--;
-                    if (groupInDegree[vId] === 0) groupQueue.push(Object.values(groups).find(g => g.id === vId));
+                    if (groupInDegree[vId] === 0) groupQueue.push(Object.values(groups).find(group => group.id === vId));
                 });
             });
         }
@@ -508,7 +510,7 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, users, executi
                             return (
                                 <React.Fragment key={levelIndex}>
                                     {/* The column of groups */}
-                                    <div className="flex flex-col items-stretch gap-4 py-2 h-full">
+                                    <div className="flex flex-col items-stretch gap-4 py-2">
                                          {level.map(group => {
                                             const scenariosInGroup = group.scenarios;
                                             if (!scenariosInGroup || scenariosInGroup.length === 0) return null;
@@ -546,10 +548,11 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, users, executi
                                                             <span>{t('dependsOn', 'Phụ thuộc')}: {group.dependsOn.join(', ')}</span>
                                                         </div>
                                                     )}
-                                                    <div className="flex flex-col items-center gap-2 mt-2">
+                                                    <div className="flex flex-row items-start gap-2 mt-2">
                                                         {scenarioLevels.map((scenarioLevel, sLevelIndex) => (
                                                             <React.Fragment key={sLevelIndex}>
-                                                                <div className="flex flex-row justify-center gap-3">
+                                                                {sLevelIndex > 0 && <ScenarioSubLevelConnector />}
+                                                                <div className="flex flex-col items-center gap-3">
                                                                     {scenarioLevel.map(node => {
                                                                         const isSelected = activeNodeId === node.id || activeNodeId === node.checkpoint?.id;
                                                                         const isInProgress = node.executionStatus === 'InProgress' || node.checkpoint?.executionStatus === 'InProgress';
@@ -557,45 +560,48 @@ const ExecutionScreen = ({ user, drill, onBack, scenarios, steps, users, executi
                                                                         const drillExec = executionData[drill.id] || {};
                                                                         const assignedUserIds = new Set(node.steps.map(stepId => (drillExec[stepId]?.assignee || drill.step_assignments?.[stepId])).filter(Boolean));
                                                                         const assignedUsers = Array.from(assignedUserIds).map(userId => users.find(u => u.id === userId)).filter(Boolean);
-    
+                    
                                                                         return (
                                                                             <button 
                                                                                 key={node.id} 
                                                                                 onClick={() => setActiveNodeId(node.id)} 
                                                                                 disabled={node.isLocked || !isAuthorizedToView} 
-                                                                                className={`w-60 text-left p-2 rounded-lg border transition-all duration-300 bg-white border-gray-200 hover:border-gray-400 flex flex-col justify-between
+                                                                                className={`w-56 h-20 relative overflow-hidden text-left p-2 rounded-lg border transition-all duration-300 bg-white border-gray-200 hover:border-gray-400 flex flex-col justify-between
                                                                                     ${(isSelected && isAuthorizedToView) ? 'ring-2 ring-sky-500' : ''} 
                                                                                     ${node.isLocked ? 'opacity-60' : ''}
                                                                                     ${isInProgress && !isSelected ? 'animate-pulse' : ''} 
                                                                                     ${(node.isLocked || !isAuthorizedToView) ? 'cursor-not-allowed' : ''}`
                                                                                 }
                                                                             >
-                                                                                <div>
+                                                                                {node.executionStatus === 'Completed' && (
+                                                                                    <CheckCircleIcon className="absolute z-0 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 text-green-400 opacity-20" />
+                                                                                )}
+                                                                                <div className="relative z-10">
                                                                                     <h4 className="font-semibold text-xs text-gray-900 flex items-center truncate">
                                                                                         {node.isLocked && <LockIcon />}
-                                                                                        {node.executionStatus === 'Completed' && <CheckCircleIcon className="w-4 h-4 text-green-500 mr-1" />}
                                                                                         {node.name}
                                                                                     </h4>
                                                                                 </div>
-                                                                                <div className="flex justify-between items-center mt-2">
+                                                                                <div className="relative z-10 mt-2">
                                                                                     <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${node.role === 'TECHNICAL' ? 'bg-purple-100 text-purple-800' : 'bg-orange-100 text-orange-800'}`}>{node.role}</span>
-                                                                                    {assignedUsers.length > 0 && (
-                                                                                        <div className="flex items-center -space-x-2">
-                                                                                            {assignedUsers.slice(0, 2).map(u => {
-                                                                                                const colorStyle = userColorMap[u.id] || userColorClasses[0];
-                                                                                                const fullName = u.last_name && u.first_name ? `${u.last_name} ${u.first_name}` : (u.fullname || u.username);
-                                                                                                const avatarText = (u.last_name?.[0] || u.username?.[0] || 'U').toUpperCase();
-                                                                                                return <div key={u.id} className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ring-1 ring-white ${colorStyle.bg} ${colorStyle.text}`} title={fullName}>{avatarText}</div>;
-                                                                                            })}
-                                                                                            {assignedUsers.length > 2 && <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ring-1 ring-white bg-gray-200 text-gray-700" title={`${assignedUsers.length - 2} người khác`}>+{assignedUsers.length - 2}</div>}
-                                                                                        </div>
-                                                                                    )}
                                                                                 </div>
+                                                                                {assignedUsers.length > 0 && (
+                                                                                    <div className="absolute z-20 bottom-2 right-2 flex flex-row-reverse items-center -space-x-2 space-x-reverse">
+                                                                                        {assignedUsers.slice(0, 2).map(u => {
+                                                                                            const colorStyle = userColorMap[u.id] || userColorClasses[0];
+                                                                                            const fullName = u.last_name && u.first_name ? `${u.last_name} ${u.first_name}` : (u.fullname || u.username);
+                                                                                            const nameParts = fullName ? fullName.split(' ').filter(p => p) : [];
+                                                                                            const lastName = nameParts.length > 0 ? nameParts[nameParts.length - 1] : '';
+                                                                                            const avatarText = (lastName?.[0] || u.username?.[0] || 'U').toUpperCase();
+                                                                                            return <div key={u.id} className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ring-1 ring-white ${colorStyle.bg} ${colorStyle.text}`} title={fullName}>{avatarText}</div>;
+                                                                                        })}
+                                                                                        {assignedUsers.length > 2 && <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ring-1 ring-white bg-gray-200 text-gray-700" title={`${assignedUsers.length - 2} người khác`}>+{assignedUsers.length - 2}</div>}
+                                                                                    </div>
+                                                                                )}
                                                                             </button>
                                                                         );
                                                                     })}
                                                                 </div>
-                                                                {sLevelIndex < scenarioLevels.length - 1 && <ScenarioSubLevelConnector />}
                                                             </React.Fragment>
                                                         ))}
                                                     </div>
